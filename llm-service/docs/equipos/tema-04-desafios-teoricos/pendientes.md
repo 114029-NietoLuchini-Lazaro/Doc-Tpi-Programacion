@@ -3,14 +3,11 @@
 > Carpeta nueva (creada 2026-09-13, a partir de una consulta directa de Tema 04 sobre respuestas
 > cortas mal corregidas por comparación exacta). No hay agenda de integración previa que citar acá
 > — es la primera vez que este equipo queda registrado en `docs/equipos/`.
-
-## 🟡 Confirmar que "Desafío Teórico" es Tema 04
-
-La identificación viene de una sola mención de refilón en
-[`11-glosario-y-metadata.md`](../../11-glosario-y-metadata.md#las-ocho-colisiones) ("Tema 04:
-corregir") y de [`10-entregables-y-plan.md:71`](../../10-entregables-y-plan.md), no de una
-confirmación directa de ellos. Antes de asumir más contenido bajo este nombre de carpeta, conviene
-que alguien lo valide en una conversación real con el equipo.
+>
+> **Identificación confirmada (2026-09-13):** "Desafío Teórico" es Tema 04. Hasta acá la única
+> base escrita era una mención de refilón en
+> [`11-glosario-y-metadata.md`](../../11-glosario-y-metadata.md#las-ocho-colisiones) ("Tema 04:
+> corregir") y en [`10-entregables-y-plan.md:71`](../../10-entregables-y-plan.md); queda cerrado.
 
 ## 🟡 Si van a implementar la recomendación de normalización + distancia de edición
 
