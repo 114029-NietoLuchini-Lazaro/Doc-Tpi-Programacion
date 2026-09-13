@@ -49,12 +49,38 @@ public class FakeModelAdapter implements ModelInvocationPort {
   }
 
   private String respond(ModelInvocationRequest request) {
-    if (request.function() != ModelFunction.TUTOR) {
-      throw new UnsupportedOperationException("El fake todavía no simula la función " + request.function());
-    }
+    return switch (request.function()) {
+      case TUTOR -> respondAsTutor(request);
+      case EVALUATOR -> respondAsEvaluator(request);
+      default -> throw new UnsupportedOperationException("El fake todavía no simula la función " + request.function());
+    };
+  }
+
+  private String respondAsTutor(ModelInvocationRequest request) {
     String excerpt = firstWords(request.userPrompt(), 12);
     return "¿Qué estructura o patrón te ayudaría a resolver \"" + excerpt
         + "\" sin escribir todavía el código completo? Contame qué probaste hasta ahora.";
+  }
+
+  /** Puntajes determinísticos derivados de un hash del prompt — "reglas simples", como pide H10.
+   * No conoce los puntajes humanos de referencia: es un fake, no le hace falta acertar, solo
+   * producir un JSON válido y reproducible para poder ejercitar el resto del pipeline
+   * (persistencia, PAR-14, transición de estado) de punta a punta. */
+  private String respondAsEvaluator(ModelInvocationRequest request) {
+    int seed = (request.userPrompt() == null ? "" : request.userPrompt()).hashCode();
+    return "{"
+        + "\"autonomy\":" + scoreFrom(seed, 1) + ","
+        + "\"clarity\":" + scoreFrom(seed, 2) + ","
+        + "\"progression\":" + scoreFrom(seed, 3) + ","
+        + "\"compliance\":" + scoreFrom(seed, 4) + ","
+        + "\"efficiency\":" + scoreFrom(seed, 5)
+        + "}";
+  }
+
+  /** Un entero estable en [55, 95] a partir de la semilla y un multiplicador por dimensión. */
+  private int scoreFrom(int seed, int dimensionIndex) {
+    int mixed = Math.abs(seed * 31 + dimensionIndex * 17);
+    return 55 + (mixed % 41);
   }
 
   private String firstWords(String text, int count) {

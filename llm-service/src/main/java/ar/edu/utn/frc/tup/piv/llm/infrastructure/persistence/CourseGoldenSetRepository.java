@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -11,7 +12,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class CourseGoldenSetRepository {
   private final JdbcTemplate jdbc;
-  public CourseGoldenSetRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+  private final ObjectMapper mapper;
+  public CourseGoldenSetRepository(JdbcTemplate jdbc, ObjectMapper mapper) { this.jdbc = jdbc; this.mapper = mapper; }
 
   public Optional<CourseGoldenSetVersion> copyPublishedPlatformVersion(UUID courseId, UUID baseVersionId, UUID actorId) {
     var source = jdbc.query("""
@@ -137,7 +139,24 @@ public class CourseGoldenSetRepository {
         """, actorId, versionId, courseId) == 1;
   }
 
+  /** Los casos de una versión (publicada o no) para correr una calibración —
+   * `transcript`/`challengeContext`/`referenceScores` tal cual quedaron persistidos. */
+  public List<GoldenSetCaseDetail> casesOf(UUID goldenSetVersionId) {
+    return jdbc.query("""
+        select id, transcript, challenge_context, reference_scores from llm.golden_set_cases
+        where golden_set_version_id = ? order by case_order
+        """, (rs, row) -> new GoldenSetCaseDetail(rs.getObject("id", UUID.class),
+        readTree(rs.getString("transcript")), readTree(rs.getString("challenge_context")),
+        readTree(rs.getString("reference_scores"))), goldenSetVersionId);
+  }
+
+  private JsonNode readTree(String json) {
+    try { return mapper.readTree(json); }
+    catch (Exception exception) { throw new IllegalStateException("No se pudo leer un caso del golden set", exception); }
+  }
+
   public record CourseGoldenSetVersion(UUID id, UUID familyId, int version, String state, UUID basedOnVersionId) {}
+  public record GoldenSetCaseDetail(UUID id, JsonNode transcript, JsonNode challengeContext, JsonNode referenceScores) {}
   public record CourseGoldenSetView(UUID id, UUID familyId, String name, int version, String state, UUID basedOnVersionId,
       List<GoldenSetCaseSummary> cases) {}
   public record GoldenSetCaseSummary(UUID id, int order, String author, String reviewState) {}
