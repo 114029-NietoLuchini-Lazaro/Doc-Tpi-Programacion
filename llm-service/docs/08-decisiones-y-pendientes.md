@@ -678,8 +678,7 @@ arrancar con tres y descubrir que dos no se usan, no.
 mensajes/día, 15 por desafío). `LLM-S09-H02` (la historia que permite a un ADMIN cambiar un límite
 de cuota) hoy solo modela ese límite **por función** (`tutor`, `evaluator`) — nunca por alumno
 individual. Y el back office (Tema 12) no tiene, en ningún contrato vigente
-([`18 §4.5`](18-contratos-inter-equipos.md#45-tema-12--backoffice--admin),
-[`equipos/tema-12-backoffice-admin/contratos.md`](equipos/tema-12-backoffice-admin/contratos.md)),
+([`equipos/tema-12-backoffice-admin/contratos.md`](equipos/tema-12-backoffice-admin/contratos.md)),
 la pantalla que configuraría eso.
 
 **Lo que se pide alinear:** que el back office tenga, en teoría, parámetros para limitar el uso de
@@ -702,7 +701,7 @@ DPO**, no algo que esta nota resuelva.
 **Prioridad:** Media — no bloquea el arranque de EP-07 (que ya cubre el límite por función), pero
 hay que resolverla antes de cerrar `LLM-S09-H02` si el back office la necesita en el primer corte.
 
-📄 [ep-07](epicas/ep-07.md) · [18 §4.5](18-contratos-inter-equipos.md#45-tema-12--backoffice--admin)
+📄 [ep-07](epicas/ep-07.md) · [`equipos/tema-12-backoffice-admin/contratos.md`](equipos/tema-12-backoffice-admin/contratos.md)
 
 ---
 
@@ -864,6 +863,10 @@ La salvaguarda anti-fuga (**tuya sin discusión**) compara la respuesta del tuto
 
 **Ojo:** la metadata de tiempos entre mensajes y ediciones de código ([07](07-datos-y-terminos.md) §3.1) es **evidencia de la dimensión que más pesa** y no se puede reconstruir después. Si la guarda otro equipo, **hay que pedirles explícitamente que la capturen** — no la van a capturar solos.
 
+> ✅ **Resuelto (2026-09-13), opción A.** Tema 05 guarda la transcripción (dueños de la UI del
+> chat) y nos la entrega completa al notificar el cierre del intento — ver
+> [`equipos/tema-05-desafios-practicos/contratos.md`](equipos/tema-05-desafios-practicos/contratos.md#qué-nos-dan-el-cierre-del-intento).
+
 ---
 
 ### 🔴 B-3 — Tema 11: los campos del contrato de eventos
@@ -873,6 +876,9 @@ El Tema 11 define el contrato de eventos **para toda la plataforma** y su decisi
 **Es urgente por secuencia, no por importancia: una vez cerrado, pedir un campo nuevo es renegociar con todos.**
 
 **Lo que necesitás que incluyan:** `curso_cohorte_id`, `intento_id`, `alumno_id`, `rubric_version`, `model_id`, `model_version`, `score_agregado`, `confianza`, `estado` y `trace_id`.
+
+> 🔴 **Sigue abierto** — trackeado en
+> [`equipos/tema-11-chat/pendientes.md`](equipos/tema-11-chat/pendientes.md#-cruzado--b-3-los-campos-que-tema-11-tiene-que-incluir-en-el-contrato-de-eventos).
 
 ---
 

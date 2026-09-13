@@ -885,6 +885,10 @@ La mayor parte de los datos se puede regenerar. **Dos artefactos no.**
 
 ## 6. Qué ve el usuario cuando algo falla
 
+> También vive, copiado completo, en
+> [`equipos/frontend-angular/contratos.md`](equipos/frontend-angular/contratos.md) — acá queda
+> además junto al resto de la escalera de resiliencia (§4-5) para verlos de punta a punta.
+
 Nunca lo escribimos, y son las pantallas que más se improvisan.
 
 | Situación | Qué ve el alumno | Requerimiento |
@@ -900,6 +904,11 @@ Nunca lo escribimos, y son las pantallas que más se improvisan.
 > varía según el motivo, el alumno aprende a mapear el detector probando.
 
 ## 7. El componente Angular: estados y contrato
+
+> También vive, copiado completo, en
+> [`equipos/frontend-angular/contratos.md`](equipos/frontend-angular/contratos.md) — es el
+> destino natural por ser contrato de UI, pero queda acá también junto al resto de la ingeniería
+> de resiliencia que lo origina.
 
 Lo construyen ustedes y no lo habíamos especificado.
 

@@ -1,8 +1,9 @@
 # Tema 11 — Chat — contratos
 
-> Fuente completa: [18 §4.4](../../18-contratos-inter-equipos.md#44-tema-11--chat),
-> [17 §4](../../17-mapa-de-integracion.md#4-camino-sincrónico-b--el-moderador) (diagrama completo),
-> [04-funciones-de-ia.md](../../04-funciones-de-ia.md) líneas 1658-1679 ("qué construimos y qué no").
+> Este documento es el contrato completo y vigente con Tema 11 (incluye el diagrama de
+> secuencia del moderador) — `18` §4 ya no repite este detalle. Contexto adicional:
+> [04-funciones-de-ia.md](../../04-funciones-de-ia.md) líneas 1658-1679 ("qué construimos y qué
+> no"). Reglas generales: [18 §0](../../18-contratos-inter-equipos.md#0-cómo-leemos-los-contratos).
 
 ## Qué nos llama
 
@@ -33,6 +34,63 @@
 `desafio_activo` lo tiene que mandar Tema 11 — nosotros no podemos deducir si el emisor tiene un
 desafío en curso, y la heurística de integridad académica (bloque de código pegado en el chat)
 lo necesita.
+
+### Diagrama de secuencia completo (también vive en [17 §4](../../17-mapa-de-integracion.md#4-camino-sincrónico-b--el-moderador))
+
+El presupuesto más ajustado de todo el sistema: **300 ms**, y está en el camino de entrega del
+mensaje. Por eso ADR-012 lo resolvió al revés que las otras cuatro funciones: **la mayoría de
+los casos no sale del proceso**.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant T11 as Tema 11 · Chat
+    participant API as M8 · API
+    participant CL as M5 · capa clasica
+    participant CB as Circuit Breaker
+    participant CLF as omni-moderation-latest
+
+    T11->>API: POST /ai/moderador · siempre sync
+    API->>CL: normalizar + correr TODOS los detectores
+
+    Note over CL: listas con nivel por termino · spam por frecuencia<br/>forma de codigo · base64 · integridad academica<br/>menos de 1 ms, es un match en memoria
+
+    alt la capa clasica llego a severidad media o alta
+        CL-->>API: veredicto · origen = lista o heuristica
+        Note over CL,API: aca termina. Sin red, sin tokens, USD 0
+    else no llego
+        CL->>CB: consultar el residuo contextual
+        alt el breaker esta cerrado
+            CB->>CLF: acoso y amenaza sin lexico explicito
+            CLF-->>CB: categorias + score
+            CB-->>API: veredicto · origen = clasificador
+        else el breaker esta abierto
+            CB-->>API: 503 · degradacion prefiltro_solamente
+            Note over CB,API: la capa clasica ya decidio y su veredicto vale
+        end
+    end
+
+    API-->>T11: categorias, severidad, confianza, origen, version_lista
+    Note over T11: NO entrega el mensaje hasta tener<br/>200 con severidad baja
+```
+
+| Etapa | Cuánto tarda | Qué resuelve |
+|---|---|---|
+| Capa clásica, todos los detectores | **< 1 ms** | 4 de las 6 categorías de RF-CHT-10 |
+| Clasificador externo | **200 a 500 ms** | Solo el residuo: acoso y amenaza sin léxico explícito |
+| Factor entre las dos | **~1000×** | Por eso ADR-012 empuja todo lo que puede al lado determinístico |
+| Timeout hacia el clasificador | **1 s** | Al vencerse: `prefiltro_solamente` |
+| **Objetivo total** | **< 300 ms** | Es lo único que importa en esta función |
+
+**El campo `origen` no es telemetría decorativa.** Es lo único que permite medir qué proporción
+resuelve la capa clásica —la palanca dice «−70% o más», y eso **era una suposición**— y es lo
+primero que se mira para depurar un falso positivo.
+
+> 🔴 **Tres cosas que este diagrama deja a la vista** (detalle completo en `17` §4, I-01/I-02):
+> el corte entre las dos capas está escrito de dos formas distintas en dos documentos (I-01); un
+> timeout de 1 s no entra en un presupuesto de 300 ms y nadie escribió qué pasa en el medio
+> (I-02); y el acoso acumulativo no lo detecta ninguna de las dos capas porque el contrato evalúa
+> un mensaje por vez, sin estado por hilo.
 
 ## Qué nos da
 

@@ -88,7 +88,7 @@ flowchart TB
 > "consulta estado" ni al bus). Todo el camino asincrónico del evaluador ahora entra y sale por
 > Tema 05: publica `intento_cerrado.v1` (con transcripción) en vez de Tema 03, recibe
 > `score_de_ia_calculado` de nuestra parte, y es quien se lo reenvía a Tema 03. Ver §5 para el
-> diagrama de secuencia completo y [18 §4.2/§4.3](18-contratos-inter-equipos.md#42-tema-03--motor-de-desafíos)
+> diagrama de secuencia completo y [`equipos/tema-03-motor-de-desafios/contratos.md`](equipos/tema-03-motor-de-desafios/contratos.md)
 > para el contrato.
 
 ### Las tres cosas que se llaman «gateway»
@@ -166,6 +166,11 @@ flowchart LR
 
 ## 3. Camino sincrónico A — el tutor
 
+> También vive, copiado completo, en
+> [`equipos/tema-05-desafios-practicos/contratos.md`](equipos/tema-05-desafios-practicos/contratos.md) —
+> acá queda además para poder comparar los tres presupuestos de latencia (tutor, moderador,
+> evaluador) en un solo lugar.
+
 El más difícil de los cinco: hay alguien mirando la pantalla, y la respuesta **no se puede mostrar
 hasta compararla contra la solución esperada** (RF-IA-20). Eso es lo que mata el streaming token a
 token y lo que convierte al guardarraíl de salida en parte del presupuesto de latencia.
@@ -236,6 +241,10 @@ sequenceDiagram
 
 ## 4. Camino sincrónico B — el moderador
 
+> También vive, copiado completo, en
+> [`equipos/tema-11-chat/contratos.md`](equipos/tema-11-chat/contratos.md) — acá queda además
+> para la comparación de presupuestos de latencia entre las tres funciones síncronas.
+
 El presupuesto más ajustado de todo el sistema: **300 ms**, y está en el camino de entrega del
 mensaje. Por eso ADR-012 lo resolvió al revés que las otras cuatro funciones: **la mayoría de los
 casos no sale del proceso**.
@@ -303,6 +312,10 @@ primero que se mira para depurar un falso positivo.
 ---
 
 ## 5. Camino asincrónico — el evaluador
+
+> También vive, copiado completo, en
+> [`equipos/tema-05-desafios-practicos/contratos.md`](equipos/tema-05-desafios-practicos/contratos.md) —
+> acá queda además para la vista cruzada de las tres integraciones síncronas/asincrónicas.
 
 Nadie está mirando la pantalla, así que va por cola. Eso compra tres cosas de un saque: **−50% de
 costo con Batch**, el pico absorbido, y RF-IA-27 implementado por construcción. Y trae una
@@ -579,7 +592,7 @@ flowchart LR
         N4["Backend<br/>endpoint de contexto<br/>del desafio"]
         N5["Backend<br/>que la entrega se acepte<br/>con el evaluador caido"]
         N6["Product Owner<br/>responsable y fecha<br/>del golden set"]
-        N7["Front End<br/>las 7 pantallas"]
+        N7["Front End<br/>las pantallas pendientes"]
     end
 
     IA(("TEMA 07"))
@@ -620,7 +633,7 @@ flowchart LR
 | Responsable y fecha del golden set | Product Owner | Sin calibración, ningún curso arranca. Es el plazo más largo del proyecto | 🔴 |
 | Endpoint de contexto del desafío | Backend | El tutor no puede tutorear | 🟡 |
 | Que la entrega se acepte con el evaluador caído | Backend | La caída de un proveedor externo bloquea a un alumno — lo que RF-IA-27 prohíbe | 🔴 **El que más se cae entre equipos** |
-| Las 7 pantallas | Front End | La IA queda lista y no se puede usar ni verificar | 🔴 |
+| Las pantallas pendientes ([`equipos/frontend-angular/pendientes.md`](equipos/frontend-angular/pendientes.md)) | Front End | La IA queda lista y no se puede usar ni verificar | 🔴 |
 
 > **El punto de la degradación es el que más se pierde.** El otro equipo suele asumir que «la
 > resiliencia es cosa de la IA». No lo es: aceptar la entrega con el evaluador caído es lógica del

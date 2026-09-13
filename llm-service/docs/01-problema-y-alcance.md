@@ -174,48 +174,19 @@ preparadas desde el diseño inicial.
 
 ## 3. Lo que necesitás pedirle a los otros equipos
 
-Esta es la lista concreta. Reclamala temprano — cada ítem que llegue tarde te bloquea.
+Reclamalo temprano — cada ítem que llegue tarde te bloquea. El detalle completo, con requerimiento
+y estado, vive en la carpeta de cada equipo, no acá:
 
-### 3.1 Del backend de negocio
-
-| Qué | Por qué lo necesitás | Requerimiento |
-|---|---|---|
-| **Endpoint de contexto de desafío** | Para tutorear necesitás enunciado, código actual, tipo y nivel de riesgo | RF-IA-19 |
-| **Endpoint para devolver resultados** | Vos no escribís en la base académica | ADR-001 |
-| **Disparador al cerrar un intento** | Es lo que encola la evaluación | RF-IA-12 |
-| **Que la entrega se acepte con el evaluador caído** | La entrega no se bloquea nunca; XP base y monedas se otorgan igual | RF-IA-27 |
-| **Que el cierre de curso consulte tus pendientes** | El profesor no puede archivar con scores pendientes | RF-IA-34 |
-| **Que el paso draft→activo consulte tu calibración** | Bloqueo duro, sin override | RF-IA-36 |
-| **Identidad y `curso_id` derivados de la sesión** | Si vienen del cliente, tu aislamiento no vale nada | [05](05-seguridad.md) |
-
-### 3.2 Del equipo de front
-
-Siete pantallas. **Ninguna la hacés vos, y sin ellas la IA no se puede usar ni verificar.**
-
-| Pantalla | Para qué | Requerimiento |
-|---|---|---|
-| Chat del tutor dentro del IDE | Es la interfaz del tutor | RF-IA-01 |
-| **Desglose del score por dimensión** con justificación | El alumno tiene que ver por qué le puntuaron así | RF-IA-16 |
-| **Flujo de apelación** | El alumno pide revisión humana | RF-IA-18 |
-| **Revisión del parcial generado**, con el fragmento fuente al lado | Gate humano obligatorio antes de publicar | [04](04-funciones-de-ia.md) §5 |
-| **Herramienta de golden set** para docentes | Cargar y puntuar transcripciones de referencia | RF-IA-30, DoD 7b |
-| **Dashboard de incidentes** de jailbreak y moderación | El profesor tiene que ver los incidentes | RF-IA-10, RF-CHT-11 |
-| **Config de modelos del ADMIN** | Asignación modelo→función | RF-IA-24 |
-
-> ⚠️ **La herramienta de golden set es la más urgente y la que más se subestima.** No es una pantalla
-> más: sin ella, los docentes no pueden calibrar, y sin calibración **ningún curso arranca**
-> (RF-IA-36, sin override). Y encima el trabajo docente de producirla es un hito de calendario
-> académico (RF-IA-36b), no de desarrollo.
-
-### 3.3 Del Product Owner
-
-Las 11 preguntas abiertas de [08](08-decisiones-y-pendientes.md). Las tres que más te bloquean:
-
-| # | Pregunta | Por qué te bloquea |
-|---|---|---|
-| **P-04** | ¿Quién produce el golden set y para cuándo? | 🔴 Sin fecha, el MVP no sale |
-| **P-06** | ¿El free tier puede tocar datos de alumnos? | Define todo tu modelo de costos |
-| **P-01** | ¿El corrector lleva calibración como el evaluador? | ✅ Resuelto: el corrector LLM queda fuera del alcance vigente |
+- **Backend de negocio** — endpoint de contexto de desafío, endpoint para devolver resultados,
+  disparador al cerrar un intento, aceptar la entrega con el evaluador caído, consulta de
+  pendientes antes de cerrar un curso, consulta de calibración antes de activar, identidad y
+  `curso_id` derivados de la sesión: [`equipos/backend-de-negocio/pendientes.md`](equipos/backend-de-negocio/pendientes.md).
+- **Front End** — las pantallas que faltan (la del golden set es la más urgente y la que más se
+  subestima: sin calibración **ningún curso arranca**, RF-IA-36):
+  [`equipos/frontend-angular/pendientes.md`](equipos/frontend-angular/pendientes.md).
+- **Product Owner** — las preguntas abiertas de [08](08-decisiones-y-pendientes.md), empezando
+  por quién produce el golden set y para cuándo (P-04) y si el free tier puede tocar datos de
+  alumnos (P-06): [`equipos/product-owner/pendientes.md`](equipos/product-owner/pendientes.md).
 
 ## 4. Las cosas que van a caer en el medio
 
@@ -262,13 +233,13 @@ producto: es tu banco de pruebas. Sirve para tres cosas y las tres valen:
 
 1. Demostrarle al equipo qué hace el servicio.
 2. Iterar prompts sin esperar al front.
-3. **Ser el prototipo de las 7 pantallas que el otro equipo va a tener que construir** — mostrarles
+3. **Ser el prototipo de las pantallas que el otro equipo va a tener que construir** — mostrarles
    una versión fea que funciona vale más que cualquier especificación escrita.
 
 ## 7. Los tres riesgos del recorte de alcance
 
 | Riesgo | Por qué pasa | Mitigación |
 |---|---|---|
-| **La IA queda lista y no se puede usar** | Faltan las 7 pantallas de §3.2 | Reclamalas ahora, con los IDs de requerimiento y los puntos del DoD en la mano |
+| **La IA queda lista y no se puede usar** | Faltan las pantallas de [`equipos/frontend-angular/pendientes.md`](equipos/frontend-angular/pendientes.md) | Reclamalas ahora, con los IDs de requerimiento y los puntos del DoD en la mano |
 | **El golden set no existe el día del go-live** | Nadie lo agendó porque no es trabajo de desarrollo | 🔴 Escalá P-04 al PO **esta semana**. Es el único DoD que no depende de ningún equipo técnico |
 | **El backend no implementa la degradación de RF-IA-27** | Asume que la resiliencia es "cosa de la IA" | La degradación es **de producto**, no técnica: aceptar la entrega y otorgar XP con el evaluador caído es lógica del backend. Explicitalo en el contrato |

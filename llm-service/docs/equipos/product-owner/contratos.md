@@ -3,8 +3,9 @@
 > No hay contrato técnico con el Product Owner — esta carpeta existe igual porque el PO decide
 > puntos que condicionan contratos con equipos técnicos. Ver [`pendientes.md`](pendientes.md).
 >
-> Fuente completa: [18 §4.8](../../18-contratos-inter-equipos.md#48-product-owner),
-> [08 Parte B](../../08-decisiones-y-pendientes.md).
+> Este documento y [`pendientes.md`](pendientes.md) son la fuente completa y vigente para
+> Product Owner — `18` §4 ya no repite este detalle. Decisiones y preguntas originales:
+> [08 Parte B/C](../../08-decisiones-y-pendientes.md).
 
 ## Resuelto
 

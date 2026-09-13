@@ -1,7 +1,7 @@
 # Tema 12 — Backoffice / ADMIN — pendientes
 
-> Fuente completa: [17 I-15](../../17-mapa-de-integracion.md#8-lo-que-estos-diagramas-dejaron-a-la-vista),
-> [18 §4.5](../../18-contratos-inter-equipos.md#45-tema-12--backoffice--admin),
+> Este documento es la fuente completa de lo pendiente con Tema 12. Antecedentes:
+> [17 I-15](../../17-mapa-de-integracion.md#8-lo-que-estos-diagramas-dejaron-a-la-vista),
 > [04-funciones-de-ia.md](../../04-funciones-de-ia.md) líneas 889-900.
 
 ## 🔴 Cruzado — I-15: quién construye la pantalla del golden set

@@ -87,7 +87,7 @@ Los service IDs canónicos son `practice-service`, `challenges-service`, `course
 > ⚠️ **Cambió el 2026-09-13.** `llm-service` dejó de comunicarse directo con `challenges-service`
 > (Tema 03). Todo el intercambio del evaluador — cierre de intento y entrega del score — pasa
 > ahora por `practice-service` (Tema 05), que es quien se lo reenvía a `challenges-service`. Ver
-> [18 §4.2/§4.3](18-contratos-inter-equipos.md#42-tema-03--motor-de-desafíos) y
+> [`equipos/tema-03-motor-de-desafios/contratos.md`](equipos/tema-03-motor-de-desafios/contratos.md) y
 > [`equipos/tema-05-desafios-practicos/contratos.md`](equipos/tema-05-desafios-practicos/contratos.md).
 
 | Llamador | Scope M2M mínimo hacia `llm-service` |

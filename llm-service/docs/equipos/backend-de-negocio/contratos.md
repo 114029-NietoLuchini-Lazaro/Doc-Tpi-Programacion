@@ -1,6 +1,8 @@
 # Backend de negocio — contratos
 
-> Fuente completa: [18 §4.6](../../18-contratos-inter-equipos.md#46-backend-de-negocio).
+> Este documento es el contrato completo y vigente con Backend de negocio — `18` ya no repite
+> este detalle, solo indexa hacia acá. Reglas generales:
+> [18 §0](../../18-contratos-inter-equipos.md#0-cómo-leemos-los-contratos).
 
 ## Qué nos da (acordado)
 

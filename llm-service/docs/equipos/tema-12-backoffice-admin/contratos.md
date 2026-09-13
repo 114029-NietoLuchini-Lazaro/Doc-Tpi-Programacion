@@ -1,6 +1,8 @@
 # Tema 12 — Backoffice / ADMIN — contratos
 
-> Fuente completa: [18 §4.5](../../18-contratos-inter-equipos.md#45-tema-12--backoffice--admin).
+> Este documento es el contrato completo y vigente con Tema 12 — `18` ya no repite este
+> detalle, solo indexa hacia acá. Reglas generales (canal sync/async, errores, autenticación):
+> [18 §0](../../18-contratos-inter-equipos.md#0-cómo-leemos-los-contratos).
 
 ## Qué nos llama
 

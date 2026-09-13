@@ -1,7 +1,8 @@
 # Tema 03 — Motor de Desafíos — contratos
 
-> Fuente completa: [18 §4.2](../../18-contratos-inter-equipos.md#42-tema-03--motor-de-desafíos),
-> [17 §5](../../17-mapa-de-integracion.md#5-camino-asincrónico--el-evaluador) (diagrama completo).
+> Este documento conserva el contrato directo anterior (retirado) como registro — `18` §4 ya no
+> lo repite, solo indexa hacia acá. El diagrama de secuencia del evaluador vigente vive en
+> [`tema-05-desafios-practicos/contratos.md`](../tema-05-desafios-practicos/contratos.md).
 
 ## ⚠️ Decisión de diseño (2026-09-13): esto ya no es directo
 

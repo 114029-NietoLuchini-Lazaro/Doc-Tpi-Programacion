@@ -288,168 +288,20 @@ es un error o diseño interno que no es parte del contrato público.
 
 ## 4. Lo que necesitamos de cada equipo
 
-### 4.1 Tema 02 — Cursos y Matrícula
+> **El detalle completo de cada equipo se mudó a su carpeta** — `docs/equipos/<equipo>/`
+> (`contratos.md` para lo acordado, `pendientes.md` para lo que falta), con JSON y diagramas
+> incluidos. Esta sección queda como índice para no tener que adivinar en qué carpeta buscar.
 
-**Nos llaman para:**
-
-- `GET /ai/calibracion/{curso_cohorte_id}` — verificar si la calibración está aprobada antes de activar el curso
-
-**Nos tienen que dar:**
-
-- Material del curso para indexar (via `POST /ai/ingesta`)
-- Confirmación del modelo `curso_template_id` vs `curso_cohorte_id` (I-09)
-
-**🔴 Bloqueo crítico:**
-
-- El **golden set** (muestras del docente para calibrar la rúbrica). Sin esto, ningún curso puede activarse. Es la dependencia con el plazo más largo del proyecto.
-
----
-
-### 4.2 Tema 03 — Motor de Desafíos
-
-> ⚠️ **Integración indirecta desde el 2026-09-13.** `llm-service` dejó de comunicarse directo
-> con el Motor de Desafíos. Todo el intercambio del evaluador pasa ahora por Tema 05 — ver
-> [§4.3](#43-tema-05--desafíos-prácticos). Lo que sigue describe el contrato **anterior**,
-> directo, que queda retirado y se conserva como registro.
-
-**Nos llamaban para (retirado):**
-
-- `POST /ai/evaluador` (async)
-- `GET /ai/jobs/{job_id}`
-
-**Nos tenían que dar (retirado):**
-
-- Publicar `intento_cerrado` con los campos de §3 — ahora lo publica Tema 05.
-- **🔴 Aceptar la entrega con el evaluador caído**: si respondemos `503`, el backend acepta igual con `score_agregado = null` y espera `score_pendiente_diferido`. La resiliencia de este punto es del lado que escribe en la base académica, no del nuestro. **Esto sigue vigente** — solo cambió quién nos habla, no quién absorbe la caída del evaluador.
-
-**Lo que le queda a Tema 03 ahora:** recibir el score reenviado por Tema 05 y aplicar el
-modificador de XP (PAR-05). Cómo se lo reenvía Tema 05 es una definición entre Tema 03 y Tema 05
-— nosotros no somos parte de esa conversación.
-
-**✅ I-04, resuelto de nuestro lado:** el mecanismo es el evento Kafka `score_de_ia_calculado.v1`
-— un solo mecanismo, no cuatro — pero el consumidor es Tema 05, no Tema 03. Ver
-[§6](#6-agenda-mínima-para-la-sesión-de-integración).
-
----
-
-### 4.3 Tema 05 — Desafíos Prácticos
-
-**Nos llaman para:**
-
-- `POST /ai/tutor` — asistencia
-
-**🔴 Nos tienen que dar (crítico):**
-
-1. **La solución esperada del desafío** — sin esto el anti-fuga (RF-IA-20) no tiene contra qué comparar. Falta definir: ¿endpoint? ¿campo en el evento? ¿verbo?
-2. **Evento de ediciones y ejecuciones de tests del IDE** — 30% del score depende de esta señal. Si no se pide ahora, no va a existir.
-
-**Desde el 2026-09-13, además:**
-
-3. **Notificarnos el cierre del intento** — evento `intento_cerrado` con la transcripción completa (mismos campos de §3, ahora publicados por Tema 05 en vez de Tema 03).
-4. **Reenviarle a Tema 03 el resultado del evaluador** (`score_de_ia_calculado`, ver §2.1) que nosotros les entregamos — el impacto en XP depende de que ese reenvío se resuelva entre Tema 05 y Tema 03. Nosotros no le damos nada directo a Tema 03.
-
----
-
-### 4.4 Tema 11 — Chat
-
-**Nos llaman para:**
-
-- `POST /ai/moderador` — siempre sync, siempre antes de entregar el mensaje al hilo
-
-**Nos tienen que dar:**
-
-- Incluir nuestros campos en el contrato de eventos del bus (ver §3)
-- Aclarar qué enum viaja en `estado` (I-05)
-
-**Contrato del moderador que Tema 11 necesita para diseñar el chat:**
-
-> ⚠️ **Actualizado 2026-09-12.** Esta sección tenía un bosquejo más viejo (`veredicto` +
-> `categorias` como objeto de 6 booleanos con nombres que no eran los de RF-CHT-10). Quedó
-> reemplazado por la forma de
-> [`contracts/llm-service-v1-moderacion-borrador.yaml`](contracts/llm-service-v1-moderacion-borrador.yaml)
-> (`RespuestaModeracion`), que es más nueva, más detallada, y usa las seis categorías exactas
-> de RF-CHT-10. Es la única forma vigente — si aparece la vieja en otro lado (una presentación,
-> por ejemplo), es histórica.
-
-```json
-{
-  "resultado": {
-    "categorias": ["integridad_academica"],
-    "severidad": "alta | media | baja",
-    "confianza": 0.94,
-    "origen": "lista | heuristica | clasificador",
-    "version_lista": "2025-05-v3"
-  },
-  "trace_id": "uuid",
-  "metadata": {
-    "model_id": null,
-    "model_version": null,
-    "latencia_ms": 45
-  }
-}
-```
-
-`categorias` es un **array** de las seis categorías de RF-CHT-10 (`ofensivo_discriminatorio`,
-`acoso`, `sexual_violencia`, `spam_no_academico`, `integridad_academica`,
-`elusion_solo_texto`) — vacío si el mensaje está limpio, y puede traer más de una a la vez
-porque los detectores clásicos corren todos y fusionan veredictos. No hay campo `veredicto`
-separado: el bloqueo se infiere de `severidad` (`baja` no bloquea, `media`/`alta` sí).
-
-> Tema 11 **NO entrega el mensaje al hilo** hasta recibir `200` con `severidad: baja`.
-
----
-
-### 4.5 Tema 12 — Backoffice / ADMIN
-
-**Nos llaman para:**
-
-- `GET /ai/calibracion/{curso_cohorte_id}` — ver estado
-- `POST /ai/calibracion` — disparar recalibración
-
-**Nos tienen que dar:**
-
-- Ser dueños de la pantalla de configuración del proveedor LLM
-- Ser dueños de la pantalla del golden set (actualmente sin dueño claro — I-15)
-- Ser dueños de la pantalla de límites de uso de IA por alumno — cantidad de usos y cantidad de
-  tokens, por día —, consumiendo `PUT /api/v1/operations/quotas/student/{studentId}` (extensión de
-  `LLM-S09-H02`, ver [`historias/ep-07/h02.md`](historias/ep-07/h02.md)). Pendiente de confirmar
-  con Product Owner y DPO — ver [08 P-12](08-decisiones-y-pendientes.md).
-
----
-
-### 4.6 Backend de negocio
-
-**Nos tienen que dar:**
-
-- **Endpoint de contexto del desafío** — el tutor necesita el enunciado para armar el prompt
-- **Aceptar entregas con evaluador caído** — igual que §4.2
-- Propagación del JWT en cada llamada
-
----
-
-### 4.7 Front End — Angular
-
-**🔴 Las 7 pantallas que necesitamos:**
-
-| # | Pantalla | Para qué |
-|---|---|---|
-| 1 | Chat del tutor en el IDE | Sin esto la función principal no tiene UI |
-| 2 | Estado del evaluador por intento | Para que el alumno vea el feedback |
-| 3 | Rúbrica con desglose por dimensión | RF-IA-16 requiere mostrar la justificación |
-| 4 | Panel de calibración (docente) | Para aprobar el golden set |
-| 5 | Panel de moderación (admin) | Ver incidentes e historial |
-| 6 | Dashboard de costos y uso (admin) | Visualización del Tema 12 |
-| 7 | **Pantalla del golden set** | La más urgente — destraba el plazo más largo |
-
----
-
-### 4.8 Product Owner
-
-| Lo que necesitamos | Por qué no podemos avanzar sin ello |
+| Equipo | Carpeta |
 |---|---|
-| Responsable y fecha del **golden set** | Sin calibración, ningún curso se activa. Es el plazo más largo y no es trabajo de desarrollo |
-| Decisión sobre el techo de cuota (15 / 10 / 8 por día) | El presupuesto del cuatrimestre cambia según el valor (I-06) |
-| Quién construye la pantalla del golden set | Actualmente tiene cuatro dueños distintos en cuatro documentos (I-15) |
+| Tema 02 — Cursos y Matrícula | [`equipos/tema-02-cursos-y-matricula/`](equipos/tema-02-cursos-y-matricula/) |
+| Tema 03 — Motor de Desafíos (integración indirecta desde el 2026-09-13, ver [§4.2 antiguo](equipos/tema-03-motor-de-desafios/contratos.md)) | [`equipos/tema-03-motor-de-desafios/`](equipos/tema-03-motor-de-desafios/) |
+| Tema 05 — Desafíos Prácticos | [`equipos/tema-05-desafios-practicos/`](equipos/tema-05-desafios-practicos/) |
+| Tema 11 — Chat | [`equipos/tema-11-chat/`](equipos/tema-11-chat/) |
+| Tema 12 — Backoffice / ADMIN | [`equipos/tema-12-backoffice-admin/`](equipos/tema-12-backoffice-admin/) |
+| Backend de negocio | [`equipos/backend-de-negocio/`](equipos/backend-de-negocio/) |
+| Front End — Angular | [`equipos/frontend-angular/`](equipos/frontend-angular/) |
+| Product Owner | [`equipos/product-owner/`](equipos/product-owner/) |
 
 ---
 
@@ -480,7 +332,7 @@ flowchart LR
         N4["🔴 PO\ngolden set con fecha y dueño"]
         N5["🟡 Backend\nendpoint contexto del desafío"]
         N6["🔴 Backend\naceptar entrega con evaluador caído"]
-        N7["🔴 Front End\nlas 7 pantallas"]
+        N7["🔴 Front End\nlas pantallas pendientes"]
     end
 
     N1 --> IA

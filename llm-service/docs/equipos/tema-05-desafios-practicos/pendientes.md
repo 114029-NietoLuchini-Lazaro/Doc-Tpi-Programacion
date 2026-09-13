@@ -1,7 +1,7 @@
 # Tema 05 — Desafíos Prácticos — pendientes
 
-> Fuente completa: [17 §7.3](../../17-mapa-de-integracion.md#73-quién-nos-bloquea-y-a-quién-bloqueamos)
-> (N1, N3), [18 §4.3](../../18-contratos-inter-equipos.md#43-tema-05--desafíos-prácticos),
+> Este documento es la fuente completa de lo pendiente con Tema 05. Antecedentes:
+> [17 §7.3](../../17-mapa-de-integracion.md#73-quién-nos-bloquea-y-a-quién-bloqueamos) (N1, N3),
 > [08 B-1](../../08-decisiones-y-pendientes.md), [20-backlog-y-sprints.md](../../20-backlog-y-sprints.md) E12-02.
 
 ## 🔴 Cruzado — la solución esperada del desafío

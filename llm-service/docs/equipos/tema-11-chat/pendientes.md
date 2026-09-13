@@ -1,8 +1,19 @@
 # Tema 11 — Chat — pendientes
 
-> Fuente completa: [17 §4](../../17-mapa-de-integracion.md#4-camino-sincrónico-b--el-moderador)
-> y [17 §8](../../17-mapa-de-integracion.md#8-lo-que-estos-diagramas-dejaron-a-la-vista) (I-01,
-> I-05, I-08), [18 §3](../../18-contratos-inter-equipos.md#3-eventos-que-consumimos).
+> Este documento es la fuente completa de lo pendiente con Tema 11. Antecedentes:
+> [17 §8](../../17-mapa-de-integracion.md#8-lo-que-estos-diagramas-dejaron-a-la-vista) (I-01,
+> I-05, I-08), [18 §3](../../18-contratos-inter-equipos.md#3-eventos-que-consumimos),
+> [08 B-3](../../08-decisiones-y-pendientes.md).
+
+## 🔴 Cruzado — B-3: los campos que Tema 11 tiene que incluir en el contrato de eventos
+
+Tema 11 define el contrato de eventos **para toda la plataforma** y su decisión condiciona a
+cinco equipos — es urgente por secuencia, no por importancia: una vez cerrado, pedir un campo
+nuevo es renegociar con todos.
+
+**Lo que necesitamos que incluyan:** `curso_cohorte_id`, `intento_id`, `alumno_id`,
+`rubric_version`, `model_id`, `model_version`, `score_agregado`, `confianza`, `estado` y
+`trace_id`. Ver [08 B-3](../../08-decisiones-y-pendientes.md#-b-3--tema-11-los-campos-del-contrato-de-eventos).
 
 ## 🔴 Cruzado — I-05: qué enum viaja en `estado`
 

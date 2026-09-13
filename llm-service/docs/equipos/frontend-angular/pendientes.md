@@ -1,21 +1,29 @@
 # Front End — Angular — pendientes
 
-> Fuente completa: [18 §4.7](../../18-contratos-inter-equipos.md#47-front-end--angular),
-> [17 §7.3](../../17-mapa-de-integracion.md#73-quién-nos-bloquea-y-a-quién-bloqueamos) (N7).
+> Este documento es la fuente completa de lo pendiente con Front End. Antecedentes:
+> [17 §7.3](../../17-mapa-de-integracion.md#73-quién-nos-bloquea-y-a-quién-bloqueamos) (N7),
+> [01 §3](../../01-problema-y-alcance.md#3-lo-que-necesitás-pedirle-a-los-otros-equipos).
 
-## 🔴 Cruzado — las 7 pantallas que necesitamos
+## 🔴 Cruzado — las pantallas que necesitamos
 
-| # | Pantalla | Para qué |
-|---|---|---|
-| 1 | Chat del tutor en el IDE | Sin esto la función principal no tiene UI |
-| 2 | Estado del evaluador por intento | Para que el alumno vea el feedback |
-| 3 | Rúbrica con desglose por dimensión | RF-IA-16 requiere mostrar la justificación |
-| 4 | Panel de calibración (docente) | Para aprobar el golden set |
-| 5 | Panel de moderación (admin) | Ver incidentes e historial |
-| 6 | Dashboard de costos y uso (admin) | Visualización del Tema 12 |
-| 7 | **Pantalla del golden set** | La más urgente — destraba el plazo más largo |
+> ⚠️ **No son 7.** `01-problema-y-alcance.md` §3.2 y esta lista traían dos catálogos de "7
+> pantallas" distintos, con solo una en común (el chat del tutor) — quedó así porque se
+> escribieron en momentos distintos sin cruzarse. Esta es la lista fusionada y deduplicada; si
+> aparece una pantalla nueva, se agrega acá, no se vuelve a inventar un conteo redondo.
+
+| # | Pantalla | Para qué | Requerimiento |
+|---|---|---|---|
+| 1 | Chat del tutor en el IDE | Sin esto la función principal no tiene UI | RF-IA-01 |
+| 2 | Estado del evaluador por intento, con desglose por dimensión y justificación | Para que el alumno vea el feedback | RF-IA-16 |
+| 3 | Flujo de apelación | El alumno pide revisión humana | RF-IA-18 |
+| 4 | Revisión del parcial generado, con el fragmento fuente al lado | Gate humano obligatorio antes de publicar | [04](../../04-funciones-de-ia.md) §5 |
+| 5 | Panel de calibración (docente) | Para aprobar el golden set | RF-IA-36 |
+| 6 | Panel/dashboard de moderación e incidentes (admin) | Ver incidentes de jailbreak y moderación, e historial | RF-IA-10, RF-CHT-11 |
+| 7 | Dashboard de costos y uso (admin) | Visualización del Tema 12 | — |
+| 8 | Config de modelos del ADMIN | Asignación modelo→función | RF-IA-24 |
+| 9 | **Pantalla del golden set** | La más urgente — destraba el plazo más largo | RF-IA-30, DoD 7b |
 
 Si no llegan: **"la IA queda lista y no se puede usar ni verificar"** (17 §7.3).
 
-La pantalla 7 está cruzada con [`tema-12-backoffice-admin/pendientes.md`](../tema-12-backoffice-admin/pendientes.md)
+La pantalla 9 está cruzada con [`tema-12-backoffice-admin/pendientes.md`](../tema-12-backoffice-admin/pendientes.md)
 (I-15, dueño sin definir) y con [`product-owner/pendientes.md`](../product-owner/pendientes.md).
