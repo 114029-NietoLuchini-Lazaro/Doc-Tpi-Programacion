@@ -1,0 +1,61 @@
+<section class="diagrams-panel" aria-label="Diagramas">
+  <header>
+    <p class="eyebrow">DIAGRAMAS</p>
+    <h2>Imágenes detectadas en el PDF</h2>
+    <p>Decodificación 100% determinística (sin IA): bounding boxes + texto vectorial de la página.</p>
+  </header>
+
+  <label class="document-picker">
+    Documento a inspeccionar
+    <select (change)="selectDocument($any($event.target).value)">
+      <option value="">Elegí un documento…</option>
+      @for (source of sources(); track source.id) {
+        <option [value]="source.id">{{ source.fileName }}</option>
+      }
+    </select>
+  </label>
+
+  @if (indexError()) {
+    <p class="error" role="alert">{{ indexError() }}</p>
+  }
+
+  @if (!selectedDocId()) {
+    <p class="empty">Elegí un documento para ver sus imágenes de contenido genuino.</p>
+  } @else if (images.isLoading()) {
+    <p role="status">Buscando imágenes en {{ selectedDocName() }}…</p>
+  } @else if (images.error()) {
+    <p class="error" role="alert">No se pudieron cargar las imágenes de este documento.</p>
+  } @else if (!images.value().length) {
+    <p class="empty">No se detectaron imágenes de contenido genuino (se descartan encabezados, pies e íconos).</p>
+  } @else {
+    <ul class="image-list">
+      @for (image of images.value(); track image.imageIndex) {
+        <li class="image-item">
+          <img [src]="image.base64Data" [alt]="image.titleHint ?? ('Imagen página ' + image.pageNumber)" />
+          <div class="image-meta">
+            <strong>{{ image.titleHint ?? ('Figura pág. ' + image.pageNumber) }}</strong>
+            <span>Página {{ image.pageNumber }} · {{ image.width }}×{{ image.height }}px</span>
+            <button type="button" [disabled]="decodingIndex() === image.imageIndex" (click)="decode(image.imageIndex)">
+              {{ decodingIndex() === image.imageIndex ? 'Decodificando…' : (decoded().has(image.imageIndex) ? 'Volver a decodificar' : 'Decodificar') }}
+            </button>
+          </div>
+
+          @if (decoded().has(image.imageIndex)) {
+            @let result = decoded().get(image.imageIndex)!;
+            <div class="decoded" [class.unknown]="!isKnownDiagram(result)">
+              <p class="tipo">{{ result.tipoDiagrama }}</p>
+              <pre class="interpretacion">{{ result.interpretacion }}</pre>
+              <details>
+                <summary>Código Mermaid</summary>
+                <pre class="mermaid-code">{{ result.mermaidCode }}</pre>
+              </details>
+              @if (isKnownDiagram(result)) {
+                <button type="button" class="small" (click)="indexAsChunk(image.imageIndex)">Indexar como chunk semántico</button>
+              }
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

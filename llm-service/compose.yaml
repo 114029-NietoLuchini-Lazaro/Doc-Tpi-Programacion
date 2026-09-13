@@ -1,6 +1,8 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    # pgvector/pgvector:pg16 = postgres:16 + la extensión `vector` preinstalada, necesaria desde
+    # V14 (EP-09, RAG). Drop-in compatible con postgres:16-alpine para todo lo demás.
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_DB: llm
       POSTGRES_USER: llm

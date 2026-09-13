@@ -28,13 +28,21 @@ Portado (adaptado) de `codigo-ejemplo/ms-evaluacion-llm`
 
 ## Qué NO se portó (decisión explícita, no descuido)
 
-- **`TutorChatController`** (CRUD de conversaciones, `/api/conversaciones`) — no está en ningún
+> **🟢 2026-09-13 — revisada.** El CRUD de conversaciones y el histórico multi-turno, que este
+> archivo daba por descartados, **sí se portaron** a pedido explícito del usuario — ver
+> [`conversations.md`](conversations.md). Se deja el texto original abajo (tachado en el
+> historial, no en el archivo) solo para trazar que la decisión cambió, no para que quede como
+> vigente.
+
+- ~~**`TutorChatController`** (CRUD de conversaciones, `/api/conversaciones`) — no está en ningún
   contrato acordado. El tutor real audita cada interacción pero no expone un historial navegable
-  por API todavía.
-- **Persistencia de conversación/histórico multi-turno** — `TutorServiceImpl` original mantenía
+  por API todavía.~~ Portado, ver [`conversations.md`](conversations.md).
+- ~~**Persistencia de conversación/histórico multi-turno** — `TutorServiceImpl` original mantenía
   un histórico completo por conversación; el contrato v1 (`TutorInteractionRequest`) no modela una
   `conversacionId`, así que cada interacción se trata independiente. Si el producto necesita
-  histórico multi-turno, es un cambio de contrato, no de este código.
+  histórico multi-turno, es un cambio de contrato, no de este código.~~ El contrato v1 ahora sí
+  modela `conversacionId` (opcional en el request, siempre presente en la response) — ver
+  [`conversations.md`](conversations.md).
 - **`state=blocked`** — el enum del contrato lo permite, pero esta implementación nunca lo
   produce: cuando el guardarraíl de salida actúa, sustituye el mensaje y queda `completed` (la
   adenda SSE reserva `blocked` para cuando la respuesta final se suprime por completo, escenario

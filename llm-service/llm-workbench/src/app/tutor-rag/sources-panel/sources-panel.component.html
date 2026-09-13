@@ -1,0 +1,39 @@
+<section class="sources-panel" aria-label="Fuentes">
+  <header>
+    <p class="eyebrow">FUENTES</p>
+    <h2>Documentos del curso</h2>
+    <p>Subí uno o más PDFs y marcá cuáles participan de la consulta.</p>
+  </header>
+
+  <label class="upload-button">
+    {{ uploading() ? 'Subiendo…' : 'Subir PDF' }}
+    <input type="file" accept="application/pdf" [disabled]="uploading()" (change)="onFileSelected($event)" hidden />
+  </label>
+
+  @if (uploadError()) {
+    <p class="error" role="alert">{{ uploadError() }}</p>
+  }
+
+  @if (loading()) {
+    <p role="status">Cargando fuentes…</p>
+  } @else if (!sources().length) {
+    <p class="empty">Todavía no hay fuentes subidas para este curso.</p>
+  } @else {
+    <ul class="source-list">
+      @for (source of sources(); track source.id) {
+        <li class="source-item">
+          <label>
+            <input type="checkbox" [checked]="isSelected(source.id)" (change)="toggle.emit(source.id)" />
+            <span class="source-name">{{ source.fileName }}</span>
+          </label>
+          <div class="source-meta">
+            <span>{{ source.pageCount }} pág.</span>
+            <span>{{ source.chunkCount }} fragmentos</span>
+            <span>{{ formatSize(source.fileSizeBytes) }}</span>
+          </div>
+          <button type="button" class="small danger" (click)="remove.emit(source.id)">Retirar</button>
+        </li>
+      }
+    </ul>
+  }
+</section>

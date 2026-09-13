@@ -536,6 +536,10 @@ Sin un número fijado, no hay nada que hacer cumplir.
 **Nota:** estos límites son también el control de costo. Con el techo de 15 mensajes, el peor caso
 del tutor está acotado por diseño y no depende del comportamiento de los alumnos.
 
+**Nota (2026-09-13):** estos valores son un techo **global**, igual para todos los alumnos. Si el
+back office necesita ajustarlo por alumno individual (cantidad de usos y tokens/día), ver **P-12**
+— es una dimensión nueva que se suma a esta, no la reemplaza.
+
 **Prioridad:** Media — se puede empezar con estos y calibrar.
 
 📄 [03](03-modelos-costos-y-contexto.md)
@@ -666,6 +670,42 @@ arrancar con tres y descubrir que dos no se usan, no.
 
 ---
 
+### ❓ P-12 — ¿El back office configura límites de IA por alumno, o solo por función?
+
+**Abierta (2026-09-13).**
+
+**El hueco:** RF-IA-22 y P-05 fijan un techo **global**, igual para todos los alumnos (60
+mensajes/día, 15 por desafío). `LLM-S09-H02` (la historia que permite a un ADMIN cambiar un límite
+de cuota) hoy solo modela ese límite **por función** (`tutor`, `evaluator`) — nunca por alumno
+individual. Y el back office (Tema 12) no tiene, en ningún contrato vigente
+([`18 §4.5`](18-contratos-inter-equipos.md#45-tema-12--backoffice--admin),
+[`equipos/tema-12-backoffice-admin/contratos.md`](equipos/tema-12-backoffice-admin/contratos.md)),
+la pantalla que configuraría eso.
+
+**Lo que se pide alinear:** que el back office tenga, en teoría, parámetros para limitar el uso de
+IA de **cada alumno por día** en dos ejes: **cantidad de usos** (interacciones — la dimensión que
+P-05 ya fija, pero como valor global) y **cantidad de tokens** (dimensión que hoy no existe a
+nivel alumno, solo agregada por función).
+
+**Recomendación:** extender el modelo de `LLM-S09-H02` con un segundo `scope` (`function` |
+`student`) sobre la misma tabla append-only y el mismo mecanismo de auditoría (`changed_by`,
+`reason`, versionado) — no un componente nuevo. El back office (Tema 12) pasa a ser dueño de la
+pantalla que llama a ese endpoint extendido. Ver [`ep-07`](epicas/ep-07.md) y
+[`historias/ep-07/h02.md`](historias/ep-07/h02.md).
+
+**Tensión sin resolver, a propósito:** el panel agregado de costos (`LLM-S09-H01`) prohíbe
+exponer `studentId` por privacidad (su CA6). Una pantalla que configura un límite **por alumno**
+necesita identificarlo. Son recursos distintos (uno agregado y de solo lectura, el otro puntual y
+de escritura), pero quién puede ver/limitar a qué alumno es una decisión de **Product Owner y
+DPO**, no algo que esta nota resuelva.
+
+**Prioridad:** Media — no bloquea el arranque de EP-07 (que ya cubre el límite por función), pero
+hay que resolverla antes de cerrar `LLM-S09-H02` si el back office la necesita en el primer corte.
+
+📄 [ep-07](epicas/ep-07.md) · [18 §4.5](18-contratos-inter-equipos.md#45-tema-12--backoffice--admin)
+
+---
+
 ## Parte C — Cosas por definir cuando llegue el momento
 
 No urgentes, pero anotadas para no redescubrirlas:
@@ -718,7 +758,7 @@ No urgentes, pero anotadas para no redescubrirlas:
 | **B-2** | ¿Quién guarda la transcripción? | 🟢 **Nosotros**, porque el tutor es nuestro. Y capturamos la metadata de tiempos nosotros mismos |
 | — | ¿Quiénes son los "docentes" del golden set? | 🟢 **Personas físicas, nunca un modelo.** En el TP pueden ser 2 del equipo actuando como docentes |
 | — | Tamaño del equipo | 🟢 **12 integrantes** (5 parejas P1–P5 + referente de producto + facilitador). El "6 personas / P1–P6" de [10](10-entregables-y-plan.md) quedó superado; reparto vigente en [23 · §3](23-plan-construccion-producto-llm.md) |
-| — | ¿Producto o demo? | 🟢 **Tiene que funcionar, pero primero demo local.** El "plan de 4 semanas" de [10](10-entregables-y-plan.md) fue reemplazado por los 19 sprints de [23](23-plan-construccion-producto-llm.md) |
+| — | ¿Producto o demo? | 🟢 **Tiene que funcionar, pero primero demo local.** El "plan de 4 semanas" de [10](10-entregables-y-plan.md) fue reemplazado por los 19 sprints de [23](23-plan-construccion-producto-llm.md), y ese horizonte a su vez por el máximo de **5 sprints** de [38](38-plan-de-5-sprints.md) |
 
 **Lo que sigue abierto es lo de abajo.** Los ítems tachados quedan por trazabilidad.
 

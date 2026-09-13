@@ -19,8 +19,8 @@ Kafka. Todas las rutas usan `/api/llm/**`, los servicios se identifican con M2M
 
 | Par | Responsabilidad acordada |
 |---|---|
-| `practice-service` | Envía contexto validado al tutor y conserva la frontera de UI. |
-| `challenges-service` | Publica `intento_cerrado.v1`; recibe score y aplica XP. |
+| `practice-service` | Envía contexto validado al tutor y conserva la frontera de UI. Desde el 2026-09-13, también publica `intento_cerrado.v1` (con transcripción) y recibe el score — antes lo hacía `challenges-service` directo. |
+| `challenges-service` | Aplica XP a partir del score que le reenvía `practice-service` (PAR-05). **Ya no se comunica directo con `llm-service`** — ver [§4.2](#42-tema-03--motor-de-desafíos). |
 | `courses-service` | Consulta calibración y pendientes antes de activar/cerrar. |
 | `admin-service` | Gestiona modelo, golden set y calibración como operación delegada. |
 
@@ -164,7 +164,13 @@ es un error o diseño interno que no es parte del contrato público.
 
 ### 2.1 `score_de_ia_calculado`
 
-**Consumidores:** Tema 03 (Motor de desafíos), Tema 10
+**Consumidor:** Tema 05 (Desafíos Prácticos), Tema 10.
+
+> ⚠️ **Cambió el 2026-09-13.** Antes el consumidor era Tema 03 (Motor de desafíos) directo. Desde
+> la decisión de diseño que centraliza el intercambio del evaluador en Tema 05, es Tema 05 quien
+> consume este evento y quien se lo reenvía a Tema 03 para que aplique el modificador de XP —
+> nosotros ya no publicamos nada directo para Tema 03. Ver
+> [`equipos/tema-05-desafios-practicos/contratos.md`](equipos/tema-05-desafios-practicos/contratos.md).
 
 ```json
 {
@@ -193,7 +199,9 @@ es un error o diseño interno que no es parte del contrato público.
 
 ### 2.2 `score_pendiente_diferido`
 
-**Consumidores:** Tema 03, Backend
+**Consumidores:** Tema 05, Backend.
+
+> ⚠️ Mismo cambio que 2.1: Tema 05 es el consumidor desde el 2026-09-13, no Tema 03.
 
 ```json
 {
@@ -253,7 +261,7 @@ es un error o diseño interno que no es parte del contrato público.
 
 | Evento | Lo publica | Qué dispara en nosotros |
 |---|---|---|
-| `intento_cerrado` | Tema 03 — Motor de desafíos | Encola la evaluación del intento |
+| `intento_cerrado` | Tema 05 — Desafíos Prácticos (desde el 2026-09-13; antes lo publicaba Tema 03 directo — ver [§4.2](#42-tema-03--motor-de-desafíos)) | Encola la evaluación del intento |
 | `curso_archivado` | Tema 02 — Cursos | Frena todos los trabajos pendientes de ese curso-cohorte |
 | `modelo_llm_cambiado` | Tema 12 — Backoffice | Dispara recalibración automática (RF-IA-32) |
 
@@ -299,18 +307,28 @@ es un error o diseño interno que no es parte del contrato público.
 
 ### 4.2 Tema 03 — Motor de Desafíos
 
-**Nos llaman para:**
+> ⚠️ **Integración indirecta desde el 2026-09-13.** `llm-service` dejó de comunicarse directo
+> con el Motor de Desafíos. Todo el intercambio del evaluador pasa ahora por Tema 05 — ver
+> [§4.3](#43-tema-05--desafíos-prácticos). Lo que sigue describe el contrato **anterior**,
+> directo, que queda retirado y se conserva como registro.
+
+**Nos llamaban para (retirado):**
 
 - `POST /ai/evaluador` (async)
 - `GET /ai/jobs/{job_id}`
 
-**Nos tienen que dar:**
+**Nos tenían que dar (retirado):**
 
-- Publicar `intento_cerrado` con los campos de §3
-- **🔴 Aceptar la entrega con el evaluador caído**: si respondemos `503`, el backend acepta igual con `score_agregado = null` y espera `score_pendiente_diferido`. La resiliencia de este punto es del lado que escribe en la base académica, no del nuestro.
+- Publicar `intento_cerrado` con los campos de §3 — ahora lo publica Tema 05.
+- **🔴 Aceptar la entrega con el evaluador caído**: si respondemos `503`, el backend acepta igual con `score_agregado = null` y espera `score_pendiente_diferido`. La resiliencia de este punto es del lado que escribe en la base académica, no del nuestro. **Esto sigue vigente** — solo cambió quién nos habla, no quién absorbe la caída del evaluador.
 
-**🔴 Pendiente sin resolver (I-04):**
-Hay cuatro mecanismos escritos para que el score llegue al motor de desafíos. Ninguno tiene payload definido. Acordar **uno solo** antes de que cualquiera empiece a codear.
+**Lo que le queda a Tema 03 ahora:** recibir el score reenviado por Tema 05 y aplicar el
+modificador de XP (PAR-05). Cómo se lo reenvía Tema 05 es una definición entre Tema 03 y Tema 05
+— nosotros no somos parte de esa conversación.
+
+**✅ I-04, resuelto de nuestro lado:** el mecanismo es el evento Kafka `score_de_ia_calculado.v1`
+— un solo mecanismo, no cuatro — pero el consumidor es Tema 05, no Tema 03. Ver
+[§6](#6-agenda-mínima-para-la-sesión-de-integración).
 
 ---
 
@@ -324,6 +342,11 @@ Hay cuatro mecanismos escritos para que el score llegue al motor de desafíos. N
 
 1. **La solución esperada del desafío** — sin esto el anti-fuga (RF-IA-20) no tiene contra qué comparar. Falta definir: ¿endpoint? ¿campo en el evento? ¿verbo?
 2. **Evento de ediciones y ejecuciones de tests del IDE** — 30% del score depende de esta señal. Si no se pide ahora, no va a existir.
+
+**Desde el 2026-09-13, además:**
+
+3. **Notificarnos el cierre del intento** — evento `intento_cerrado` con la transcripción completa (mismos campos de §3, ahora publicados por Tema 05 en vez de Tema 03).
+4. **Reenviarle a Tema 03 el resultado del evaluador** (`score_de_ia_calculado`, ver §2.1) que nosotros les entregamos — el impacto en XP depende de que ese reenvío se resuelva entre Tema 05 y Tema 03. Nosotros no le damos nada directo a Tema 03.
 
 ---
 
@@ -387,6 +410,10 @@ separado: el bloqueo se infiere de `severidad` (`baja` no bloquea, `media`/`alta
 
 - Ser dueños de la pantalla de configuración del proveedor LLM
 - Ser dueños de la pantalla del golden set (actualmente sin dueño claro — I-15)
+- Ser dueños de la pantalla de límites de uso de IA por alumno — cantidad de usos y cantidad de
+  tokens, por día —, consumiendo `PUT /api/v1/operations/quotas/student/{studentId}` (extensión de
+  `LLM-S09-H02`, ver [`historias/ep-07/h02.md`](historias/ep-07/h02.md)). Pendiente de confirmar
+  con Product Owner y DPO — ver [08 P-12](08-decisiones-y-pendientes.md).
 
 ---
 
@@ -428,20 +455,26 @@ separado: el bloqueo se infiere de `severidad` (`baja` no bloquea, `media`/`alta
 
 ## 5. Mapa de dependencias resumido
 
+> ⚠️ **Desde el 2026-09-13**, el par `IA → Tema 03/10` (score → XP) ya no es una arista directa:
+> pasa por Tema 05. El diagrama lo dibuja como `IA → Tema 05 → Tema 03/10` para reflejar el
+> intermediario; el nodo `N1` de "lo que necesitamos" también creció, porque ahora incluye el
+> cierre de intento además de la solución esperada.
+
 ```mermaid
 flowchart LR
     subgraph damos["LO QUE DAMOS"]
         D1["Tema 02\nno pueden ACTIVAR cursos"]
-        D2["Tema 03/10\nno pueden aplicar modificador XP"]
         D3["Tema 11\nel contrato del moderador"]
         D4["Tema 12\nnada demostrable"]
         D5["Backend\nno pueden cerrar un curso"]
     end
 
     IA(["TEMA 07\nms-evaluacion-llm"])
+    T05IA(["Tema 05\npractice-service"])
+    D2["Tema 03/10\nno pueden aplicar modificador XP"]
 
     subgraph necesitamos["LO QUE NECESITAMOS"]
-        N1["🔴 Tema 05\nla solución esperada"]
+        N1["🔴 Tema 05\nla solución esperada +<br/>cierre de intento (intento_cerrado)"]
         N2["🔴 Tema 11\nnuestros campos en el bus"]
         N3["🔴 Tema 05/06\nevento de ediciones/tests"]
         N4["🔴 PO\ngolden set con fecha y dueño"]
@@ -457,8 +490,9 @@ flowchart LR
     N5 --> IA
     N6 --> IA
     N7 --> IA
+    IA -->|"score_de_ia_calculado"| T05IA
+    T05IA -->|"reenvío a definir<br/>entre Tema 05 y Tema 03"| D2
     IA --> D1
-    IA --> D2
     IA --> D3
     IA --> D4
     IA --> D5
@@ -470,7 +504,7 @@ flowchart LR
 
 | Prioridad | Tema | Equipos | Por qué urgente |
 |---|---|---|---|
-| 🔴 1 | **I-04**: Cómo llega el score al motor de desafíos (un mecanismo, un payload) | Tema 07 + Tema 03 | Tema 03 no puede empezar su lado |
+| ✅ 1 | **I-04**: resuelto de nuestro lado — evento Kafka `score_de_ia_calculado.v1`, un solo mecanismo. Sigue abierto para Tema 05 y Tema 03: cómo Tema 05 le reenvía el resultado a Tema 03 | Tema 05 + Tema 03 | Tema 03 no puede empezar su lado hasta que Tema 05 y Tema 03 lo acuerden entre ellos |
 | 🔴 2 | **I-05**: Qué enum viaja en `estado` del contrato de eventos | Tema 07 + Tema 11 | Contrato ambiguo si no se decide |
 | 🔴 3 | **I-09**: `curso_id` vs `curso_cohorte_id` — de qué cuelga el chunk del RAG | Tema 07 + Tema 02 | Imposible migrar datos después |
 | 🔴 4 | **I-08**: Esquema de la tabla `mensaje` (tres versiones incompatibles) | Tema 07 + Tema 11 | El dato que no se captura hoy no se recupera |

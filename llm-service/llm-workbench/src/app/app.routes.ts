@@ -45,6 +45,7 @@ export const routes: Routes = [
     { path: 'asignaciones', loadComponent: () => import('./teacher/assignments-page/assignments-page').then((m) => m.AssignmentsPage) },
     { path: 'como-usar', loadComponent: () => import('./teacher/how-to-use-page/how-to-use-page').then((m) => m.HowToUsePage) },
   ] },
+  { path: 'docente/cursos/:courseId/tutor-rag', canActivate: [authorizedCourseGuard], loadComponent: () => import('./tutor-rag/tutor-rag-shell/tutor-rag-shell').then((m) => m.TutorRagShell) },
   { path: 'docente/sin-cursos', canActivate: [emptyCourseGuard], component: CourseEmptyComponent },
   { path: 'docente', canActivate: [firstAuthorizedCourse], component: CourseEmptyComponent },
   { path: 'golden-sets/new', canActivate: [firstAuthorizedCourse], component: CourseEmptyComponent },

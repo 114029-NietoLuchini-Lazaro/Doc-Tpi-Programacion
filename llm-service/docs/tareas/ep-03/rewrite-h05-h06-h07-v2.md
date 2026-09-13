@@ -21,7 +21,7 @@
 
 ### T1 — Reescribir la ficha de H05 contra `CourseGoldenSetController`
 
-- **Específica:** reemplazar en [`historias/ep-03/h05.md`](../../historias/ep-03/h05.md) las
+- **Específica:** reemplazar en [`historias/ep-03/h01.md`](../../historias/ep-03/h01.md) (ex-H05) las
   rutas y el término "cohorte" por el flujo real: crear golden set (borrador vacío o copiado
   desde base publicada), agregar caso con anonimización, sobre `/api/llm/courses/{courseId}/
   golden-sets/...`. Mantener el formato Como/Quiero/Para + CA + BDD del template de Taiga.
@@ -33,9 +33,9 @@
 - **Acotada:** 4 h · paso *documentación*. **Depende de:** — · **Traza:**
   [`estado-implementacion/ep-03/h05-h06-h07.md`](../../estado-implementacion/ep-03/h05-h06-h07.md).
 
-### T2 — Reescribir la ficha de H06 contra la consulta real (con `s02-h02` como base)
+### T2 — Reescribir la ficha de H06 contra la consulta real (con `h05.md` de ep-03 como base)
 
-- **Específica:** reemplazar en [`historias/ep-03/h06.md`](../../historias/ep-03/h06.md) la
+- **Específica:** reemplazar en [`historias/ep-03/h02.md`](../../historias/ep-03/h02.md) (ex-H06) la
   consulta v1 por listar/detalle reales del flujo por curso, incluyendo el `404` real que debería
   quedar cerrado por [`ep-01/h03.md` T9](../ep-01/h03.md) — sin ese fix, la ficha reescrita
   seguiría prometiendo algo que el código no cumple todavía.
@@ -49,7 +49,7 @@
 
 ### T3 — Reescribir la ficha de H07 contra la pantalla real de `llm-workbench`
 
-- **Específica:** reemplazar en [`historias/ep-03/h07.md`](../../historias/ep-03/h07.md) la
+- **Específica:** reemplazar en [`historias/ep-03/h03.md`](../../historias/ep-03/h03.md) (ex-H07) la
   descripción de pantalla, confirmando que `llm-workbench` ya usa rutas relativas al Gateway
   (`/api/llm/courses/...`) — el hallazgo original de H07 (llamaba al servicio directo) ya está
   cerrado según [`verificacion-v2-golden-set-calibracion.md` §2`](../../entregas/verificacion-v2-golden-set-calibracion.md).

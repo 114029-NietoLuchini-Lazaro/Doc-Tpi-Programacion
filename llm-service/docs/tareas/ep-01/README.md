@@ -13,10 +13,10 @@
 
 | Historia | Archivo | Tareas | h |
 |---|---|---:|---:|
-| LLM-S01-H01 | [`h01.md`](h01.md) | 5 | 16 |
-| LLM-S01-H02 | [`h02.md`](h02.md) | 7 | 30 |
-| LLM-S01-H03 | [`h03.md`](h03.md) | 8 | 34 |
-| LLM-S01-H04 | [`h04.md`](h04.md) | 7 | 38 |
-| LLM-S01-H08 | [`h08.md`](h08.md) | 4 | 10 |
-| LLM-S01-H09 | [`h09.md`](h09.md) | 6 | 18 |
+| LLM-EP01-H01 *(LLM-S01-H01)* | [`h01.md`](h01.md) | 5 | 16 |
+| LLM-EP01-H02 *(LLM-S01-H02)* | [`h02.md`](h02.md) | 7 | 30 |
+| LLM-EP01-H03 *(LLM-S01-H03)* | [`h03.md`](h03.md) | 8 | 34 |
+| LLM-EP01-H04 *(LLM-S01-H04)* | [`h04.md`](h04.md) | 7 | 38 |
+| LLM-EP01-H05 *(LLM-S01-H08)* | [`h05.md`](h05.md) | 4 | 10 |
+| LLM-EP01-H06 *(LLM-S01-H09)* | [`h06.md`](h06.md) | 6 | 18 |
 | **Total** | | **37** | **146** |

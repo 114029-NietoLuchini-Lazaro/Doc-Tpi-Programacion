@@ -42,6 +42,16 @@ Alimenta el 30% del score (dimensión autonomía). Si no se pide ahora, no va a 
 `11-glosario-y-metadata.md` deja explícito que puede ser cualquiera de los dos y no está
 resuelto.
 
+## 🟡 Nuevo — cómo le reenvían ustedes el resultado a Tema 03
+
+Nosotros les entregamos el score por evento Kafka (`score_de_ia_calculado`, ver
+[`contratos.md`](contratos.md)) — pero qué usan para que Tema 03 aplique el modificador de XP
+(evento propio suyo, llamada HTTP, lo que sea) es una definición entre ustedes y Tema 03, no algo
+que nosotros necesitemos cerrar. Se anota acá porque es la pieza que le faltaba a
+[I-04](../../17-mapa-de-integracion.md#-i-04--el-resultado-sale-por-cuatro-caminos-distintos) para
+cerrarse del todo: de nuestro lado ya no hay cuatro caminos, hay uno (a ustedes); el salto de
+ustedes a Tema 03 queda fuera de nuestro contrato.
+
 ## 🟡 Interno, en desarrollo — streaming SSE del tutor
 
 **Hoy NO implementado.** El código actual (EP-05) solo tiene el camino síncrono completo con

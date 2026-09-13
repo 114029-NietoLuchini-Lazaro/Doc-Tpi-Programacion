@@ -14,7 +14,7 @@
 >
 > **Fuente de los ítems y sus horas:** [`checklist-cierre-s1.md`](checklist-cierre-s1.md),
 > [`entrega-1.md`](entrega-1.md) y las fichas de tarea firmadas el 2026-09-12
-> ([`ep-04/s03-h01.md`](../tareas/ep-04/s03-h01.md) T7,
+> ([`ep-04/h01.md`](../tareas/ep-04/h01.md) T7,
 > [`ep-02/model-catalog-real.md`](../tareas/ep-02/model-catalog-real.md),
 > [`ep-01/h03.md`](../tareas/ep-01/h03.md) T9).
 
@@ -107,7 +107,7 @@ Semana 2 ── una vez lo de arriba cierra:
 | **Total backlog** | **74** | **+26** | **100** | 581,6 h (equipo completo) | — |
 
 **Quedaron fuera de esta ampliación**, sin costo por postergarlas (siguiente ciclo): formalizar
-T3/T5 de [`ep-01/h09.md`](../tareas/ep-01/h09.md) (~6 h) y unificar "cohorte"/"curso" en el resto
+T3/T5 de [`ep-01/h06.md`](../tareas/ep-01/h06.md) (~6 h) y unificar "cohorte"/"curso" en el resto
 de la documentación (~5 h, [checklist §3.2](checklist-cierre-s1.md)).
 
 Con la ampliación, P1 pasa de ~45% a ~57% de su capacidad — sigue teniendo margen, pero ya no es

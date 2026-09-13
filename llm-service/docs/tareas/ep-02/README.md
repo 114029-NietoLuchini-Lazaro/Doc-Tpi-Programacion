@@ -8,4 +8,4 @@
 
 | Historia | Archivo | Tareas | h |
 |---|---|---:|---:|
-| LLM-S01-H10 *(adelantada de S3)* | [`h10.md`](h10.md) | 6 | 32 |
+| LLM-EP02-H01 *(ex-H10, adelantada de S3 a S1)* | [`h01.md`](h01.md) | 6 | 32 |

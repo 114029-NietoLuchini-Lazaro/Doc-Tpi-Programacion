@@ -1,0 +1,142 @@
+:host {
+  display: block;
+  color: #203b40;
+  font: 15px / 1.55 'DM Sans', sans-serif;
+}
+
+.eyebrow {
+  margin: 0 0 0.4rem;
+  color: #185c65;
+  font: 500 0.7rem / 1.4 var(--mono);
+  letter-spacing: 0.1em;
+}
+
+h2 {
+  margin: 0;
+  font: 600 1.15rem / 1.25 var(--display);
+}
+
+header p:not(.eyebrow) {
+  margin: 0.35rem 0 0;
+  color: #52666a;
+}
+
+.document-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 1rem;
+  max-width: 24rem;
+  font-weight: 600;
+
+  select {
+    border: 1px solid #d6ded8;
+    border-radius: 0.4rem;
+    padding: 0.5rem 0.6rem;
+    font: inherit;
+  }
+}
+
+.empty,
+.error {
+  margin-top: 1rem;
+}
+
+.error {
+  color: #8b2e2e;
+}
+
+.image-list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: 1rem;
+}
+
+.image-item {
+  border: 1px solid #d6ded8;
+  border-radius: 0.5rem;
+  background: #fffefa;
+  padding: 0.75rem;
+
+  img {
+    display: block;
+    width: 100%;
+    max-height: 12rem;
+    object-fit: contain;
+    border-radius: 0.35rem;
+    background: #f2f2ee;
+  }
+}
+
+.image-meta {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  span {
+    color: #52666a;
+    font-size: 0.82rem;
+  }
+
+  button {
+    align-self: flex-start;
+    margin-top: 0.35rem;
+    border: 1px solid #185c65;
+    border-radius: 0.35rem;
+    background: #fff;
+    color: #185c65;
+    padding: 0.4rem 0.7rem;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.decoded {
+  margin-top: 0.75rem;
+  border-top: 1px dashed #d6ded8;
+  padding-top: 0.6rem;
+
+  &.unknown {
+    color: #8b6d1f;
+  }
+}
+
+.tipo {
+  margin: 0 0 0.35rem;
+  font: 700 0.72rem / 1.2 var(--mono);
+  letter-spacing: 0.05em;
+  color: #185c65;
+}
+
+.interpretacion,
+.mermaid-code {
+  white-space: pre-wrap;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  background: #f2f2ee;
+  border-radius: 0.35rem;
+  padding: 0.5rem 0.6rem;
+  overflow-x: auto;
+}
+
+.small {
+  margin-top: 0.5rem;
+  border: 1px solid #185c65;
+  border-radius: 0.35rem;
+  background: #185c65;
+  color: #fff;
+  padding: 0.35rem 0.65rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}

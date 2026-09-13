@@ -1,5 +1,11 @@
 # Backlog ejecutable S0–S19
 
+> ⚠️ **Retirado como calendario el 2026-09-13.** El plan vigente es
+> [38 — Plan vigente: máximo 5 sprints](38-plan-de-5-sprints.md). Las recetas **S1–S4** de acá
+> siguen sirviendo como antecedente técnico (qué paquete resuelve qué) donde no contradigan la
+> auditoría de código real de 38 · Parte 1–2; **las recetas de S5 en adelante no se ejecutan
+> este cuatrimestre** — quedan solo como diseño de referencia, no como sprints a planificar.
+
 Cada bloque de S1 en adelante es una receta de implementación. Las horas de cada paquete son el **trabajo estimado** (desarrollo, pruebas, revisión, documentación y demo; no reuniones ni reserva) y suman **~208 h por sprint**. Esa cifra es una estimación gruesa anterior a los contratos, **no el tope**: la **capacidad del sprint es 571 h** ([23 · §2.1](23-plan-construccion-producto-llm.md)) y la diferencia (**~363 h**) es margen para re-estimar en Planning, imprevistos y coordinación de 12 personas. Reestimar en cada Planning según disponibilidad real. Leer antes el [playbook](36-playbook-de-construccion.md).
 
 > **Excepción S1/S3.** En la reprogramación a 8 semanas ([sprints/README.md](sprints/README.md)),
@@ -237,6 +243,12 @@ La columna **h** es la referencia de planificación del plan. Los **puntos Fibon
 | 6 | Pruebas/demo | 44 | Modelo no habilitado, falla de recalibración, cambio concurrente y preservación histórica. |
 
 ## S9 — Consumo, cuotas y salud (~208 h estimadas)
+
+> **Antecedente de diseño técnico** ([38 · nota introductoria](38-plan-de-5-sprints.md)): esta
+> receta se ejecuta renumerada como la primera mitad de EP-07 en Sprint 1. La granularidad por
+> alumno (cantidad de usos y tokens/día, propuesta en [08 P-12](08-decisiones-y-pendientes.md))
+> es una extensión posterior a lo que describe el paquete 2 de abajo — no reescribe la receta
+> original, la amplía.
 
 **No iniciar sin:** instrumentación de S3–S8. **Demo:** ADMIN consulta costos/fallas, cambia límite y sistema aplica 429/`Retry-After`; readiness sigue útil sin proveedor.
 

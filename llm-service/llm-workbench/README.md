@@ -82,6 +82,40 @@ npm test -- --watch=false
 npm run build
 ```
 
+## Tutor + RAG (prueba)
+
+La ruta `/docente/cursos/:courseId/tutor-rag` (también accesible desde el link "Tutor + RAG" en
+el nav del espacio docente) permite probar el tutor con histórico multi-turno (EP-05) y el RAG de
+consulta de material (EP-09) portados de `demoLLMSpringAi`. No reemplaza el frontend final de la
+plataforma — es, igual que el resto de `llm-workbench`, un banco de pruebas.
+
+### Recorrido de prueba
+
+1. En la pestaña **Fuentes**, subí uno o más PDFs. Cada uno queda indexado (texto + diagramas
+   detectados automáticamente) para el curso actual.
+2. Marcá los checkboxes de las fuentes que querés que participen de la consulta.
+3. Pasá a la pestaña **Chat** y hacé una pregunta sobre el contenido de esas fuentes. La respuesta
+   cita documento y página; las citas se pueden expandir para ver el fragmento exacto usado.
+4. En la pestaña **Diagramas**, elegí un documento y decodificá cualquier imagen detectada — la
+   decodificación es 100% determinística (heurística de bounding boxes), no usa IA. Un diagrama
+   decodificado se puede indexar como chunk semántico adicional para que el chat lo cite.
+
+### Reglas del prototipo
+
+- **Sin proveedor real de IA:** tanto la respuesta del tutor como los embeddings de búsqueda son
+  simulados (`FakeModelAdapter`/`FakeEmbeddingAdapter`, ver
+  [`docs/estado-implementacion/ep-09/`](../docs/estado-implementacion/ep-09/README.md)) — la
+  calidad de la respuesta no refleja un proveedor real todavía.
+- **`learnerId` de prueba:** no hay identidad real de alumno en el workbench; se genera un UUID
+  estable por pestaña del navegador (`sessionStorage`, clave
+  `llm-workbench.tutor-rag.learner-id`), igual de efímero que el resto del estado del prototipo.
+- **`courseCohortId` = `courseId` de la ruta:** el contrato de RAG pide `courseCohortId` como
+  partición obligatoria; el workbench no distingue curso de cohorte, así que reusa el mismo id de
+  curso para ambos campos.
+- El PDF subido se guarda como bytes en la base del backend (`rag_documents.pdf_bytes`), no en
+  este frontend ni en `localStorage` — a diferencia de golden set/rúbricas, esta sección no
+  funciona sin backend levantado.
+
 ## Contenedor de desarrollo
 
 ```bash

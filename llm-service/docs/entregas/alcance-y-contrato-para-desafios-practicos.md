@@ -15,16 +15,27 @@
 
 ## 0. Quiénes somos y qué relación tenemos con ustedes
 
-Somos el equipo de IA (Tema 07). Con Desafíos Prácticos tenemos **dos puntos de contacto**:
+Somos el equipo de IA (Tema 07). Con Desafíos Prácticos tenemos **tres puntos de contacto** — el
+tercero se agregó con una decisión de diseño del 2026-09-13 que centraliza en ustedes todo el
+intercambio del evaluador con el Motor de Desafíos (Tema 03), que antes era directo entre
+nosotros y Tema 03:
 
 1. **Ustedes nos llaman en vivo**, mientras el alumno resuelve un desafío, para que el **tutor
    socrático** le responda. Es la única llamada síncrona entre los dos equipos.
 2. **Nosotros les pedimos datos suyos** — contexto del desafío, la solución esperada y una señal de
    actividad del IDE — porque sin ellos no podemos tutorear ni evaluar bien. Esta parte todavía tiene
    puntos abiertos (§5) y es la que más nos bloquea.
+3. **Nos avisan cuando cierra un intento, y les devolvemos el score.** Ustedes publican el
+   evento de cierre de intento (con la transcripción completa) y nosotros les entregamos el
+   resultado del evaluador por el mismo canal (evento Kafka, `score_de_ia_calculado`). Ustedes
+   son quienes se lo reenvían a Tema 03 para el impacto en XP — nosotros ya no hablamos directo
+   con el Motor de Desafíos. Detalle completo en
+   [`tema-05-desafios-practicos/contratos.md`](../equipos/tema-05-desafios-practicos/contratos.md).
 
-No hay ningún evento Kafka publicado hoy entre `llm-service` y `practice-service` en el AsyncAPI
-vigente. Todo lo que sigue es HTTP síncrono vía Gateway, más los mecanismos a acordar en §5.
+El punto 1 sigue siendo HTTP síncrono vía Gateway — eso no cambia. El punto 3 es Kafka: es el
+único evento que hoy corre entre `llm-service` y `practice-service`, con el mismo estado que el
+resto de este documento (acordado en contenido, todavía no volcado al AsyncAPI ejecutable). El
+punto 2 se resuelve con los mecanismos a acordar en §5.
 
 ---
 
@@ -34,7 +45,7 @@ vigente. Todo lo que sigue es HTTP síncrono vía Gateway, más los mecanismos a
 |---|---|---|---|---|
 | 1 | **Tutor socrático en el desafío** | Responde al alumno sin darle la solución; ajusta el nivel de ayuda según `riskLevel` | Síncrono, objetivo `< 2 s` | ✅ Es el endpoint que ustedes llaman |
 | 2 | **Salvaguarda anti-fuga** (RF-IA-20 / PAR-11) | Compara la respuesta del tutor contra la solución esperada del desafío **antes** de mostrarla; si supera 70% de similitud, la descarta y regenera | Corre dentro de la llamada al tutor | ✅ Necesita un dato suyo — ver §5.2 |
-| 3 | **Evaluador de uso de IA** (async) | Puntúa cómo el alumno usó al tutor durante el intento, 5 dimensiones 0-100 | Asíncrono, vía evento de cierre de intento | Indirecto — necesita señales suyas para 2 de las 5 dimensiones — ver §5.3 |
+| 3 | **Evaluador de uso de IA** (async) | Puntúa cómo el alumno usó al tutor durante el intento, 5 dimensiones 0-100 | Asíncrono, vía evento de cierre de intento | Directo con ustedes desde el 2026-09-13 (ver §0.3): nos avisan el cierre y les devolvemos el score para que se lo reenvíen a Tema 03. Además necesita señales suyas para 2 de las 5 dimensiones — ver §5.3 |
 | 4 | **Golden Set y calibración** | Aprueba la rúbrica por curso-cohorte | — | Indirecto — bloquea si el curso puede tener evaluaciones válidas |
 
 El tutor **nunca** ve la solución esperada ni tests ocultos. Ve enunciado, código actual del alumno,
@@ -52,7 +63,8 @@ salida, **fuera del prompt del modelo** (ADR-008).
 | **Guardar la solución esperada** | Ustedes | La usamos y la descartamos en el momento de comparar. Nunca entra al prompt del modelo, nunca se persiste, nunca se loguea (ADR-008) |
 | **Streaming token a token del tutor, hoy** | — | RF-IA-20 exige comparar contra la solución esperada **antes** de mostrar la respuesta — eso impide emitir texto en vivo en el contrato vigente. Ya tenemos diseñada una variante en streaming ("Buffer Interceptor", ver §4.3) pero **no está fusionada al contrato**: depende de una decisión interna nuestra pendiente y de que ustedes acuerden consumir ese formato |
 | **Persistir la transcripción alumno-tutor a largo plazo** | Abierto — ver §5.4 (B-2) | No hay dueño confirmado todavía; nuestra recomendación es que la retenga quien es dueño de la UI del chat, no nosotros |
-| **Asignar XP o cualquier efecto de gamificación** | Motor de Desafíos (otro equipo, no ustedes) | Fuera de nuestro alcance por completo — lo mencionamos para que no se mezcle con la pregunta de "quién aplica el resultado" |
+| **Asignar XP o cualquier efecto de gamificación** | Motor de Desafíos (Tema 03) — ustedes se lo reenvían, pero no lo aplican | Fuera de nuestro alcance por completo. Desde el 2026-09-13 el score les llega a ustedes primero (§0.3) y ustedes lo reenvían a Tema 03 — pero reenviar no es aplicar: el modificador de XP (PAR-05) lo sigue calculando y aplicando el Motor de Desafíos, ni ustedes ni nosotros |
+| **Comunicarnos directo con el Motor de Desafíos (Tema 03)** | Ustedes — todo el intercambio del evaluador pasa por Desafíos Prácticos | Decisión de diseño del 2026-09-13: un solo canal para el evaluador (nosotros ↔ ustedes ↔ Tema 03) en vez de que cada equipo hable con todos |
 | **Detectar jailbreaks del alumno contra el tutor y frenarlos** | Nosotros — esto sí es nuestro | Aclarado para que no asuman que también es de ustedes: el filtro de entrada corre de nuestro lado |
 
 > **La frase que hay que repetir en cualquier reunión de integración: el tutor nunca ve, nunca dice

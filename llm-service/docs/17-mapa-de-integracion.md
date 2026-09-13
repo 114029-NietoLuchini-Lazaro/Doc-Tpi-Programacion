@@ -23,7 +23,7 @@ viven en [`contracts/llm-service-v1.asyncapi.yaml`](contracts/llm-service-v1.asy
 | Camino | Llamador canónico | Canal vigente |
 |---|---|---|
 | Tutor seguro | `practice-service` | `POST /api/llm/tutor/interactions` por Gateway, síncrono. |
-| Evaluación | `challenges-service` | Kafka `intento_cerrado.v1`; resultado por evento. |
+| Evaluación | `practice-service` (desde el 2026-09-13; antes `challenges-service` directo — ver §5) | Kafka `intento_cerrado.v1`; resultado por evento. `practice-service` reenvía el resultado a `challenges-service`. |
 | Calibración y golden set | `admin-service` | Recursos `/api/llm/golden-sets` y `/api/llm/calibrations` por Gateway. |
 | Activación y cierre | `courses-service` | Lecturas de calibración y pendientes bajo `/api/llm/course-cohorts/...`. |
 
@@ -71,17 +71,25 @@ flowchart TB
     FE --> NGINX
     NGINX --> GW
     T02 -->|"esta aprobada la calibracion?"| GW
-    T03 -->|"consulta estado"| GW
     T05 -->|"tutor"| GW
     T11 -->|"moderación diferida a Fase 2"| GW
     T12 -->|"estado, deriva, costo"| GW
     GW --> API
     AIGW --> LLM
-    nuestro -->|"score listo · calibracion · incidente"| BUS
-    BUS -->|"intento_cerrado.v1 · curso_archivado.v1"| nuestro
+    nuestro -->|"score_de_ia_calculado · calibracion · incidente"| BUS
+    BUS -->|"intento_cerrado.v1 (de T05) · curso_archivado.v1"| nuestro
+    BUS -->|"score_de_ia_calculado"| T05
+    T05 -->|"reenvía el score<br/>(a definir entre T05 y T03)"| T03
 
     style Q stroke:#c00,stroke-width:3px
 ```
+
+> ⚠️ **Cambió el 2026-09-13.** Tema 03 ya no tiene flecha directa hacia nosotros (ni al Gateway
+> "consulta estado" ni al bus). Todo el camino asincrónico del evaluador ahora entra y sale por
+> Tema 05: publica `intento_cerrado.v1` (con transcripción) en vez de Tema 03, recibe
+> `score_de_ia_calculado` de nuestra parte, y es quien se lo reenvía a Tema 03. Ver §5 para el
+> diagrama de secuencia completo y [18 §4.2/§4.3](18-contratos-inter-equipos.md#42-tema-03--motor-de-desafíos)
+> para el contrato.
 
 ### Las tres cosas que se llaman «gateway»
 
@@ -301,23 +309,29 @@ costo con Batch**, el pico absorbido, y RF-IA-27 implementado por construcción.
 restricción que ninguna otra función tiene: **el evaluador es el único sin fallback de modelo**
 (RF-IA-25), así que su escalera de degradación tiene dos escalones en vez de cuatro.
 
+> ⚠️ **Cambió el 2026-09-13.** El diagrama de abajo ya refleja la decisión vigente: quien publica
+> `intento_cerrado` y quien recibe `score_de_ia_calculado` es **Tema 05**, no Tema 03. Tema 03
+> queda fuera de este diagrama — recibe el resultado de manos de Tema 05, por un mecanismo que
+> ellos dos definen entre sí y que no es parte de nuestro contrato.
+
 ```mermaid
 sequenceDiagram
     autonumber
-    participant T03 as Tema 03 · Motor de desafios
+    participant T05 as Tema 05 · Desafios practicos
     participant BUS as Bus de eventos
     participant API as M8 · API
     participant Q as Cola interna
     participant WK as worker
     participant GW as M1 · AI Gateway
     participant LLM as Claude Haiku 4.5 · Batch
+    participant T03 as Tema 03 · Motor de desafios
 
-    T03->>BUS: intento_cerrado
+    T05->>BUS: intento_cerrado · con transcripcion completa
     BUS->>API: dispara la evaluacion — RF-IA-12
     API->>Q: encolar · prioridad 3 · idempotency_key
-    API-->>T03: 202 · job_id · estado pendiente
+    API-->>T05: 202 · job_id · estado pendiente
 
-    Note over T03: el alumno YA recibio XP base y monedas.<br/>La entrega nunca se bloquea — RF-IA-27
+    Note over T05: el alumno YA recibio XP base y monedas.<br/>La entrega nunca se bloquea — RF-IA-27
 
     WK->>Q: toma el trabajo · pendiente → en_proceso
     WK->>WK: calcular features deterministicos<br/>eficiencia, cumplimiento, progresion
@@ -337,7 +351,9 @@ sequenceDiagram
     end
 
     WK->>BUS: score_de_ia_calculado
-    Note over WK,BUS: 🔴 aca hay CUATRO mecanismos escritos<br/>y ninguno decidido — ver I-04
+    BUS->>T05: score_de_ia_calculado
+    T05-->>T03: reenvia el resultado — RF-IA-15/PAR-05<br/>mecanismo a definir entre Tema 05 y Tema 03
+    Note over T05,T03: nosotros no llegamos hasta aca:<br/>este tramo es de ellos, no nuestro
 ```
 
 ### Cuánto tarda de punta a punta
@@ -350,31 +366,32 @@ sequenceDiagram
 | Una pregunta del generador | ~20 s · un parcial de 15, ~1-2 min · 30 parciales simultáneos, ~10-15 min |
 | Recalibración | Mensual, PAR-15, **fuera de horario pico** |
 
-### 🔴 I-04 · El resultado sale por cuatro caminos distintos
+### ✅ I-04 · Resuelto de nuestro lado — un mecanismo, un destinatario nuevo
 
-Es el hallazgo más grande de esta revisión. Cuatro documentos describen cuatro mecanismos para
-entregar el mismo score, y **ninguno de los cuatro tiene payload definido**.
+Antes, cuatro documentos describían cuatro mecanismos para entregar el mismo score, y ninguno
+tenía payload definido. La decisión de diseño del 2026-09-13 lo cierra así: **un solo mecanismo,
+el evento Kafka `score_de_ia_calculado`**, con payload definido en
+[18 §2.1](18-contratos-inter-equipos.md#21-score_de_ia_calculado) — pero el destinatario deja de
+ser Tema 03 (Motor de desafíos) y pasa a ser **Tema 05** (Desafíos Prácticos).
 
 ```mermaid
 flowchart LR
     W["worker<br/>score listo"]
-    W -->|"1 · evento score_de_ia_calculado"| M1["Bus del Tema 11<br/>02 §6"]
-    W -->|"2 · POST /internal/ai-result"| M2["Motor de desafios<br/>01 §2c"]
-    W -->|"3 · el que encolo hace polling"| M3["GET /ai/jobs/:id<br/>02 Parte 3"]
-    W -->|"4 · POST resultado al backend"| M4["Backend Spring<br/>06 §5"]
-
-    style M2 stroke:#c00,stroke-width:3px
+    W -->|"unico mecanismo vigente<br/>evento score_de_ia_calculado"| T05IA["Tema 05<br/>practice-service"]
+    T05IA -->|"reenvio a definir<br/>entre Tema 05 y Tema 03"| T03IA["Tema 03<br/>Motor de desafios"]
 ```
 
-| Mecanismo | Dónde está escrito | Problema |
-|---|---|---|
-| Evento `score_de_ia_calculado` | [02](02-arquitectura-y-stack.md) §6 | Sin payload, sin tópico, sin versión. Solo el nombre |
-| `POST /internal/ai-result` | [01](01-problema-y-alcance.md) §2c, dentro de un diagrama | Aparece **una sola vez en todo el repositorio**, no está entre los seis endpoints, y es un HTTP directo entre microservicios — justo lo que el mismo corpus llama no negociable |
-| Polling a `GET /ai/jobs/{job_id}` | [02](02-arquitectura-y-stack.md) Parte 3 | Existe y funciona, pero obliga al otro equipo a preguntar |
-| `POST resultado` del worker al backend | [06](06-operacion-e-ingenieria.md) §5, en el diagrama de secuencia | No tiene contraparte en ningún contrato |
+Los otros tres mecanismos que estaban en danza quedan descartados, no solo pospuestos:
 
-**Los cuatro no son alternativas de diseño: son cuatro lecturas del mismo documento.** Hasta que se
-elija uno, el Tema 03 no puede empezar su lado. Va primero a la sesión de integración.
+| Mecanismo descartado | Dónde estaba escrito | Por qué queda fuera |
+|---|---|---|
+| `POST /internal/ai-result` directo al Motor de desafíos | [01](01-problema-y-alcance.md) §2c, dentro de un diagrama | Era HTTP directo entre microservicios — lo que el corpus llama no negociable, y ahora además contradice la decisión de no hablar directo con Tema 03 |
+| Polling a `GET /ai/jobs/{job_id}` desde Tema 03 | [02](02-arquitectura-y-stack.md) Parte 3 | Obligaba a Tema 03 a preguntarnos — con la nueva decisión, Tema 03 ni siquiera nos llama |
+| `POST resultado` del worker al backend | [06](06-operacion-e-ingenieria.md) §5, en el diagrama de secuencia | No tenía contraparte en ningún contrato |
+
+**Lo que sigue sin decidir, y ya no es parte de nuestro contrato:** cómo Tema 05 le reenvía el
+resultado a Tema 03. Es una conversación entre esos dos equipos — nosotros ya cerramos nuestra
+parte de I-04.
 
 ---
 
@@ -625,9 +642,9 @@ acá.
 | **I-01** | Cuándo se invoca el clasificador de moderación: ¿cuando la capa clásica «no decidió», o cuando «no llegó a media o alta»? | Nosotros — es leer el código y elegir | Cambian los 300 ms, el −70% y el tope diario del free tier |
 | **I-02** | Qué pasa entre los 300 ms de presupuesto y el timeout de 1 s del moderador | Nosotros | Un mensaje puede tardar 3× lo declarado sin que nada lo marque |
 | **I-03** | Latencia del tutor: el objetivo dice < 2 s, el cálculo del pico usa ~8 s | Nosotros, **midiendo** | De ahí sale cuántas réplicas hacen falta |
-| **I-04** | **Cómo llega el resultado asincrónico al motor de desafíos.** Cuatro mecanismos escritos, ninguno con payload | 🔴 **Sesión de integración** | El Tema 03 no puede empezar su lado |
+| **I-04** | ✅ **Resuelto de nuestro lado** (2026-09-13): evento Kafka `score_de_ia_calculado`, un solo mecanismo — ver §5. Sigue abierto entre Tema 05 y Tema 03: cómo Tema 05 reenvía el resultado | Tema 05 + Tema 03, entre ellos | El Tema 03 no puede empezar su lado hasta que Tema 05 y Tema 03 lo acuerden |
 | **I-05** | Qué enum viaja en el campo `estado` del contrato de eventos | 🔴 Sesión de integración, con el Tema 11 | Se cierra el contrato con un campo ambiguo |
-| **I-06** | El techo de RF-IA-22: la decisión dice 15, el inventario dice 10, el presupuesto calcula con 8 | Product Owner / ADMIN | **El presupuesto del cuatrimestre depende de cuál es** |
+| **I-06** | El techo de RF-IA-22: la decisión dice 15, el inventario dice 10, el presupuesto calcula con 8. Además, si el back office necesita fijar un techo distinto por alumno (cantidad de usos y de tokens), ver [08 P-12](08-decisiones-y-pendientes.md) | Product Owner / ADMIN | **El presupuesto del cuatrimestre depende de cuál es** |
 | **I-07** | Modelo del corrector | ✅ Cerrado: el corrector LLM queda fuera del alcance vigente | Sin costo ni asignación de modelo |
 | **I-08** | El esquema de la tabla `mensaje`, escrito de tres formas incompatibles | P5, **esta semana** | Es lo único que se pierde para siempre si se posterga |
 | **I-09** | `curso_id` / `curso_cohorte_id` / `curso_template_id`: de qué cuelga el chunk del RAG | Sesión de integración | *Si un equipo modela sin esa clave, después no hay forma de acotarlas sin migrar datos* |

@@ -30,3 +30,8 @@ llm:
     trusted-service: practice-service
     required-scope: llm.tutor.interact
     invocation-timeout-ms: 8000
+  rag:
+    trusted-service: practice-service
+    required-scope: llm.rag.query
+    embedding-timeout-ms: 8000
+    max-upload-bytes: 26214400

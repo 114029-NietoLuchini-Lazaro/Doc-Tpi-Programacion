@@ -73,7 +73,7 @@ círculo es más chico de lo que parecía: no hay que construir calibración des
 
 Del punch-list de la verificación, en orden de bloqueo:
 
-1. **H10** — puerto de invocación + fake ([ya con ficha](../historias/ep-02/h10.md), 32 h).
+1. **EP-02·H01** — puerto de invocación + fake ([ya con ficha](../historias/ep-02/h01.md), 32 h, ex-H10).
 2. **Conectar calibración con H10** — nueva pieza (sin ficha todavía) que, al recibir un run
    `RUNNING`, llame al puerto por cada caso del golden set, arme `CaseScores`, corra
    `CalibrationMetrics.assess` y persista `calibration_case_results` + el cierre del run.

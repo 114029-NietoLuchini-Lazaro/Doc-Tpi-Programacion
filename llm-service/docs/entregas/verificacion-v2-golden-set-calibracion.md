@@ -93,7 +93,7 @@ estado, la métrica y el modelo de datos están listos y bien probados (`Calibra
 simulado.
 
 **Esto es exactamente `LLM-S01-H10`** (puerto de invocación + fake), que la reprogramación a
-8 semanas ya adelantó a S1 ([h10.md](../historias/ep-02/h10.md)). Falta, además de H10, el
+8 semanas ya adelantó a S1 ([h01.md](../historias/ep-02/h01.md)). Falta, además de H10, el
 paso que hoy no tiene ficha: que algo (probablemente una extensión de
 `CalibrationWorkflowService` o un nuevo `CalibrationRunner`) tome el puerto de H10, corra los
 casos del golden set contra el fake, llene `calibration_case_results` y cierre el run con
@@ -227,7 +227,7 @@ todavía no hay proveedor real habilitado, ver B-6/C-2 de
    fija 30/25/20/15/10 como invariante de producto; `RubricValidator` solo exige que las cinco
    dimensiones sumen 100, sin fijar esos valores concretos. Decidir si eso es correcto (cada
    curso puede variar sus pesos) o si falta una validación. Detalle en
-   [`LLM-S02-H01`](../historias/ep-03/s02-h01.md).
+   [`LLM-EP03-H04`](../historias/ep-03/h04.md) (ex-S02-H01).
 9. **Confirmar el alcance de calibración de plataforma vs. de curso.** La épica EP-04 describe
    ambos niveles; el código solo implementa el de curso. Detalle en
-   [`LLM-S03-H01`](../historias/ep-04/s03-h01.md).
+   [`LLM-EP04-H01`](../historias/ep-04/h01.md) (ex-S03-H01).

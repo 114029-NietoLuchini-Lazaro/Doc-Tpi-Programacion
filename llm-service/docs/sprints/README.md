@@ -10,10 +10,11 @@
 >
 > | Pieza | Dónde vive |
 > |---|---|
+> | **Calendario vigente (máximo 5 sprints)** | [`38`](../38-plan-de-5-sprints.md) — retira el horizonte de 19 sprints de abajo |
 > | Checklist de Sprint 0 | [`35` · «Sprint 0»](../35-backlog-ejecutable.md) y [30 · §1](../30-arranque-agil-y-sprint-0.md) |
 > | DoR / DoD | [23 · §9.2](../23-plan-construccion-producto-llm.md) |
 > | Cálculo de capacidad | [`capacidad-sprints.md`](capacidad-sprints.md) · [23 · §2](../23-plan-construccion-producto-llm.md) / [30 · §3](../30-arranque-agil-y-sprint-0.md) |
-> | Recetas de construcción S1–S19 | [`35`](../35-backlog-ejecutable.md) |
+> | Recetas de construcción (histórico S1–S19; vigentes S1–S4, S9–S13, S15–S18 — renumeradas a Sprints 1–5 por [`38`](../38-plan-de-5-sprints.md); S6, S14 y S19 quedan como antecedente) | [`35`](../35-backlog-ejecutable.md) |
 > | Épicas | [`../epicas/`](../epicas/README.md) |
 > | Fichas de historias (por épica) | [`../historias/`](../historias/README.md) |
 > | Tareas SMART por historia | [`../tareas/`](../tareas/README.md) |
@@ -22,11 +23,14 @@
 
 ## Índice
 
-| Sprint | Registro | Vista de historias | Estado | Incremento / objetivo |
+| Sprint | Carpeta | Estado | HU comprometidas | Objetivo |
 |---|---|---|---|---|
-| **0** | [`sprint-0.md`](sprint-0.md) | — | Por ejecutar | Arranque: acuerdos, capacidad de S1 y ambiente. **Sin incremento de software.** |
-| **1** | *(crear desde [plantilla](../plantillas/sprint-llm.md) en la Planning de S1)* | [`s1-historias.md`](s1-historias.md) · [`s1-explicado.md`](s1-explicado.md) | — | Un docente autorizado carga y consulta un golden set que sobrevive al reinicio. |
-| 2–19 | *(uno por sprint, al planificarlo)* | *(uno por sprint)* | — | Ver recetas en [`35`](../35-backlog-ejecutable.md). |
+| **0** | [`sprint-0/`](sprint-0/README.md) | Por ejecutar | Ninguna | Acuerdos, capacidad de S1 y ambiente. Sin incremento de software. |
+| **1** | [`sprint-1/`](sprint-1/README.md) | ✅ Listo para Planning | 30 HU/Tareas (7 hilos en paralelo, ~660–681 h + 9 a estimar) | Golden set, proveedor real, tutor, calibración plataforma, cola de evaluación, **+ arranque de EP-07 y de la extensión de EP-09**. |
+| **2** | [`sprint-2/`](sprint-2/README.md) | Por planificar | 12 HU/Tareas (~348–368 h + variable) | Cerrar EP-06 completa (apelación, override, bloqueo de cierre) **+ cerrar EP-07 y la extensión de EP-09** que S1 dejó a mitad. |
+| **3** | [`sprint-3/`](sprint-3/README.md) | Por planificar | Regresión + cobertura (~40–65 h) | Hardening, cobertura ≥ 95%, colchón `courses-service`. Vuelve a ser colchón — EP-07 y la extensión de EP-09 se adelantaron a S1/S2. |
+| **4** | [`sprint-4/`](sprint-4/README.md) | Por planificar | Integración E2E + **EP-08 completa** (~205–230 h) | Ambiente compartido real, corrección de errores de integración, moderación integrada de punta a punta. |
+| **5** | [`sprint-5/`](sprint-5/README.md) | Por planificar | Demo + defensa + **EP-10 completa** + streaming (~201–221 h) | Demo grabada, deck de defensa, desafío personalizado y agente por mención. |
 
 ## Regla de nombrado
 
@@ -55,9 +59,10 @@ página para llevar directo a la Planning** en
 > Nota de planificación, no una fuente de verdad nueva: registra por qué S1 ganó una
 > historia que la receta original ([`35`](../35-backlog-ejecutable.md)) asignaba a S3.
 
-El plan de 19 sprints ([23](../23-plan-construccion-producto-llm.md)) está pensado para el
-**alcance amplio** (ser el servicio de LLM de toda la plataforma, con RAG, moderación y
-personalización). Para el **alcance estricto de la cátedra** — los 6 ítems: rúbrica, golden
+El plan de 19 sprints que llegó a plantear [23](../23-plan-construccion-producto-llm.md) pensaba
+el **alcance amplio** (ser el servicio de LLM de toda la plataforma, con RAG, moderación y
+personalización) — **horizonte retirado, ver [38](../38-plan-de-5-sprints.md)**. Para el
+**alcance estricto de la cátedra** — los 6 ítems: rúbrica, golden
 set, invocación del modelo, calibración, bloqueo de activación y salvaguarda anti-fuga — ese
 plan cabe en **4 sprints (8 semanas)** si se corren **dos pistas en paralelo** desde S1 en vez
 de encadenar todo secuencialmente:

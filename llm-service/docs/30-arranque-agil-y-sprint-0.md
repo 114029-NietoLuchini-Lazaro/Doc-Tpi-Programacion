@@ -19,10 +19,10 @@
 > | Cálculo de capacidad | [23 · §2](23-plan-construccion-producto-llm.md) |
 > | Catálogo de épicas | [`35`](35-backlog-ejecutable.md) · sección «Épicas» |
 > | Historias de S1 (ID, épica, pareja, horas) | [`35`](35-backlog-ejecutable.md) · sección «S1» |
-> | Historias de S1 en formato largo (Taiga) | [`historias/`](historias/README.md) (por épica) · índice y demo en [`sprints/s1-historias.md`](sprints/s1-historias.md) |
+> | Historias de S1 en formato largo (Taiga) | [`historias/`](historias/README.md) (por épica) · índice y demo en [`sprints/sprint-1/s1-historias.md`](sprints/sprint-1/s1-historias.md) |
 > | Tareas SMART por historia | [`tareas/`](tareas/README.md) |
 > | Épicas (EP-01…EP-10) en formato Taiga, una por archivo | [`epicas/`](epicas/README.md) |
-> | Acta del Sprint 0 | [`sprints/sprint-0.md`](sprints/sprint-0.md) |
+> | Acta del Sprint 0 | [`sprints/sprint-0/sprint-0.md`](sprints/sprint-0/sprint-0.md) |
 > | Método para redactar/estimar HU | [29](29-guia-catedra-historias-de-usuario.md) |
 > | Templates de Taiga | [`plantillas/historia-de-usuario-taiga.md`](plantillas/historia-de-usuario-taiga.md) · [`plantillas/epica-taiga.md`](plantillas/epica-taiga.md) |
 >
@@ -166,10 +166,12 @@ las sincronizaciones, con un representante por pareja cuando hay cruces.
 
 ### 3.3 Capacidad ≠ presupuesto de trabajo
 
-Las recetas S1–S19 estiman el trabajo de cada sprint en **~208 h de paquetes** (estimación
-gruesa anterior a los contratos, **no un tope**). La diferencia con las 571 h —**~363 h por
-sprint**— es **margen explícito** para re-estimar en Planning, absorber imprevistos y cubrir el
-overhead de coordinar 12 personas. Al cerrar S2 se revisa la previsión con datos reales.
+Las recetas S1–S4 (el horizonte de S1–S19 quedó retirado — ver
+[38 · Plan de 5 sprints](38-plan-de-5-sprints.md)) estiman el trabajo de cada sprint en
+**~208 h de paquetes** (estimación gruesa anterior a los contratos, **no un tope**). La
+diferencia con las 571 h —**~363 h por sprint**— es **margen explícito** para re-estimar en
+Planning, absorber imprevistos y cubrir el overhead de coordinar 12 personas. Al cerrar S2 se
+revisa la previsión con datos reales.
 
 ### 3.4 Recalcular en cada Planning
 
@@ -264,10 +266,10 @@ después de reiniciar el servicio.
 > historias en **formato largo del template de Taiga** (Como/Quiero/Para, Notas, CA con
 > negativos, ≥ 3 escenarios BDD, Prototipo, Estimación, Dependencias) están agrupadas por
 > épica en [`historias/ep-01/`](historias/ep-01/README.md) y [`historias/ep-03/`](historias/ep-03/README.md)
-> (índice del sprint y demo en [`sprints/s1-historias.md`](sprints/s1-historias.md); tareas
+> (índice del sprint y demo en [`sprints/sprint-1/s1-historias.md`](sprints/sprint-1/s1-historias.md); tareas
 > SMART en [`tareas/`](tareas/README.md)); las diez épicas (EP-01…EP-10), una por archivo, en
 > [`epicas/`](epicas/README.md) — las activas en S1 son EP-01 y EP-03. El arranque como acta
-> se registra en [`sprints/sprint-0.md`](sprints/sprint-0.md).
+> se registra en [`sprints/sprint-0/sprint-0.md`](sprints/sprint-0/sprint-0.md).
 
 ---
 

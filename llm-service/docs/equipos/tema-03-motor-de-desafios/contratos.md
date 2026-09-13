@@ -3,7 +3,24 @@
 > Fuente completa: [18 §4.2](../../18-contratos-inter-equipos.md#42-tema-03--motor-de-desafíos),
 > [17 §5](../../17-mapa-de-integracion.md#5-camino-asincrónico--el-evaluador) (diagrama completo).
 
-## Qué nos llama
+## ⚠️ Decisión de diseño (2026-09-13): esto ya no es directo
+
+`llm-service` **dejó de comunicarse directamente con el Motor de Desafíos**. Todo el intercambio
+del evaluador (cierre de intento → score) ahora pasa por Tema 05 (`practice-service`):
+
+- Tema 05 nos notifica el cierre del intento (con transcripción) — antes lo hacían ustedes.
+- Nosotros le entregamos el score a Tema 05 por evento Kafka — antes se lo dábamos a ustedes.
+- **Tema 05 es quien les reenvía el resultado a ustedes** para que apliquen el modificador de XP
+  (PAR-05). Eso no cambia: **nosotros nunca otorgamos XP**, solo se movió quién nos habla.
+
+El resto de esta página describe el contrato **anterior**, directo entre nosotros y ustedes, que
+queda retirado — se conserva para que quede registro de qué cambió y por qué. El contrato
+vigente del evaluador vive ahora en
+[`tema-05-desafios-practicos/contratos.md`](../tema-05-desafios-practicos/contratos.md).
+
+---
+
+## Qué nos llama (contrato anterior, retirado)
 
 - No hay un `POST` directo de "pedir evaluación" en el contrato v1 vigente — la evaluación se
   dispara **solo** al consumir el evento `intento_cerrado` (ver "Qué nos da"). El viejo
@@ -11,7 +28,7 @@
 - `GET /api/llm/evaluations/{evaluationId}` — para consultar el detalle después.
 - `GET /api/llm/jobs/{jobId}` — para consultar el estado del trabajo asincrónico.
 
-## Qué nos da
+## Qué nos da (contrato anterior, retirado)
 
 - Publica el evento `intento_cerrado.v1`, que dispara la evaluación asincrónica. Estructura
   mínima obligatoria: `trace_id`, `curso_cohorte_id`, `intento_id`, `alumno_id`,
@@ -39,7 +56,7 @@
 y `trace_id` todavía no están en el YAML ejecutable**, aunque doc 18 los pida como
 "OBLIGATORIO". Es parte de lo que hay que cerrar en I-04/I-05.
 
-## Qué le damos
+## Qué le damos (contrato anterior, retirado)
 
 - `score_agregado` (0–100) con desglose por dimensión vía el evento `score_de_ia_calculado.v1`.
 - **Nunca devolvemos XP.** El modificador (PAR-05) lo aplica el motor de desafíos, no nosotros.
@@ -118,7 +135,7 @@ volcar al schema ejecutable):
 obtener el score, hoy no alcanza: hay que ir a `GET /evaluations/{evaluationId}` aparte, o
 cerrar I-04 con el evento. Otro argumento más para resolver I-04 con un solo mecanismo.
 
-## Qué pasa si esto falla
+## Qué pasa si esto falla (contrato anterior, retirado)
 
 Técnica común en
 [transversales del README](../README.md#resiliencia-y-manejo-de-errores-técnica-común-a-todos-los-endpoints).
@@ -137,7 +154,7 @@ todavía (04 línea 619). Por eso su única degradación válida es la **cola di
    sigue devolviendo esa evaluación mientras no se resuelva; **bloquea el cierre del curso**
    hasta que se resuelva o el docente haga un override manual.
 
-## Acordado, no técnico
+## Acordado, no técnico (contrato anterior, retirado)
 
 - **Aceptar la entrega con el evaluador caído**: si respondemos `503`, el backend acepta igual
   con `score_agregado = null` y espera `score_pendiente_diferido`. La resiliencia de este punto

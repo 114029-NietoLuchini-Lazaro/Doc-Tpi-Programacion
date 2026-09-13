@@ -4,7 +4,22 @@
 > líneas 353-377, [17 §8](../../17-mapa-de-integracion.md#8-lo-que-estos-diagramas-dejaron-a-la-vista)
 > I-04/I-05, [08 B-5](../../08-decisiones-y-pendientes.md).
 
-## 🔴 Cruzado — I-04: cómo llega el score al motor de desafíos
+## ⚠️ Actualización (2026-09-13): I-04 se resuelve, pero cambia el destinatario
+
+Decisión de diseño: `llm-service` deja de hablar directo con el Motor de Desafíos. El mecanismo
+de I-04 queda cerrado de nuestro lado — **evento Kafka `score_de_ia_calculado.v1`, como ya
+proponíamos abajo** — pero el consumidor pasa a ser Tema 05 (`practice-service`), no ustedes. Ver
+[`tema-05-desafios-practicos/contratos.md`](../tema-05-desafios-practicos/contratos.md) para el
+contrato vigente.
+
+Lo que queda sin resolver ya **no es un pendiente cruzado con nosotros**: cómo Tema 05 les
+reenvía ese resultado a ustedes para aplicar el modificador de XP. Es una definición entre
+Tema 05 y Tema 03 — nosotros no somos parte de esa conversación.
+
+El resto de esta sección describe el problema y la propuesta **tal como estaban antes de esta
+decisión**, para que quede registro de qué se decidió y por qué.
+
+## 🔴 Cruzado — I-04: cómo llega el score al motor de desafíos (contrato anterior)
 
 **El hallazgo más grande del mapa de integración.** Cuatro documentos describen cuatro
 mecanismos distintos y ninguno tiene payload definido: el evento `score_de_ia_calculado` (sin

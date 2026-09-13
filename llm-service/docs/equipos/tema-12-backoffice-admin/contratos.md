@@ -8,6 +8,10 @@
   — ver estado (mismo cuerpo que en
   [`tema-02-cursos-y-matricula/contratos.md`](../tema-02-cursos-y-matricula/contratos.md)).
 - `POST /ai/calibracion` → `POST /api/llm/calibrations` — disparar recalibración.
+- 🟡 **Propuesta** — `PUT /api/v1/operations/quotas/student/{studentId}` — fijar el límite de uso
+  de IA de un alumno (cantidad de usos y cantidad de tokens por día). Extensión de
+  `LLM-S09-H02` ([`historias/ep-07/h02.md`](../../historias/ep-07/h02.md)); pendiente de
+  confirmar con Product Owner y DPO ([08 P-12](../../08-decisiones-y-pendientes.md)).
 
 ### Cuerpo de la solicitud ✅ (schema real de `/calibrations`)
 
@@ -110,3 +114,6 @@ de "corrió y no pasó PAR-14" — hoy se pierde esa distinción.
 ## Acordado
 
 - Tema 12 es dueño de la pantalla de configuración del proveedor LLM.
+- 🟡 Propuesto — Tema 12 es dueño de la pantalla de límites de uso de IA por alumno (cantidad de
+  usos y cantidad de tokens por día). Ver [`pendientes.md`](pendientes.md) por la tensión con la
+  privacidad del panel agregado de costos.

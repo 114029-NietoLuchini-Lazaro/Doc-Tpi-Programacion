@@ -46,6 +46,14 @@
 | Front End — Angular | [`frontend-angular/`](frontend-angular/) | 18 §4.7 |
 | Product Owner | [`product-owner/`](product-owner/) | 18 §4.8, 08 Parte B |
 
+> **Tema 03 pasa a ser integración indirecta.** Desde la decisión de diseño del 2026-09-13,
+> `llm-service` no vuelve a hablar directo con el Motor de Desafíos: el intercambio del
+> evaluador (cierre de intento → score) queda intermediado por Tema 05 (`practice-service`).
+> El contrato vigente vive en
+> [`tema-05-desafios-practicos/contratos.md`](tema-05-desafios-practicos/contratos.md); la
+> carpeta de Tema 03 conserva el contrato directo anterior marcado como retirado, para que quede
+> registro de qué cambió.
+
 ---
 
 ## Transversales (no son de un solo equipo)

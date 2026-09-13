@@ -1,0 +1,102 @@
+:host {
+  display: block;
+  color: #203b40;
+  font: 15px / 1.55 'DM Sans', sans-serif;
+}
+
+.eyebrow {
+  margin: 0 0 0.4rem;
+  color: #185c65;
+  font: 500 0.7rem / 1.4 var(--mono);
+  letter-spacing: 0.1em;
+}
+
+h2 {
+  margin: 0;
+  font: 600 1.15rem / 1.25 var(--display);
+}
+
+header p:not(.eyebrow) {
+  margin: 0.35rem 0 0;
+  color: #52666a;
+}
+
+.upload-button {
+  display: inline-block;
+  margin-top: 1rem;
+  border: 1px solid #185c65;
+  border-radius: 0.35rem;
+  background: #185c65;
+  color: #fff;
+  padding: 0.55rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:has(input:disabled) {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.error {
+  margin-top: 0.75rem;
+  color: #8b2e2e;
+}
+
+.empty {
+  margin-top: 1rem;
+  color: #52666a;
+}
+
+.source-list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.source-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid #d6ded8;
+  border-radius: 0.5rem;
+  background: #fffefa;
+  padding: 0.65rem 0.85rem;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.source-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.source-meta {
+  display: flex;
+  gap: 0.6rem;
+  color: #52666a;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.danger {
+  border: 1px solid #dd9b9b;
+  border-radius: 0.35rem;
+  background: #fff3f3;
+  color: #8b2e2e;
+  padding: 0.35rem 0.6rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}

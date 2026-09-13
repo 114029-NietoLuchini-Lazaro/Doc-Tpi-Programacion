@@ -44,7 +44,7 @@ declaradas × 2 semanas).
 Base = disponibilidad − reuniones − soporte conocido
 Entregables = máximo(0, Base × 0,80)
 Referencia sin soporte conocido: (816 − 102) × 0,80 ≈ 571 h de capacidad
-Trabajo estimado por las recetas S1–S19: ~208 h/sprint (piso, no tope)
+Trabajo estimado por las recetas S1–S4 (horizonte vigente, ver ../38-plan-de-5-sprints.md): ~208 h/sprint (piso, no tope)
 ```
 
 Revisar bases individuales negativas; no trasladarlas silenciosamente a otra persona.

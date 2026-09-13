@@ -84,15 +84,25 @@ No se usan “examen corregido”, “respuesta esperada”, “corrector LLM”
 
 Los service IDs canónicos son `practice-service`, `challenges-service`, `courses-service` y `admin-service`.
 
+> ⚠️ **Cambió el 2026-09-13.** `llm-service` dejó de comunicarse directo con `challenges-service`
+> (Tema 03). Todo el intercambio del evaluador — cierre de intento y entrega del score — pasa
+> ahora por `practice-service` (Tema 05), que es quien se lo reenvía a `challenges-service`. Ver
+> [18 §4.2/§4.3](18-contratos-inter-equipos.md#42-tema-03--motor-de-desafíos) y
+> [`equipos/tema-05-desafios-practicos/contratos.md`](equipos/tema-05-desafios-practicos/contratos.md).
+
 | Llamador | Scope M2M mínimo hacia `llm-service` |
 |---|---|
-| `practice-service` | `llm.tutor.invoke` |
-| `challenges-service` | `llm.evaluation.read` |
+| `practice-service` | `llm.tutor.invoke`; desde el 2026-09-13 también publica el cierre de intento y consume el score del evaluador (🟡 nombre de scope todavía no acordado) |
+| `challenges-service` | — ya no llama directo a `llm-service` (🟡 retirado; antes `llm.evaluation.read`) |
 | `courses-service` | `llm.calibration.read`, `llm.pending.read` |
 | `admin-service` | `llm.golden-set.manage`, `llm.calibration.manage`, `llm.model-assignment.manage`, `llm.evaluation.override` |
 
-- `practice-service` invoca tutoría por M2M.
-- `challenges-service` publica el cierre de intento y aplica el modificador de XP; LLM nunca asigna XP.
+- `practice-service` invoca tutoría por M2M. Desde el 2026-09-13, también publica el cierre de
+  intento (con la transcripción) y recibe el resultado del evaluador — reemplaza en ambos roles a
+  `challenges-service`.
+- `challenges-service` **ya no habla directo con `llm-service`**: aplica el modificador de XP a
+  partir del resultado que le reenvía `practice-service`. LLM nunca asigna XP — eso no cambió,
+  solo se movió quién nos habla.
 - `courses-service` consulta calibración y evaluaciones pendientes antes de cambiar el estado del curso.
 - `admin-service` administra modelos, golden set y calibraciones mediante M2M delegado.
 - Kafka es el bus compartido para eventos asíncronos. No sustituye al Gateway para solicitudes HTTP.

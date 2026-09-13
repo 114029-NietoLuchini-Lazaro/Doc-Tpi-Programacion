@@ -8,4 +8,4 @@
 
 | Historia | Archivo | Tareas | Estado |
 |---|---|---:|---|
-| LLM-S03-H01 | [`s03-h01.md`](s03-h01.md) | 7 | 🟢 7 hechas (T7 cerrada el 2026-09-13) |
+| LLM-EP04-H01 *(LLM-S03-H01)* | [`h01.md`](h01.md) | 7 | 🟢 7 hechas (T7 cerrada el 2026-09-13) |
