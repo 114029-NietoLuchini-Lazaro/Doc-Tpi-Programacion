@@ -39,6 +39,7 @@
 |---|---|---|
 | Tema 02 — Cursos y Matrícula | [`tema-02-cursos-y-matricula/`](tema-02-cursos-y-matricula/) | 18 §4.1 |
 | Tema 03 — Motor de Desafíos | [`tema-03-motor-de-desafios/`](tema-03-motor-de-desafios/) | 18 §4.2 |
+| Tema 04 — Desafío Teórico ("corregir") | [`tema-04-desafios-teoricos/`](tema-04-desafios-teoricos/) | Sin contrato técnico — `docs/entregas/recomendacion-correccion-respuestas-cortas.md` |
 | Tema 05 — Desafíos Prácticos | [`tema-05-desafios-practicos/`](tema-05-desafios-practicos/) | 18 §4.3, `docs/entregas/alcance-y-contrato-para-desafios-practicos.md` |
 | Tema 11 — Chat | [`tema-11-chat/`](tema-11-chat/) | 18 §4.4 |
 | Tema 12 — Backoffice / ADMIN | [`tema-12-backoffice-admin/`](tema-12-backoffice-admin/) | 18 §4.5 |
@@ -53,6 +54,12 @@
 > [`tema-05-desafios-practicos/contratos.md`](tema-05-desafios-practicos/contratos.md); la
 > carpeta de Tema 03 conserva el contrato directo anterior marcado como retirado, para que quede
 > registro de qué cambió.
+
+> **Tema 04 no es un socio de integración técnica, todavía.** No hay endpoint, evento ni scope M2M
+> entre `llm-service` y Tema 04 — solo una recomendación de código (normalización + distancia de
+> edición) para que la implementen en su propio motor. Se le abrió carpeta igual porque es donde
+> vive "qué falta hablar con cada equipo", y con Tema 04 sí hay algo pendiente (ver su
+> `pendientes.md`), aunque hoy no sea un contrato.
 
 ---
 
