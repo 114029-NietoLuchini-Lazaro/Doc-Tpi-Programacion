@@ -8,4 +8,4 @@
 
 | Historia | Archivo | Tareas | Estado |
 |---|---|---:|---|
-| LLM-S03-H01 | [`s03-h01.md`](s03-h01.md) | 7 | 🟡 6 hechas, 1 bloqueante (T7, depende de H10) |
+| LLM-S03-H01 | [`s03-h01.md`](s03-h01.md) | 7 | 🟢 7 hechas (T7 cerrada el 2026-09-13) |

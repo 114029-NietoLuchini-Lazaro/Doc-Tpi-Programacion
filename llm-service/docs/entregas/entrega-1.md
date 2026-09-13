@@ -8,6 +8,12 @@
 > **Por qué existe.** El código ya entrega más que "solo S1" — golden set y rúbrica
 > versionados, y el esqueleto de calibración. Definir la Entrega 1 recortada a "S1 tal cual
 > lo dice la receta original" desperdiciaría trabajo real ya hecho y probado.
+>
+> **🟢 2026-09-13 — la pieza que faltaba (T7, "conectar calibración con H10") se cerró.** Ver
+> [`docs/sprints/s1-cierre.md`](../sprints/s1-cierre.md) fila 7 y
+> [`docs/estado-implementacion/ep-04/s03-h01.md`](../estado-implementacion/ep-04/s03-h01.md).
+> Las filas de la tabla de abajo que hablaban de este hueco quedan como registro de cómo estaba
+> antes; ya se puede demostrar una calibración real terminando en `PASSED`/`FAILED`.
 
 ---
 

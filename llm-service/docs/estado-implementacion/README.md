@@ -54,12 +54,12 @@
 | **EP-01** · Plataforma, contratos e integración | [`ep-01/`](ep-01/README.md) | 🟡 desigual — H04 🟢, resto con huecos concretos (ver carpeta) | 2026-09-12 |
 | **EP-02** · AI Gateway, modelos y resiliencia | [`ep-02/`](ep-02/README.md) | 🟢 H10 construida (puerto + fake); 🔴 catálogo de modelos por curso sigue hardcodeado | 2026-09-12 |
 | **EP-03** · Golden set y referencia humana | [`ep-03/`](ep-03/README.md) | 🟢 golden set y rúbrica por curso sólidos; 🔴 dos placeholders sin LLM real | 2026-09-12 |
-| **EP-04** · Calibración y gobernanza del modelo | [`ep-04/`](ep-04/README.md) | 🔴 esqueleto sólido, pero ninguna calibración puede terminar (H10 existe, la calibración no la usa todavía) | 2026-09-12 |
-| **EP-05** · Tutor seguro y guardarraíles | [`ep-05/`](ep-05/README.md) | 🟡 interacción síncrona con guardarraíles construida; sin historia formal ni streaming | 2026-09-12 |
+| **EP-04** · Calibración y gobernanza del modelo | [`ep-04/`](ep-04/README.md) | 🟢 conectada con H10 — un run ya termina `PASSED`/`FAILED` | 2026-09-13 |
+| **EP-05** · Tutor seguro y guardarraíles | [`ep-05/`](ep-05/README.md) | 🟡 interacción síncrona con guardarraíles e histórico multi-turno construidos; sin historia formal ni streaming | 2026-09-13 |
 | **EP-06** · Evaluación, score y auditoría académica | [`ep-06/`](ep-06/README.md) | 🔴 **no iniciado, confirmado por auditoría exhaustiva** — cero código propio; lo que parecía EP-06 era EP-04 (ver hallazgo transversal) | 2026-09-12 |
 | EP-07 · Operación, cuotas y observabilidad | — | ⬜ sin código encontrado | — |
 | EP-08 · Moderación integrada (F2) | — | ⬜ sin código; contrato de referencia preservado en [`docs/contracts/llm-service-v1-moderacion-borrador.yaml`](../contracts/llm-service-v1-moderacion-borrador.yaml) | 2026-09-12 |
-| EP-09 · RAG y consulta de material (F3) | — | ⬜ sin código encontrado | — |
+| **EP-09** · RAG y consulta de material (F3) | [`ep-09/`](ep-09/README.md) | 🟡 ingesta + chat con citas construidos (179 tests, 76% cobertura); sin proveedor real de embeddings/LLM y sin verificar contra Postgres+pgvector real (los 4 repos JDBC están en 0% de cobertura, bloqueados por Docker en el entorno de esta sesión) | 2026-09-13 |
 | EP-10 · Personalización y agente (F3) | — | ⬜ sin código encontrado | — |
 
 > Subsistemas que el código ya construyó pero que ninguna épica reclama con certeza:
@@ -69,13 +69,14 @@
 ## El hallazgo transversal más importante
 
 El código de `llm-service` **no avanza parejo con el backlog**: en EP-03/EP-04 va muy
-adelantado (construyó golden set versionado, rúbrica versionada y el esqueleto completo de
-calibración con métrica PAR-14 — funcionalidad de S2/S3 — sin que existieran las fichas), pero
-en EP-01 sigue con huecos que las fichas de S1 dan por hechos (Eureka, `401`, JaCoCo — ver
-[`ep-01/`](ep-01/README.md)). El puerto de invocación de modelos de `LLM-S01-H10` (EP-02), que
-estaba en 0 de 6 tareas, se cerró el 2026-09-12 portando código de `codigo-ejemplo/` — la tarea
-que conecta esto con la calibración de EP-04 (T7) quedó firmada en 14 h para el sprint de cierre.
-Ver [`ep-02/h10.md`](ep-02/h10.md) y [`ep-04/s03-h01.md`](ep-04/s03-h01.md).
+adelantado (construyó golden set versionado, rúbrica versionada y calibración con métrica
+PAR-14 — funcionalidad de S2/S3 — sin que existieran las fichas), pero en EP-01 sigue con huecos
+que las fichas de S1 dan por hechos (Eureka, `401`, JaCoCo — ver [`ep-01/`](ep-01/README.md)).
+El puerto de invocación de modelos de `LLM-S01-H10` (EP-02), que estaba en 0 de 6 tareas, se
+cerró el 2026-09-12 portando código de `codigo-ejemplo/`; **T7 (conectar la calibración con ese
+puerto) se cerró el 2026-09-13** — `CalibrationEvaluationRunner` ya corre cada run contra el fake
+y lo transiciona a `PASSED`/`FAILED`. Ver [`ep-02/h10.md`](ep-02/h10.md) y
+[`ep-04/s03-h01.md`](ep-04/s03-h01.md).
 
 ## EP-06 está en 0% — y hay una contradicción de alcance que decide si eso importa ahora
 

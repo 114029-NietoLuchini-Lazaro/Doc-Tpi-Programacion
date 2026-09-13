@@ -68,7 +68,7 @@ no en la ficha. Si un dato de una ficha no coincide con esta tabla, **manda la t
 |---|---|---|---|
 | **S1** | EP-01 (H01–H04, H08, H09) · EP-02 (H10) · EP-03 (H05–H07, histórico) | 10 | [`historias/ep-01/`](../historias/ep-01/README.md) · [`historias/ep-02/`](../historias/ep-02/README.md) · [`historias/ep-03/`](../historias/ep-03/README.md) |
 | **S2** | EP-03 (LLM-S02-H01, H02) | 2 — **ya construidas, escritas a posteriori** | [`historias/ep-03/`](../historias/ep-03/README.md) |
-| **S3** | EP-04 (LLM-S03-H01) | 1 — esqueleto construido, hueco de implementación | [`historias/ep-04/`](../historias/ep-04/README.md) |
+| **S3** | EP-04 (LLM-S03-H01) | 1 — completa, hueco de implementación cerrado el 2026-09-13 (T7) | [`historias/ep-04/`](../historias/ep-04/README.md) |
 | **S4–S19** | ver catálogo | *(a desglosar sprint a sprint)* | — |
 
 > **S1–S3 pasaron de "a construir" a "auditar contra lo ya construido"** tras el commit

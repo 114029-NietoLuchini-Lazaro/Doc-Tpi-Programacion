@@ -82,14 +82,18 @@ contrario.
 > (revisión del código v2 post-`605f381`, 2026-09-12), que pedía explícitamente transcribirlos
 > acá y no se había hecho todavía.
 
-## 🟡 2. La calibración nunca invoca un modelo — todo run queda en `RUNNING` para siempre
+## 🟢 2. La calibración nunca invoca un modelo — todo run queda en `RUNNING` para siempre
 
-> **🟢 Parcialmente resuelto el 2026-09-12.** El puerto de invocación + fake (`LLM-S01-H10`) ya
-> existe (`domain/ai/ModelInvocationPort`, `infrastructure/ai/FakeModelAdapter`,
-> `application/ModelInvocationService`) — ver [`docs/estado-implementacion/ep-02/h10.md`](docs/estado-implementacion/ep-02/h10.md).
-> **Sigue sin conectarse a la calibración**: el párrafo de abajo describe el estado tal como
-> estaba antes de H10 y el paso que falta sigue exactamente igual — solo que ahora existe algo
-> concreto para enchufar.
+> **🟢 Resuelto el 2026-09-13.** El puerto de invocación + fake (`LLM-S01-H10`) ya existía
+> (`domain/ai/ModelInvocationPort`, `infrastructure/ai/FakeModelAdapter`,
+> `application/ModelInvocationService` — ver [`docs/estado-implementacion/ep-02/h10.md`](docs/estado-implementacion/ep-02/h10.md));
+> ahora `application/CalibrationEvaluationRunner` (nuevo) lo conecta con la calibración:
+> `CalibrationRunWorker.dispatch()` llama a `runner.run(runId)` justo después de `workflow.start`,
+> corre cada caso del golden set contra la función `EVALUATOR`, llena `calibration_case_results`
+> y cierra el run con `CalibrationMetrics.assess` + `CalibrationWorkflowService.finish`. Un error
+> de invocación cierra el run `FAILED` en vez de dejarlo colgado. Detalle en
+> [`docs/estado-implementacion/ep-04/s03-h01.md`](docs/estado-implementacion/ep-04/s03-h01.md).
+> El párrafo de abajo queda como registro de cómo estaba antes.
 
 `CalibrationRunController.create` → `CalibrationRunService.enqueue` crea el registro y audita.
 `CalibrationRunWorker.dispatch` (`@Scheduled`, cada 1s) sólo hace la transición `QUEUED → RUNNING`.

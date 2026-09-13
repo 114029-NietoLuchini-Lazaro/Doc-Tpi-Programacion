@@ -68,7 +68,7 @@ cambios (102 h-persona de referencia). No se agregan reuniones extra por ser un 
 | 4 | Pipeline CI en verde (build+tests+cobertura) | [`ep-01/h03.md`](../tareas/ep-01/h03.md) T8 | P1 | 1–3 | 4 | Cierre S1 | Pendiente |
 | 5 | ADR de arquitectura y convenciones | [`ep-01/h01.md`](../tareas/ep-01/h01.md) T1–T5 | P1 | — (en paralelo a 1–4) | 16 | Cierre S1 | Pendiente |
 | 6 | Confirmar `.env.example` + documentar `down` | [`ep-01/h02.md`](../tareas/ep-01/h02.md) T3, T6 | P1 | H01·T3 (variables del ADR) | 7 | Cierre S1 | Pendiente |
-| 7 | **Conectar calibración con el puerto de H10** | [`ep-04/s03-h01.md`](../tareas/ep-04/s03-h01.md) T7 | P4 | H10 (✅). Ya no depende de la fila 8 (resuelto: usa `function_model_config`) | 14 | Entrega 1 | 🔴 Bloqueante |
+| 7 | **Conectar calibración con el puerto de H10** | [`ep-04/s03-h01.md`](../tareas/ep-04/s03-h01.md) T7 | P4 | H10 (✅). Ya no depende de la fila 8 (resuelto: usa `function_model_config`) | 14 | Entrega 1 | ✅ Hecho 2026-09-13 |
 | 8 | Catálogo de adaptadores real (lectura) | [`ep-02/model-catalog-real.md`](../tareas/ep-02/model-catalog-real.md) T1+T3 | P2 | — (independiente de la fila 7) | 8 | Entrega 1 | Pendiente |
 | 9 | Mock levantable + check CI de contrato no acordado | [`ep-01/h08.md`](../tareas/ep-01/h08.md) T3, T4 | P1 | — | 4 | Cierre S1 | Pendiente |
 | 10 | Reescribir T1 de h08 contra el contrato v2 (no v1) | [`ep-01/h08.md`](../tareas/ep-01/h08.md) T1 (rework) | P1 | — (decidido: `v1` histórico, [checklist §2.5](../entregas/checklist-cierre-s1.md)) | 2 | Cierre S1 | Pendiente — ya desbloqueada |
