@@ -115,14 +115,13 @@
 
 ## EP-05 · Tutor seguro y guardarraíles
 
-- [ ] **[EP-05·H03] — hallazgo nuevo, el más importante de esta épica:** la ficha dice que
-  depende de **`challenges-service`** para consultar si un desafío está abierto/cerrado
-  ("el equipo del `challenges-service` debe confirmar el endpoint o evento..."). Pero
-  [00 §6](../00-fuentes-de-verdad-y-convenciones.md), cambiado el **2026-09-13**, dice
-  explícitamente que **`llm-service` dejó de comunicarse directo con `challenges-service`** —
-  todo pasa ahora por `practice-service`. H03 quedó escrita con la integración vieja; hay que
-  corregir su sección de Dependencias para consultar el estado del desafío vía `practice-service`,
-  no directo a `challenges-service`, antes de comprometerla a un sprint.
+- [x] ✅ **2026-09-13 [EP-05·H03]** La ficha dependía de **`challenges-service`** para consultar
+  si un desafío está abierto/cerrado ("el equipo del `challenges-service` debe confirmar el
+  endpoint o evento..."), pero [00 §6](../00-fuentes-de-verdad-y-convenciones.md), cambiado el
+  **2026-09-13**, dice explícitamente que **`llm-service` dejó de comunicarse directo con
+  `challenges-service`** — todo pasa ahora por `practice-service`. Corregida la sección de
+  Dependencias de [`ep-05/h03.md`](ep-05/h03.md) para consultar el estado del desafío vía
+  `practice-service`.
 - [x] ✅ **2026-09-13 [EP-05]** Faltaba la historia de **cuota por alumno** (KPI de épica
   "aviso claro al superar la cuota") — redactada como propuesta en
   [`ep-05/h04.md`](ep-05/h04.md), reutilizando el mecanismo de `EP-07·H02`/`H03` en vez de

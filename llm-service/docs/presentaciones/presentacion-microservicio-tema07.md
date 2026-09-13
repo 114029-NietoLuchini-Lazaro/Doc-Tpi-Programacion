@@ -49,8 +49,7 @@
 * **Esquema de Conexiones:**
   * 🔵 **users-service (T01):** `Tokens M2M (60s)` & `JWT RS256` (Síncrono vía Gateway).
   * 🔴 **courses-service (T02):** `GET /api/llm/calibracion` *(¡Bloquea Activación!)* & `POST /api/llm/rag` (RAG).
-  * 🟢 **challenges-service (T03):** `intento_cerrado` $\rightarrow$ `score_de_ia_calculado (0-100)` (Asíncrono vía Kafka).
-  * 🔵 **practice-service (T05):** `POST /api/llm/stream` (Streaming SSE) & Solución esperada para AST.
+  * 🟢 **practice-service (T05):** `intento_cerrado` $\rightarrow$ `score_de_ia_calculado (0-100)` (Asíncrono vía Kafka; T05 se lo reenvía a T03 para el XP — no hablamos directo con T03 desde el 2026-09-13) & `POST /api/llm/stream` (Streaming SSE) & Solución esperada para AST.
   * 🔵 **chat-service (T11):** `POST /api/llm/moderador` (< 300 ms Fail-Closed).
   * 🟣 **admin-service (T12):** Configuración de modelos LLM, disparo de calibración y deriva.
 
@@ -59,12 +58,12 @@
 ### Diapositiva 5: Integración Asincrónica (Apache Kafka / Bus de Eventos)
 * **Titular:** Desacoplamiento y Resiliencia con Kafka
 * **Eventos Publicados (Outbound):**
-  * `score_de_ia_calculado`: Score 0-100, confianza y desglose 5D hacia `challenges-service (T03)`.
+  * `score_de_ia_calculado`: Score 0-100, confianza y desglose 5D hacia `practice-service (T05)`, que lo reenvía a `challenges-service (T03)` para aplicar el XP.
   * `score_pendiente_diferido`: Notifica degradación controlada ante caída del proveedor LLM (RF-IA-27).
   * `calibracion_aprobada` / `rechazada`: Notifica a `courses-service (T02)` y `admin-service (T12)` para autorizar paso a *Activo*.
   * `incidente_de_jailbreak`: Alerta al Backoffice ante intentos de bypass.
 * **Eventos Consumidos (Inbound):**
-  * `intento_cerrado` (`challenges-service`): Dispara la calificación analítica en workers.
+  * `intento_cerrado` (`practice-service`, desde el 2026-09-13; antes `challenges-service`): Dispara la calificación analítica en workers.
   * `curso_archivado` (`courses-service`): Cancela y purga jobs de cohortes concluidas.
   * `modelo_llm_cambiado` (`admin-service`): Dispara recalibración automática (RF-IA-32).
 * **Garantía:** Partición por `curso_cohorte_id` para orden secuencial estricto y trazabilidad `traceparent & X-Request-Id`.

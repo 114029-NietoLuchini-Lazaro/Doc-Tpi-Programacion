@@ -204,7 +204,7 @@ La columna **h** es la referencia de planificación del plan. Los **puntos Fibon
 
 ## S6 — Evaluación asíncrona y diferida (~208 h estimadas)
 
-**No iniciar sin:** S3, contrato `intento_cerrado.v1`, consumidor `challenges-service` y regla de cierre de cursos. **Demo:** cierre produce score; con proveedor caído la entrega se acepta y el score llega una sola vez después.
+**No iniciar sin:** S3, contrato `intento_cerrado.v1` con `practice-service` (desde el 2026-09-13; antes `challenges-service`) y regla de cierre de cursos. **Demo:** cierre produce score; con proveedor caído la entrega se acepta y el score llega una sola vez después.
 
 | Orden | Paquete verificable | h | Salida / prueba |
 |---:|---|---:|---|

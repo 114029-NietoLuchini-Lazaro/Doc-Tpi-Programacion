@@ -20,7 +20,7 @@ Técnica común en
 [transversales del README](../README.md#resiliencia-y-manejo-de-errores-técnica-común-a-todos-los-endpoints).
 Este es el único equipo donde "qué pasa si falla" **es** el contrato, no un detalle aparte:
 
-1. El alumno entrega el intento → Tema 03 publica `intento_cerrado` → nosotros encolamos.
+1. El alumno entrega el intento → Tema 05 publica `intento_cerrado` (desde el 2026-09-13; antes lo publicaba Tema 03) → nosotros encolamos.
 2. Si el proveedor no responde tras backoff+tope, publicamos `score_pendiente_diferido` con
    `motivo: proveedor_no_disponible` y `reintentar_desde`.
 3. **El Backend tiene que haber aceptado la entrega en el paso 1, sin esperar el score.** El

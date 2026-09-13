@@ -21,6 +21,14 @@
 
 ---
 
+> ⚠️ **I-04 cambió el 2026-09-13, un día después de esta agenda.** Ya no se negocia en sesión con
+> Tema 03: `llm-service` resolvió su lado con **Tema 05** como interlocutor directo del evaluador
+> (publica `intento_cerrado.v1`, recibe `score_de_ia_calculado.v1`). Cómo Tema 05 le reenvía el
+> resultado a Tema 03 queda fuera del contrato de `llm-service` — es una definición entre esos dos
+> equipos. Las menciones a Tema 03 en I-04 más abajo quedan como registro de cómo se planteó el
+> ítem antes de la decisión; el contrato vigente está en
+> [17 · I-04](../17-mapa-de-integracion.md) y [18 §4.2/§4.3](../18-contratos-inter-equipos.md).
+
 ## 1. Quién tiene que estar
 
 | Ítem | Equipos imprescindibles | Opcional |

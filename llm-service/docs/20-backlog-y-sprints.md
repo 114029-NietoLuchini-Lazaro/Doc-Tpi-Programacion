@@ -172,7 +172,7 @@ arranca el día 1 junto con E02.
 | E01-06 | Cola Redis: productor y worker | Misma imagen, distinto comando. Un trabajo encolado sobrevive al reinicio del servicio y lo drena el worker | 8 | E01-03 | 🔴 |
 | E01-07 | `GET /ai/jobs/{job_id}` | Devuelve `en_proceso`, `completado` con resultado, o `fallido` con causa. Un job inexistente da `404`, no `500` | 3 | E01-06 | 🔴 |
 | E01-08 | Publicación de eventos al bus | Los cuatro eventos de [18](18-contratos-inter-equipos.md) §2 salen con el schema acordado. Sin bus disponible se publican contra un stub local y quedan en la tabla de salida | 5 | E01-03 | 🔴 |
-| E01-09 | Consumo de `intento_cerrado` | El evento del Tema 03 encola una evaluación. Reprocesar el mismo evento **no** genera dos evaluaciones: idempotencia por `intento_id` | 5 | E01-06 · E12-03 | 🔴 |
+| E01-09 | Consumo de `intento_cerrado` | El evento de Tema 05 (desde el 2026-09-13; antes lo publicaba Tema 03) encola una evaluación. Reprocesar el mismo evento **no** genera dos evaluaciones: idempotencia por `intento_id` | 5 | E01-06 · E12-03 | 🔴 |
 | E01-10 | Sondas de salud sin el proveedor LLM | La sonda de readiness no consulta al proveedor (ADR-014). Con el proveedor caído el servicio sigue *ready*, y la degradación la maneja E02-08 | 2 | E01-01 | 🟡 |
 
 ---
@@ -550,7 +550,7 @@ nombrado y una fecha, porque una decisión sin dueño no se toma.
 
 **Criterio de cierre del sprint:**
 
-- El evento `intento_cerrado` del Tema 03 dispara una evaluación, y reprocesarlo no la duplica.
+- El evento `intento_cerrado` de Tema 05 (antes de Tema 03, cambió el 2026-09-13) dispara una evaluación, y reprocesarlo no la duplica.
 - El generador arma un parcial que cubre el temario en vez de repetir el mismo tema.
 - La validación académica permanece fuera de `llm-service`; no existe una historia de corrector LLM.
 - La deriva se detecta y dispara recalibración.

@@ -576,7 +576,7 @@ bus **Kafka** del Tema 11 (`spring-kafka`), con el contrato de eventos de
 
 | Clase | Evento que publica |
 |---|---|
-| `ScorePublisher` | `score_de_ia_calculado` — el Tema 03 aplica el XP con esto |
+| `ScorePublisher` | `score_de_ia_calculado` — lo recibe Tema 05 (desde el 2026-09-13; antes Tema 03) y se lo reenvía a Tema 03, que aplica el XP |
 | `CalibracionPublisher` | `calibracion_aprobada` / `calibracion_fuera_de_tolerancia` |
 | `IngestaPublisher` | `ingesta_completada` con el reporte de calidad |
 | `IncidentePublisher` | `incidente_de_jailbreak` — el Tema 12 lo muestra al ADMIN |
@@ -585,7 +585,7 @@ bus **Kafka** del Tema 11 (`spring-kafka`), con el contrato de eventos de
 
 | Clase | Evento que consume | Qué hace |
 |---|---|---|
-| `IntentoConsumer` | `intento_cerrado` (Tema 03) | Encola una evaluación en `queue/producer/` |
+| `IntentoConsumer` | `intento_cerrado` (Tema 05, desde el 2026-09-13; antes Tema 03) | Encola una evaluación en `queue/producer/` |
 | `CursoConsumer` | `curso_archivado` (Tema 02) | Frena trabajos pendientes de ese `curso_cohorte_id` |
 | `ModeloConsumer` | `modelo_llm_cambiado` (Tema 12) | Dispara recalibración automática (RF-IA-32) |
 

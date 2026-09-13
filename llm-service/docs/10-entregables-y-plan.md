@@ -147,7 +147,7 @@ Lo que otros no pueden terminar sin nosotros:
 | Equipo | Qué les debemos | Si no lo entregamos |
 |---|---|---|
 | **Tema 02** | Endpoint de estado de calibración | 🔴 **No pueden activar ningún curso** |
-| **Tema 03 / 10** | El score de uso de IA con su desglose | No pueden aplicar el modificador de XP |
+| **Tema 05 → Tema 03 / 10** | El score de uso de IA con su desglose (desde el 2026-09-13 se lo entregamos a Tema 05, que se lo reenvía a Tema 03) | No pueden aplicar el modificador de XP |
 | **Tema 11** | Nuestros campos en el contrato de eventos | Hay que renegociar con cinco equipos |
 | **Tema 12** | Contrato de lectura: calibración, deriva, costo | *"No tienen nada demostrable"* |
 | **Front** | El componente del chat del tutor | Los desafíos prácticos no tienen asistencia |
@@ -157,7 +157,7 @@ Y lo que necesitamos de ellos:
 | Equipo | Qué necesitamos | Estado |
 |---|---|---|
 | **Tema 05** | La solución esperada de cada desafío | 🔴 Abierto |
-| **Tema 03** | El evento `intento_cerrado` que dispara la evaluación | Por acordar |
+| **Tema 05** | El evento `intento_cerrado` que dispara la evaluación (desde el 2026-09-13 lo publica Tema 05, ya no Tema 03) | Por acordar |
 | **Tema 02** | El evento `curso_archivado` | Por acordar |
 | **Tema 12** | La configuración del proveedor LLM | Por acordar quién es dueño |
 | **Product Owner** | Golden set con responsable y fecha · consulta legal del free tier | 🔴 Abierto |

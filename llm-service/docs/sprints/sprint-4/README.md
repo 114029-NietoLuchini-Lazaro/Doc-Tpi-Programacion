@@ -35,7 +35,7 @@ Integración en el ambiente compartido de la plataforma (no local), corrección 
 |---|---|
 | Despliegue en ambiente compartido | Eureka/Gateway real, no compose local |
 | Integración E2E con `courses-service` | Golden set → calibración → tutor → cierre → evaluación → apelación |
-| Integración E2E con `challenges-service` | Consumo real de `intento_cerrado.v1` desde el bus de eventos real |
+| Integración E2E con `practice-service` | Consumo real de `intento_cerrado.v1` desde el bus de eventos real (desde el 2026-09-13; antes `challenges-service`) |
 | Corrección de errores de integración | Lo que aparece siempre al pasar del fake al real en ambiente compartido |
 
 ### Hardening de seguridad

@@ -96,9 +96,13 @@ flowchart TB
     nuestro -.->|"se registra"| SD
     T02 -->|"calibracion aprobada?<br/>SINCRONO, POR EL GATEWAY"| GW
     nuestro -->|"publica: score listo"| BUS
-    BUS --> T03
+    BUS --> T05
     BUS --> T12
 ```
+
+> ⚠️ **Cambió el 2026-09-13.** El bus le entrega `score_de_ia_calculado.v1` a **Tema 05**, no a
+> Tema 03 — Tema 03 ya no tiene conexión directa con nosotros; recibe el resultado reenviado por
+> Tema 05. Detalle en [17](17-mapa-de-integracion.md) y [18](18-contratos-inter-equipos.md).
 
 ### Cola interna vs bus de eventos — no confundirlos
 
@@ -249,7 +253,7 @@ vuelven imposibles sin refactor.
 | Quién llama | Qué pregunta |
 |---|---|
 | **Tema 02 — Cursos** | *"¿La calibración de este curso-cohorte está aprobada?"* — **bloquea la activación**. Es el ejemplo textual del documento de la cátedra |
-| Tema 03 / 05 | Pedir una evaluación o corrección |
+| Tema 05 | Pedir una evaluación o corrección — desde el 2026-09-13, Tema 03 ya no llama directo |
 | Tema 12 — Backoffice | Estado de calibración, deriva, costo por curso |
 
 ### Eventos que publicamos

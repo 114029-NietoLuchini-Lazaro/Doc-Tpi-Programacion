@@ -892,6 +892,11 @@ Conceptualmente ya está resuelto ([01](01-problema-y-alcance.md) §2c) y la cá
 
 Los cuatro puntos: vos devolvés score 0-100 y nunca XP; el Tema 10 aplica PAR-05; vos exponés el contador de pendientes; **el backend implementa la degradación de RF-IA-27** (que la entrega se acepte con tu servicio caído). Ese último es el que más se cae entre equipos.
 
+> ⚠️ **Cambió el 2026-09-13.** Estos cuatro puntos siguen firmes como regla de negocio, pero el
+> tránsito ya no es directo con Tema 03: publicás `score_de_ia_calculado.v1` para **Tema 05**, que
+> es quien se lo reenvía a Tema 03 para que aplique el XP. Detalle en
+> [17 · I-04](17-mapa-de-integracion.md) y [18 §4.2/§4.3](18-contratos-inter-equipos.md).
+
 ---
 
 ### 🟡 B-6 — Tema 12: ¿quién es dueño de la config del proveedor LLM?
