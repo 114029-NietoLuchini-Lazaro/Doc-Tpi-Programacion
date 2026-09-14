@@ -1,4 +1,4 @@
-﻿# Sprint 0 — Arranque del proyecto
+# Sprint 0 — Arranque del proyecto
 
 > **Sin incremento de software.** Sprint 0 no produce código entregable: es la primera Planning ampliada donde se cierran acuerdos, se calcula la capacidad de S1 y se deja el ambiente listo.
 
