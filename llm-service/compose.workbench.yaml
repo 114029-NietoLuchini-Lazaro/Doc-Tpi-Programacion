@@ -1,5 +1,9 @@
 services:
   llm-service:
+    # Activa WorkbenchCorsConfiguration (permite http://localhost:4200) y
+    # WorkbenchDemoCatalog (identidad docente de prueba fija) — ver
+    # application-workbench.yml. No se usa en la integración real: ahí el API Gateway
+    # valida la sesión y agrega los headers M2M que el servicio exige.
     environment:
       SPRING_PROFILES_ACTIVE: workbench
 
