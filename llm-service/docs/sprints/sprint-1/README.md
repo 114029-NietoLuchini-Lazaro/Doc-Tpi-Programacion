@@ -1,7 +1,7 @@
 # Sprint 1 — Arranque en paralelo: EP-01, EP-02, EP-03, EP-04, EP-05, EP-09 completas + arranque de EP-07 y extensión de EP-09
 
 > **Estado:** Listo para Planning.
-> **Capacidad de referencia:** 581,6 h (10 devs — la cifra dev-only de [`capacidad-sprints.md`](../capacidad-sprints.md) §3; corrige el "656,8 h" de una versión anterior de este archivo, que era el total de 12 personas incluyendo soporte). **Trabajo comprometido tras el realineado del 2026-09-13 (noche):** ~706 h + varios ítems de los Hilos D/E todavía sin estimar (~121% del techo). Sprint cargado intencionalmente por decisión explícita — ver [`38`](../../38-plan-de-5-sprints.md) · Parte 3 — para adelantar EP-07 y la extensión de EP-09 mientras P1/P2/P3/P5 todavía tienen hueco, en vez de dejarlo para más adelante.
+> **Capacidad de referencia:** 581,6 h (10 devs — la cifra dev-only de [`capacidad-sprints.md`](../capacidad-sprints.md) §3; corrige el "656,8 h" de una versión anterior de este archivo, que era el total de 12 personas incluyendo soporte). **Trabajo comprometido tras el realineado del 2026-09-13 (noche):** ~720 h + varios ítems de los Hilos D/E todavía sin estimar (~124% del techo). Sprint cargado intencionalmente por decisión explícita — ver [`38`](../../38-plan-de-5-sprints.md) · Parte 3 — para adelantar EP-07 y la extensión de EP-09 mientras P1/P2/P3/P5 todavía tienen hueco, en vez de dejarlo para más adelante.
 >
 > **Corrección del mismo realineado:** el Hilo F usaba ~208 h de referencia histórica (paquete
 > `35`·S9 completo); las fichas reales de `LLM-S09-H01/H02/H03` ([`historias/ep-07/`](../../historias/ep-07/README.md))
@@ -9,11 +9,19 @@
 > El Hilo G sigue en ~208 h porque no tiene ficha propia todavía; dado que EP-07, EP-08 y EP-10
 > reales salieron en 26–41% de su referencia histórica equivalente, esa cifra probablemente
 > también está sobreestimada — no se ajusta sin ficha propia, para no inventar un segundo número.
+>
+> **Segunda corrección, la misma sesión:** el Hilo A traía dos cifras sin conciliar — 146 h (suma
+> de las 6 fichas originales, previa a auditar el código) y "~55 h" (una cifra suelta sin fuente
+> clara en la tabla). El número real y auditado, con la ampliación ya aceptada el 2026-09-12, es
+> **66 h** (52 h base + 14 h de ampliación — ver
+> [`backlog-priorizado-cierre-s1.md` · Veredicto de capacidad](../../entregas/backlog-priorizado-cierre-s1.md#veredicto-de-capacidad-actualizado-2026-09-12-catálogo-bajó-de-12h-a-8h-al-descartar-su-t2)
+> y [`s1-cierre.md`](s1-cierre.md)). Se corrige acá y en [`s1.md`](s1.md)/[`s1-historias.md`](s1-historias.md).
 
 - **Registro de planning:** [`s1.md`](s1.md)
 - **Cierre de huecos auditados:** [`s1-cierre.md`](s1-cierre.md)
 - **Vista de historias completa:** [`s1-historias.md`](s1-historias.md)
 - **Historias explicadas sin jerga:** [`s1-explicado.md`](s1-explicado.md)
+- **Backlog priorizado (orden de trabajo):** [`backlog-priorizado-s1.md`](backlog-priorizado-s1.md)
 
 ## Objetivo
 
@@ -21,7 +29,7 @@
 
 ## HU comprometidas por hilo (581,6 h de referencia)
 
-### Hilo A — Plataforma (P1) · ~55 h
+### Hilo A — Plataforma (P1) · ~66 h (real, auditado — ver nota de corrección arriba)
 
 | ID | Título | Tipo | Épica | Ficha |
 |---|---|---|---|---|
@@ -96,14 +104,14 @@
 
 | Hilo | HU/Tareas | h estimadas |
 |---|---|---|
-| A — Plataforma (P1) | 6 | ~55 |
+| A — Plataforma (P1) | 6 | 66 (real, ver nota) |
 | B — AI Gateway (P2) | 2 | ~52 |
 | C — Tutor y RAG (P3) | 5 | ~74–79 + 2 sin estimar individualmente |
 | D — Calibración (P4) | 4 | ~73–81 + 1 a estimar (EP04-H02) |
 | E — Golden Set + Eval base (P5) | 8 | ~101 + 3 a estimar (rúbrica, golden set versionado, EP06-H02) |
 | F — EP-07 primera mitad (P1+P2) | 3 | 86 (real) |
 | G — EP-09 extensión, ingesta visual (P3+P5) | 2 | ~208 (referencia histórica, sin ficha, probablemente sobreestimada) |
-| **Total** | **30** | **~660–681 h + ~9 ítems a estimar/sin ficha, de 581,6 de referencia (~114–117%)** |
+| **Total** | **30** | **~674–695 h + ~9 ítems a estimar/sin ficha, de 581,6 de referencia (~116–120%)** *(+14 h por la corrección de Hilo A)* |
 
 > Las épicas **EP-01, EP-02, EP-03, EP-04, EP-05 y EP-09 (base)** quedan **completamente cerradas** al final de S1. EP-06 queda parcialmente abierta (solo la base). **EP-07 y la extensión de EP-09 arrancan en S1 y terminan en S2** — no cierran del todo en este sprint.
 >
