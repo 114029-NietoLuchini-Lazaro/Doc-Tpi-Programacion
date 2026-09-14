@@ -93,14 +93,12 @@ describe('CalibrationsPage', () => {
     comp.runForm.setValue({
       rubricVersionId: 'rub-1',
       goldenSetVersionId: 'gs-1',
-      modelDeploymentId: 'mod-1',
     });
     fixture.detectChanges();
 
     // GS-0541: Resumen previo visible
     expect(comp.selectedRubric()?.name).toBe('Rúbrica estándar');
     expect(comp.selectedGoldenSet()?.cases.length).toBe(3);
-    expect(comp.selectedModel()?.modelId).toBe('gpt-4o-mini');
 
     const previewText = fixture.nativeElement.querySelector('.preview-box').textContent;
     expect(previewText).toContain('Rúbrica estándar (versión inmutable v1)');
@@ -115,7 +113,6 @@ describe('CalibrationsPage', () => {
     expect(createReq.request.body).toEqual({
       rubricVersionId: 'rub-1',
       goldenSetVersionId: 'gs-1',
-      modelDeploymentId: 'mod-1',
     });
     createReq.flush({
       id: 'run-new-1',
@@ -136,7 +133,6 @@ describe('CalibrationsPage', () => {
         progress: 0,
         rubricVersionId: 'rub-1',
         goldenSetVersionId: 'gs-1',
-        modelDeploymentId: 'mod-1',
         reason: 'MANUAL',
         createdAt: '2026-09-07T10:00:00Z',
       }],

@@ -4,9 +4,12 @@ import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.AuditRepository;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationReproducibilityRepository;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationRunRepository;
 import ar.edu.utn.frc.tup.piv.llm.security.CallerIdentity;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.security.SecureRandom;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -14,20 +17,30 @@ public class CalibrationRunService {
   private final CalibrationRunRepository runs;
   private final CalibrationReproducibilityRepository artifacts;
   private final AuditRepository audit;
+  private final ObjectMapper json;
+  private final SecureRandom random = new SecureRandom();
 
+  @Autowired
   public CalibrationRunService(CalibrationRunRepository runs,
-      CalibrationReproducibilityRepository artifacts, AuditRepository audit) {
+      CalibrationReproducibilityRepository artifacts, AuditRepository audit, ObjectMapper json) {
     this.runs = runs;
     this.artifacts = artifacts;
     this.audit = audit;
+    this.json = json;
+  }
+  /** Test/backwards-compatible constructor. Spring uses the ObjectMapper-aware constructor. */
+  public CalibrationRunService(CalibrationRunRepository runs,
+      CalibrationReproducibilityRepository artifacts, AuditRepository audit) {
+    this(runs, artifacts, audit, new ObjectMapper());
   }
 
   @Transactional
   public CalibrationRunRepository.Run enqueue(UUID courseId, UUID rubricVersionId, UUID goldenSetVersionId,
       UUID modelDeploymentId, UUID idempotencyKey, CallerIdentity actor) {
-    var run = runs.create(courseId, rubricVersionId, goldenSetVersionId, modelDeploymentId,
-        idempotencyKey, actor.delegatedUserId());
-    artifacts.snapshot(run.id(), JsonNodeFactory.instance.objectNode(), "");
+    var created = runs.createStability(courseId, rubricVersionId, goldenSetVersionId, modelDeploymentId,
+        idempotencyKey, actor.delegatedUserId(), List.of(random.nextLong(), random.nextLong(), random.nextLong()));
+    var run = created.getFirst();
+    for (var item : created) artifacts.snapshot(item.id(), json.valueToTree(java.util.Map.of("policyVersion", "v1", "seed", item.id().equals(run.id()) ? "stored" : "stored")), "");
     audit.record("calibration.queued", "calibration-run", run.id(), actor,
         "{\"courseId\":\"" + courseId + "\",\"rubricVersionId\":\"" + rubricVersionId
             + "\",\"goldenSetVersionId\":\"" + goldenSetVersionId
@@ -45,4 +58,5 @@ public class CalibrationRunService {
   public java.util.List<CalibrationRunRepository.Run> list(UUID courseId) {
     return runs.list(courseId);
   }
+  @Transactional(readOnly = true) public java.util.List<CalibrationRunRepository.StabilityGroup> stabilityGroups(UUID courseId) { return runs.stabilityGroups(courseId); }
 }

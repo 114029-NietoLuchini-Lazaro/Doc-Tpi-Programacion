@@ -19,20 +19,23 @@ import org.springframework.stereotype.Service;
 @Service
 public class RealCalibrationExecutor {
   private final CalibrationRunRepository runs; private final ProviderCredentialRepository usage;
-  private final ProviderLlmGateway gateway; private final EncryptedSecretService crypto; private final ObjectMapper json;
-  public RealCalibrationExecutor(CalibrationRunRepository runs, ProviderCredentialRepository usage, ProviderLlmGateway gateway, EncryptedSecretService crypto, ObjectMapper json) { this.runs=runs;this.usage=usage;this.gateway=gateway;this.crypto=crypto;this.json=json; }
+  private final ProviderLlmGateway gateway; private final EncryptedSecretService crypto; private final ObjectMapper json; private final CalibrationInferencePolicy policy;
+  public RealCalibrationExecutor(CalibrationRunRepository runs, ProviderCredentialRepository usage, ProviderLlmGateway gateway, EncryptedSecretService crypto, ObjectMapper json, CalibrationInferencePolicy policy) { this.runs=runs;this.usage=usage;this.gateway=gateway;this.crypto=crypto;this.json=json;this.policy=policy; }
   public void execute(UUID runId) {
     try {
       var execution=runs.execution(runId); List<CalibrationMetrics.CaseScores> all=new ArrayList<>(); int total=execution.cases().size(); int completed=0;
       String secret=crypto.decrypt(execution.deployment().encryptedSecret(),execution.deployment().nonce());
+      var settings=policy.resolve(ProviderLlmGateway.Provider.valueOf(execution.deployment().provider()), execution.deployment().baseUrl(), execution.seed() == null ? 0L : execution.seed());
+      String fingerprint=null;
       for(var item:execution.cases()) {
-        var reply=gateway.chat(ProviderLlmGateway.Provider.valueOf(execution.deployment().provider()),execution.deployment().baseUrl(),secret,execution.deployment().modelId(),prompt(execution.rubric(),item));
+        var reply=gateway.chat(ProviderLlmGateway.Provider.valueOf(execution.deployment().provider()),execution.deployment().baseUrl(),secret,execution.deployment().modelId(),prompt(execution.rubric(),item),settings);
         Map<Dimension,Integer> model=parseScores(reply.text());
+        if (reply.providerFingerprint()!=null) fingerprint=reply.providerFingerprint();
         runs.saveCase(runId,item,model,execution.weights()); usage.recordUsage(execution.deployment().id(),"EVALUATION",reply.inputTokens(),reply.outputTokens());
         all.add(new CalibrationMetrics.CaseScores(item.humanScores(),model)); runs.progress(runId,++completed*100/total);
       }
-      var metrics=CalibrationMetrics.assess(all,execution.weights()); runs.finish(runId,metrics.passed(),metrics.maeFinal(),metrics.maxIndividualError());
-    } catch (Exception failure) { var diagnostic=diagnostic(failure); runs.fail(runId,diagnostic.code(),diagnostic.detail()); }
+      var metrics=CalibrationMetrics.assess(all,execution.weights()); runs.recordInference(runId, json.writeValueAsString(settings.auditView()), fingerprint); runs.finish(runId,metrics.passed(),metrics.maeFinal(),metrics.maxIndividualError()); runs.refreshStability(runId);
+    } catch (Exception failure) { var diagnostic=diagnostic(failure); runs.fail(runId,diagnostic.code(),diagnostic.detail()); runs.refreshStability(runId); }
   }
   private String prompt(String rubric, CalibrationRunRepository.Case item) {
     return "Actuás como evaluador pedagógico. Evaluá la conversación y el contexto con esta rúbrica:\n%s\nConversación: %s\nContexto: %s\nRespondé exclusivamente JSON, sin Markdown, con las cinco claves AUTONOMY, CLARITY, PROGRESSION, COMPLIANCE y EFFICIENCY. Cada valor debe ser un entero de 0 a 100.".formatted(rubric,item.transcript(),item.challengeContext());

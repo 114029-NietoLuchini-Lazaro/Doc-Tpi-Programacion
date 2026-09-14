@@ -4,6 +4,7 @@ import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.AuditRepository;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationReproducibilityRepository;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationRunRepository;
 import ar.edu.utn.frc.tup.piv.llm.security.CallerIdentity;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -27,8 +28,8 @@ class CalibrationRunServiceTest {
     UUID idempotencyKey = UUID.randomUUID();
     UUID runId = UUID.randomUUID();
     CallerIdentity actor = new CallerIdentity("courses-service", UUID.randomUUID(), "req-16", "trace-16");
-    when(runs.create(courseId, rubricVersionId, goldenSetVersionId, modelDeploymentId,
-        idempotencyKey, actor.delegatedUserId())).thenReturn(new CalibrationRunRepository.Run(runId, "QUEUED", 0));
+    when(runs.createStability(eq(courseId), eq(rubricVersionId), eq(goldenSetVersionId), eq(modelDeploymentId),
+        eq(idempotencyKey), eq(actor.delegatedUserId()), any())).thenReturn(List.of(new CalibrationRunRepository.Run(runId, "QUEUED", 0)));
 
     new CalibrationRunService(runs, artifacts, audit).enqueue(courseId, rubricVersionId,
         goldenSetVersionId, modelDeploymentId, idempotencyKey, actor);

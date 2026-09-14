@@ -28,6 +28,10 @@ export class CalibrationsPage implements OnDestroy {
     () => this.courseId() ? `/api/llm/courses/${this.courseId()}/calibrations` : undefined,
     { defaultValue: { items: [] } }
   );
+  readonly stabilityGroups = httpResource<StabilityGroupPage>(
+    () => this.courseId() ? `/api/llm/courses/${this.courseId()}/calibrations/stability-groups` : undefined,
+    { defaultValue: { items: [] } }
+  );
 
   readonly rubrics = httpResource<{ items: RubricItem[] }>(
     () => this.courseId() ? `/api/llm/courses/${this.courseId()}/rubrics` : undefined,
@@ -72,6 +76,8 @@ export class CalibrationsPage implements OnDestroy {
   readonly runningRuns = computed(() =>
     this.calibrations.value().items.filter(r => r.state === 'QUEUED' || r.state === 'RUNNING')
   );
+  readonly runningGroups = computed(() => this.stabilityGroups.value().items.filter(group => group.state === 'RUNNING'));
+  readonly stableRunIds = computed(() => new Set(this.stabilityGroups.value().items.filter(group => group.state === 'STABLE_PASSED').flatMap(group => group.runs.map(run => run.id))));
 
   readonly selectedRunId = signal<string>('');
 
@@ -143,9 +149,10 @@ export class CalibrationsPage implements OnDestroy {
       finalize(() => this.launching.set(false))
     ).subscribe(created => {
       if (created) {
-        this.successBanner.set('Corrida de calibración encolada exitosamente.');
+        this.successBanner.set('Calibración de estabilidad iniciada: se ejecutarán tres corridas.');
         this.selectedRunId.set(created.id);
         this.calibrations.reload();
+        this.stabilityGroups.reload();
         this.startRefreshing();
       }
     });
@@ -157,7 +164,8 @@ export class CalibrationsPage implements OnDestroy {
     this.stopRefreshing();
     this.refreshTimer = setInterval(() => {
       this.calibrations.reload();
-      if (!this.runningRuns().length) this.stopRefreshing();
+      this.stabilityGroups.reload();
+      if (!this.runningGroups().length) this.stopRefreshing();
     }, 2_000);
   }
 
@@ -170,6 +178,7 @@ export class CalibrationsPage implements OnDestroy {
     this.selectedRunId.set(id);
     this.cancelActivationPreview();
   }
+  isStableRun(run: CalibrationRunItem): boolean { return this.stableRunIds().has(run.id); }
 
   startActivationPreview(run: CalibrationRunItem) {
     this.errorBanner.set('');
@@ -240,6 +249,8 @@ export class CalibrationsPage implements OnDestroy {
 }
 
 interface CalibrationPageResponse { items: CalibrationRunItem[]; }
+interface StabilityGroupPage { items: StabilityGroup[]; }
+interface StabilityGroup { id: string; state: 'RUNNING' | 'STABLE_PASSED' | 'FAILED'; maeSpread?: number | null; createdAt: string; finishedAt?: string | null; runs: CalibrationRunItem[]; }
 interface CalibrationRunItem {
   id: string;
   state: string;

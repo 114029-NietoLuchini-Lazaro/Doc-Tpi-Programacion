@@ -31,8 +31,8 @@
 
 <!-- GS-0540 & GS-0541: Crear ejecución con resumen previo -->
 <section class="card editor" aria-labelledby="new-run-heading">
-  <h2 id="new-run-heading">Nueva ejecución de calibración</h2>
-  <p class="hint">Seleccioná las versiones publicadas. El modelo activo se informa en tiempo real y no se elige desde este formulario.</p>
+  <h2 id="new-run-heading">Nueva calibración de estabilidad</h2>
+  <p class="hint">La ejecución realiza tres corridas con política institucional para verificar estabilidad. El modelo candidato se informa en tiempo real.</p>
 
   <form [formGroup]="runForm" (ngSubmit)="startCalibration()" novalidate>
     <div class="form-grid">
@@ -89,7 +89,7 @@
         class="save-button"
         [disabled]="runForm.invalid || launching() || !selectedRubric() || !selectedGoldenSet() || !calibrationTarget.hasValue()"
       >
-        {{ launching() ? 'Iniciando calibración…' : 'Lanzar calibración PAR-14' }}
+        {{ launching() ? 'Iniciando calibración…' : 'Lanzar calibración de estabilidad (3 corridas)' }}
       </button>
     </div>
   </form>
@@ -175,10 +175,12 @@
       <div class="activation-action">
         @if (activeCalibration.value()?.calibrationRunId === run.id) {
           <p class="saved">Esta calibración es la que actualmente se encuentra ACTIVA para el curso.</p>
-        } @else {
+        } @else if (isStableRun(run)) {
           <button type="button" class="save-button" (click)="startActivationPreview(run)">
             Activar esta calibración para el curso
           </button>
+        } @else {
+          <p class="hint">Esta corrida aprobó PAR-14, pero todavía no pertenece a un grupo de estabilidad aprobado.</p>
         }
       </div>
     }
@@ -235,7 +237,29 @@
   </section>
 }
 
-<!-- GS-0546: Historial comparable y motivo de calibración -->
+<section class="card" aria-labelledby="stability-heading">
+  <h2 id="stability-heading">Estabilidad de calibraciones</h2>
+  <p class="hint">Una calibración es activable sólo si las tres corridas aprueban PAR-14 y su dispersión MAE es ≤ 1.00.</p>
+  @if (stabilityGroups.isLoading()) {
+    <p class="loading">Cargando grupos de estabilidad…</p>
+  } @else if (!stabilityGroups.value().items.length) {
+    <p class="hint">No hay grupos de estabilidad registrados.</p>
+  } @else {
+    @for (group of stabilityGroups.value().items; track group.id) {
+      <article class="run-card" [class.running]="group.state === 'RUNNING'">
+        <div class="run-header"><strong>Grupo <code>{{ shortId(group.id) }}</code></strong><span class="state" [class.published]="group.state === 'STABLE_PASSED'" [class.state-failed]="group.state === 'FAILED'">{{ group.state === 'STABLE_PASSED' ? 'ESTABLE Y APROBADA' : group.state === 'FAILED' ? 'RECHAZADA' : 'EN EJECUCIÓN' }}</span></div>
+        <p class="hint">Dispersión MAE: {{ group.maeSpread !== null && group.maeSpread !== undefined ? (group.maeSpread | number:'1.2-2') : 'pendiente' }} / 1.00.</p>
+        <ul class="preview-list">
+          @for (run of group.runs; track run.id) {
+            <li>Corrida {{ $index + 1 }}: {{ run.state }} · MAE {{ run.maeFinal !== null && run.maeFinal !== undefined ? (run.maeFinal | number:'1.2-2') : 'pendiente' }} · {{ run.progress }}%</li>
+          }
+        </ul>
+      </article>
+    }
+  }
+</section>
+
+<!-- GS-0546: Historial legacy comparable y motivo de calibración -->
 <section class="card" aria-labelledby="history-heading">
   <h2 id="history-heading">Historial de calibraciones</h2>
   @if (calibrations.isLoading()) {
