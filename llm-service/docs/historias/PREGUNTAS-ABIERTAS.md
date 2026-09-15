@@ -13,38 +13,51 @@
 
 ## Transversales (afectan a varias épicas / a todo el backlog)
 
-- [ ] **¿Ya ocurrió el Sprint 0 formal** (Planning Poker, historia canónica elegida y estimada)?
-  Varias fichas siguen con el placeholder "Referente de producto: a nombrar en Sprint 0" pese a
-  que ya hay commits de sprints avanzados (p. ej. T7 en EP-04). Si ya pasó, falta volcar el
-  resultado en las fichas; si no pasó, el equipo viene estimando/implementando sin ese paso.
+- [x] ✅ **2026-09-13 [Sprint 0]** ¿Ya ocurrió el Sprint 0 formal (Planning Poker, historia
+  canónica elegida y estimada)? **Resuelto:** sí — los DoR/DoD se leyeron y aceptaron por el
+  equipo en reunión, y las épicas EP-01/EP-03 junto con las historias de S1 ya quedaron cargadas
+  en Taiga (evidencia de que el Sprint 0 se ejecutó). Acción residual, no bloqueante: el acta
+  [`../sprints/sprint-0/sprint-0.md`](../sprints/sprint-0/sprint-0.md) sigue con valores por
+  volcar (puntos de la historia canónica, permalinks de Taiga, cierre firmado por
+  referente/facilitador).
 - [ ] **Nombrar al "referente de producto"** en todas las fichas que todavía dicen *"a nombrar en
-  Sprint 0"* (EP-01 H01–H07, EP-02 H01–H03, EP-03 H01–H05 y las que se sumen).
+  Sprint 0"* (EP-01 H01–H07, EP-02 H01–H03, EP-03 H01–H05 y las que se sumen). Es un **rol único
+  del equipo** (voz del cliente — no un PO externo), no un nombre por historia.
 
 ## EP-01 · Plataforma, contratos e integración
 
-- [ ] **[EP-01·H01]** ¿El ADR de convenciones técnicas ya se redactó y mergeó en algún commit
-  posterior, o el hueco reportado en `estado-implementacion/ep-01/h01.md` (🔴 "no existe ningún
-  ADR") sigue abierto? Es bloqueante por diseño de la propia ficha.
-- [ ] **[EP-01·H01]** ¿CA4/CA5 (rechazar imports de framework en `domain`, variables de entorno no
-  documentadas) se hacen cumplir con ArchUnit automatizado o con disciplina de revisión manual?
-  La ficha no lo fija y no hay evidencia de cuál es la fuente real hoy.
-- [ ] **[EP-01·H03]** ¿El código nunca devuelve `401` (todo colapsa a `403`,
-  `estado-implementacion/ep-01/h03.md`) es una decisión de seguridad deliberada (no revelar si el
-  problema es de autenticación o autorización) o un hueco de implementación? Define si se corrige
-  el código o se reescribe CA4/Escenario 2 de [h03.md](ep-01/h03.md).
-- [ ] **[EP-01·H03]** ¿Existe hoy un pipeline de CI real para `llm-service` (CA6)? La auditoría de
-  código no encontró workflow en `.github/workflows/`.
-- [ ] **[EP-01·H05]** ¿Con qué herramienta se va a levantar el mock del golden set con "un solo
-  comando" (CA2)? Propuesto: Prism sobre el OpenAPI publicado — falta confirmarlo y ejecutarlo.
-- [ ] **[EP-01·H05]** ¿La adenda S1 del contrato ya está revisada y firmada por `admin-service`, o
-  sigue pendiente?
-- [ ] **[EP-01·H06]** ¿Qué herramienta de cobertura (JaCoCo u otra) se usa para el gate de CI
-  (CA2/CA5)? No hay evidencia de que se haya decidido.
+- [x] ✅ **2026-09-13 [EP-01·H01]** ¿El ADR de convenciones técnicas ya se redactó y mergeó, o sigue
+  el hueco de `estado-implementacion/ep-01/h01.md` (🔴 "no existe ningún ADR")? **Resuelto:** los
+  ADRs ya están actualizados, charlados y aceptados por el equipo en la última reunión.
+  **No se implementa ArchUnit** (CA4/CA5: límite del `domain` y env-vars documentadas): se cumple
+  con la **convención interna + revisión manual en PR**.
+- [x] ✅ **2026-09-13 [EP-01·H03]** ¿El colapso de todo a `403` (nunca `401`,
+  `estado-implementacion/ep-01/h03.md`) es decisión deliberada o hueco? **Resuelto:** la ficha
+  [G03](ep-01/h03.md) es la fuente y está publicada en Taiga: token sin scope → `401`, identidad
+  delegada falsificada/malformada → `403`. El comportamiento actual (todo `403`) es un **hueco de
+  implementación a corregir en el código**; no se reescribe CA4/Escenario 2.
+- [ ] **[EP-01·H03]** ¿Existe hoy un pipeline de CI real para `llm-service` (CA6)?
+  **2026-09-13:** la herramienta de CI **todavía no está definida** por el equipo; la auditoría no
+  encontró workflow en `.github/workflows/`.
+- [ ] **[EP-01·H05]** ¿Con qué herramienta se levanta el mock del golden set "con un solo comando"
+  (CA2)? **2026-09-13:** **Prism se descarta** (la sección "Estrategia de autonomía" salió de H05;
+  la ficha local `ep-01/h05.md:97-101` aún la referencia — alinear cuando se edite la ficha).
+  El stack de testing queda en **JUnit 5 + Mockito** (confirmado en 02/23/26). La herramienta del
+  mock del contrato standalone queda **por definir** (candidatas: WireMock / Mockoon).
+- [x] ✅ **2026-09-13 [EP-01·H05]** ¿La adenda S1 del contrato ya está revisada y firmada por
+  `admin-service`? **Resuelto:** sí — `admin-service` **aprueba la adenda y los campos**.
+- [x] ✅ **2026-09-13 [EP-01·H06]** ¿Qué herramienta de cobertura se usa para el gate de CI
+  (CA2/CA5)? **Resuelto:** **JaCoCo**, con umbral obligatorio del **95 %** según
+  [24](../24-convenciones-cobertura.md) (toda mención a 90–95 % queda superada por el doc).
 - [ ] **[EP-01·H06]** ¿Existe algún borrador de la guía de demo paso a paso, o hay que escribirla
-  desde cero?
+  desde cero? **2026-09-13:** no se identificó borrador; **H06 ya está publicada en Taiga** y en
+  proceso de asignación. Al implementarla, decidir si hay borrador previo o se escribe desde cero
+  (CA4 sigue sin evidencia).
 - [ ] **[EP-01]** Falta una historia futura (propuesta como [H07](ep-01/h07.md), pendiente de alta
-  en `35`) que cubra el CA de épica "publica/consume eventos sin duplicarlos" — confirmar en qué
-  sprint de EP-01 (S3/S6/S10/S19) entra.
+  en `35`) que cubra el CA de épica "publica/consume eventos sin duplicarlos".
+  **2026-09-13:** referencia **actualizada al plan vigente de 5 sprints** ([38](../38-plan-de-5-sprints.md);
+  los sprints S3/S6/S10/S19 eran del horizonte viejo). No se subió a Taiga con las historias de S1;
+  **en qué sprint entra queda a consultar con el grupo**.
 
 ## EP-02 · AI Gateway, modelos y resiliencia
 
@@ -55,22 +68,29 @@
     cátedra ([38 · Parte 1](../38-plan-de-5-sprints.md)) — prioridad ya confirmada como Must, no
     hace falta re-confirmarla.
 - [ ] **[EP-02·H02]** ¿Groq es la elección definitiva de proveedor real, o solo la referencia
-  heredada del código de ejemplo? El ADR (EP-01·H01) debería nombrarlo si ya es firme.
+  heredada del código de ejemplo? **2026-09-13:** **Groq NO es el proveedor definido** — todavía
+  hay propuestas de proveedores sin fijar del todo; en total se usarían/usarán
+  **~4 proveedores o modelos distintos**. El ADR (EP-01·H01) debería nombrar la selección firme
+  cuando se cierre.
 - [ ] **[EP-02]** Falta una historia (propuesta como [H03](ep-02/h03.md), pendiente de alta en
   `35`) que cubra la restricción de épica de reintentos/circuit breaker — H01/H02 solo resuelven
   el timeout de una llamada individual.
 
 ## EP-03 · Golden set y referencia humana
 
-- [ ] **[EP-03·H02]** La designación de "historia canónica" quedó sobre una ficha (H02, ex-H06)
-  cuyo código real fue reemplazado por H05 (`605f381`). ¿Se estima Fibonacci contra H02 (tal como
-  está documentada) o contra H05 (el código vigente)? Son tamaños de esfuerzo distintos.
-- [ ] **[EP-03·H03]** ¿La pantalla de `llm-workbench` ya se migró para consumir los endpoints de
-  H04/H05 (`/api/llm/courses/{courseId}/...`), o sigue apuntando al contrato viejo de H01/H02?
-  Ninguna ficha vigente lo confirma.
+- [x] ✅ **2026-09-13 [EP-03·H02]** La designación de "historia canónica" quedó sobre una ficha (H02, ex-H06)
+  cuyo código real fue reemplazado por H05 (`605f381`). **Resuelto:** se estima Fibonacci contra **H05**
+  (código vigente), no contra H02 — son tamaños de esfuerzo distintos.
+- [x] ✅ **2026-09-13 [EP-03·H03]** ¿La pantalla de `llm-workbench` ya se migró para consumir los endpoints de
+  H04/H05 (`/api/llm/courses/{courseId}/...`)? **Resuelto:** sí — consume exclusivamente los endpoints
+  nuevos course-scoped (`golden-sets`, `golden-set-imports`, `synthetic-golden-set-cases`,
+  `cases/publish/next-version`) y no usa el contrato viejo de H01/H02 (las rutas `golden-sets` del router
+  son placeholder sin uso).
 - [ ] **[EP-03·H04]** *(ya señalada en la propia ficha)* ¿El invariante de pesos 30/25/20/15/10
   ([23 §4.2](../23-plan-construccion-producto-llm.md)) aplica solo a la rúbrica base de
-  plataforma, o también a cada rúbrica por curso? El código hoy solo exige sumar 100.
+  plataforma, o también a cada rúbrica por curso? **Hallazgo 2026-09-13:** `RubricValidator` solo
+  exige 5 dimensiones únicas con peso en (0,100] y suma 100; el patrón fijo vive solo en la seed de
+  base (V1: 30/25/20/15/10), ya que V2 permite pesos positivos ≤100 libres por curso.
 - [ ] **[EP-03·H05]** *(ya señalada en la propia ficha)* ¿Quién crea/publica la base de plataforma
   que `copyFromPublishedBase` necesita leer? Hoy no existe ningún endpoint que la genere.
 - [x] ✅ **2026-09-13 [EP-03]** Faltaba la historia de **doble puntuación independiente y
@@ -78,9 +98,10 @@
   [`ep-03/h06.md`](ep-03/h06.md), pendiente de alta en `35` y de estimación en Refinamiento.
 - [ ] **[EP-03]** Ningún CA de H01/H02/H05 mide el KPI de épica "las consultas se resuelven en
   menos de 100 ms" — todas dicen "baja latencia" en prosa, sin umbral verificable.
-- [ ] **[EP-03]** `synthetic-golden-set` y `eligible-interactions-golden-set` (código ya
-  confirmado dentro de EP-03, ambos 🔴 placeholder) no tienen ficha de historia redactada —
-  deuda documental, no solo de código.
+- [ ] **[EP-03]** `synthetic-golden-set` y `eligible-interactions-golden-set` no tienen ficha de historia
+  redactada. **Confirmado 2026-09-13:** el código **sí existe** (controllers + servicios placeholder +
+  tests; el workbench consume `synthetic-golden-set-cases`) y ambos figuran 🔴 placeholder en
+  `estado-implementacion/ep-03/` — falta solo la ficha HU (deuda documental, no de código).
 
 ## EP-04 · Calibración y gobernanza del modelo
 
@@ -88,28 +109,35 @@
 > "⚠️ Diferencia de alcance con la épica" y H02 es la respuesta propuesta) — menos preguntas
 > nuevas que en otras épicas, quedan las que siguen sin decisión.
 
-- [ ] **[EP-04·H01]** El archivo mezcla el checklist de CA/Escenarios BDD (que el template exige
+- [x] ✅ **2026-09-13 [EP-04·H01]** El archivo mezcla el checklist de CA/Escenarios BDD (que el template exige
   dejar como `- [ ]` sin marcar y sin código inline para pegar en Taiga) con anotaciones de
-  estado reales (`[x]`, 🟢, nombres de test entre backticks). Antes de pegar esta ficha en Taiga
-  hay que separar "criterio" de "evidencia de que ya se cumplió" — si no, el renderer de Taiga en
-  modo lectura descoloca las tildas (regla ya escrita en el propio template).
-- [ ] **[EP-04·H02]** ¿Se reutiliza `calibration_runs` con `course_id` nulo para representar
-  "plataforma", o conviene una tabla separada? Decisión de diseño de datos abierta, ya señalada
-  en la propia ficha.
+  estado reales (`[x]`, 🟢, nombres de test entre backticks). **Resuelto:** la separación de
+  "criterio" vs "evidencia de que ya se cumplió" se hace **al momento de pegar la ficha en Taiga**
+  — la ficha `h01.md` no se modifica (regla ya escrita en el propio template).
+- [x] ✅ **2026-09-13 [EP-04·H02]** ¿Se reutiliza `calibration_runs` con `course_id` nulo para representar
+  "plataforma", o conviene una tabla separada? **Resuelto:** tabla **separada**
+  (`platform_calibration_runs`) — `calibration_runs` hoy exige `course_id` y `requireTeacher`, y
+  `active_calibrations` usa el curso como clave. Decisión registrada; falta reflejar la nota en
+  `h02.md` (Impacto en los datos) cuando se trabaje esa ficha.
 - [ ] **[EP-04·H03]** El tiempo límite de vencimiento por inactividad no tiene valor por defecto
   — a definir con el Product Owner en Refinamiento (la ficha ya lo marca, recomienda arrancar
-  conservador).
+  conservador). **Nota 2026-09-13:** queda registrado como default propuesto **60 días**,
+  conservador, hasta tener datos reales de uso.
 - [ ] **[EP-04·H03] — hallazgo nuevo de esta auditoría:** la épica exige explícitamente
   *"cambiar de modelo dispara una recalibración con alertas"*, pero H03 solo dispara vencimiento
   por nueva rúbrica, nuevo golden set o tiempo límite — **cambiar el despliegue de modelo no está
-  en la lista de disparadores de vencimiento**. Falta agregarlo como CA/escenario o confirmar que
-  se cubre en otro lado.
-- [ ] **[EP-04·H04]** ¿Qué canal usa el evento de "curso con evaluaciones frenadas" — el mismo bus
-  de `calibracion_fuera_de_tolerancia.v1` u otro propio? La ficha lo deja explícitamente abierto.
+  en la lista de disparadores de vencimiento**. **Decisión 2026-09-13:** agregarlo como **CA +
+  Escenario 4** en `h03.md` (cambio de despliegue de modelo vence la calibración activa con
+  motivo registrado) — pendiente de aplicar cuando se trabaje esa ficha; acá queda registrado.
+- [x] ✅ **2026-09-13 [EP-04·H04]** ¿Qué canal usa el evento de "curso con evaluaciones frenadas" — el mismo bus
+  de `calibracion_fuera_de_tolerancia.v1` u otro propio? **Resuelto:** topic **propio**,
+  `evaluaciones_frenadas_por_calibracion.v1` (convención del bus: un evento = un topic; correlación
+  en headers de Kafka, publicación por outbox). Documentar en el AsyncAPI al implementar.
 - [ ] **[EP-04] — hallazgo nuevo:** el KPI de épica *"toda habilitación o cambio de modelo queda
   registrada de forma permanente"* no tiene ningún CA dedicado en H01/H02 que verifique el
   registro de auditoría de habilitación/cambio de modelo en sí (más allá del audit log genérico
-  de H04·EP-01).
+  de H04·EP-01). **Decisión 2026-09-13:** agregar un **CA + escenario en H02** (qué modelo, motivo,
+  quién, cuándo) — pendiente de aplicar en la ficha; acá queda registrado.
 
 ---
 
@@ -155,8 +183,9 @@
   `POST .../appeals/{appealId}/resolve` para que el docente confirme la nota sin cambiarla
   (`UPHELD`) — mismo patrón que [`EP-08·H04`](ep-08/h04.md). **H04** referencia la corrección.
   Nuevos CA6–CA8/Escenarios 5–6 en H05.
-- [ ] **[EP-06]** Ninguna pareja líder confirmada en el catálogo para EP-06 (todas las fichas
-  dicen "a asignar").
+- [x] ✅ **2026-09-13 [EP-06]** Ninguna pareja líder confirmada en el catálogo para EP-06 (todas las fichas
+  dicen "a asignar"). **Resuelto:** el catálogo asigna P4 + P1 a EP-06; H04/H05 quedaron con P4 y H06 con P5.
+  H01–H03 de las fichas siguen "a asignar" (inconsistencia interna a limpiar al asignar la pareja).
 - [ ] **[EP-06·H01]** Decisión de diseño abierta: ¿la evaluación "pendiente por intento recién
   cerrado, no arrancada" (EP-06) es un estado distinto o el mismo que "pendiente por falta de
   calibración" (EP-04, `pending_evaluations`)? Ya señalada en la propia ficha como riesgo.
@@ -201,9 +230,11 @@
 - [ ] **[EP-07·H01]** Depende de `LLM-S03-H11` (proveedor real conectado, ex-numeración de
   `EP-02·H02`) — coherente, pero confirmar que la referencia se actualice al ID vigente
   `LLM-EP02-H02`.
-- [ ] **[EP-07·H01]** Riesgo ya anotado en la ficha: el costo es **estimado** (tokens reportados ×
+- [x] ✅ **2026-09-13 [EP-07·H01]** Riesgo ya anotado en la ficha: el costo es **estimado** (tokens reportados ×
   precio configurado), no viene de facturación real del proveedor — aclarar esto en cualquier
-  demo para no generar expectativas de precisión contable.
+  demo para no generar expectativas de precisión contable. **Resuelto:** la ficha ya lo cubre en
+  Notas (`h01.md`, "No se accede a APIs de facturación") y en Riesgos (mitigación: documentar que
+  es estimado); resta solo reiterarlo en la demo.
 
 ---
 
