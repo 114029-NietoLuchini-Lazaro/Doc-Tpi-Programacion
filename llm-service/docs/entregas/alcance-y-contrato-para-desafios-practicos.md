@@ -15,38 +15,29 @@
 
 ## 0. Quiénes somos y qué relación tenemos con ustedes
 
-Somos el equipo de IA (Tema 07). Con Desafíos Prácticos tenemos **tres puntos de contacto** — el
-tercero se agregó con una decisión de diseño del 2026-09-13 que centraliza en ustedes todo el
-intercambio del evaluador con el Motor de Desafíos (Tema 03), que antes era directo entre
+Somos el equipo de IA (Tema 07). Con Desafíos Prácticos tenemos **tres puntos de contacto** — el tercero se agregó con una decisión de diseño del 2026-09-13 que centraliza en ustedes todo el intercambio del evaluador con el Motor de Desafíos (Tema 03), que antes era directo entre
 nosotros y Tema 03:
 
 1. **Ustedes nos llaman en vivo**, mientras el alumno resuelve un desafío, para que el **tutor
    socrático** le responda. Es la única llamada síncrona entre los dos equipos.
-2. **Nosotros les pedimos datos suyos** — contexto del desafío, la solución esperada y una señal de
-   actividad del IDE — porque sin ellos no podemos tutorear ni evaluar bien. Esta parte todavía tiene
-   puntos abiertos (§5) y es la que más nos bloquea.
+2. **Nosotros les pedimos datos suyos** — contexto del desafío, la solución esperada y una señal de actividad del IDE — porque sin ellos no podemos tutorear ni evaluar bien. Esta parte todavía tiene puntos abiertos (§5) y es la que más nos bloquea.
 3. **Nos avisan cuando cierra un intento, y les devolvemos el score.** Ustedes publican el
    evento de cierre de intento (con la transcripción completa) y nosotros les entregamos el
-   resultado del evaluador por el mismo canal (evento Kafka, `score_de_ia_calculado`). Ustedes
-   son quienes se lo reenvían a Tema 03 para el impacto en XP — nosotros ya no hablamos directo
-   con el Motor de Desafíos. Detalle completo en
-   [`tema-05-desafios-practicos/contratos.md`](../equipos/tema-05-desafios-practicos/contratos.md).
+   resultado del evaluador por el mismo canal (evento Kafka, `score_de_ia_calculado`). Ustedes son quienes se lo reenvían a Tema 03 para el impacto en XP — nosotros ya no hablamos directo con el Motor de Desafíos. Detalle completo en [`tema-05-desafios-practicos/contratos.md`](../equipos/tema-05-desafios-practicos/contratos.md).
 
 El punto 1 sigue siendo HTTP síncrono vía Gateway — eso no cambia. El punto 3 es Kafka: es el
-único evento que hoy corre entre `llm-service` y `practice-service`, con el mismo estado que el
-resto de este documento (acordado en contenido, todavía no volcado al AsyncAPI ejecutable). El
-punto 2 se resuelve con los mecanismos a acordar en §5.
+único evento que hoy corre entre `llm-service` y `practice-service`, con el mismo estado que el resto de este documento (acordado en contenido, todavía no volcado al AsyncAPI ejecutable). El punto 2 se resuelve con los mecanismos a acordar en §5.
 
 ---
 
 ## 1. Lo que hacemos (alcance de Tema 07, relevante para Desafíos Prácticos)
 
-| # | Función | Qué hace | Síncrono/Asíncrono | Relación con ustedes |
-|---|---|---|---|---|
-| 1 | **Tutor socrático en el desafío** | Responde al alumno sin darle la solución; ajusta el nivel de ayuda según `riskLevel` | Síncrono, objetivo `< 2 s` | ✅ Es el endpoint que ustedes llaman |
-| 2 | **Salvaguarda anti-fuga** (RF-IA-20 / PAR-11) | Compara la respuesta del tutor contra la solución esperada del desafío **antes** de mostrarla; si supera 70% de similitud, la descarta y regenera | Corre dentro de la llamada al tutor | ✅ Necesita un dato suyo — ver §5.2 |
-| 3 | **Evaluador de uso de IA** (async) | Puntúa cómo el alumno usó al tutor durante el intento, 5 dimensiones 0-100 | Asíncrono, vía evento de cierre de intento | Directo con ustedes desde el 2026-09-13 (ver §0.3): nos avisan el cierre y les devolvemos el score para que se lo reenvíen a Tema 03. Además necesita señales suyas para 2 de las 5 dimensiones — ver §5.3 |
-| 4 | **Golden Set y calibración** | Aprueba la rúbrica por curso-cohorte | — | Indirecto — bloquea si el curso puede tener evaluaciones válidas |
+| #   | Función                                       | Qué hace                                                                                                                                          | Síncrono/Asíncrono                         | Relación con ustedes                                                                                                                                                                                       |
+| --- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Tutor socrático en el desafío**             | Responde al alumno sin darle la solución; ajusta el nivel de ayuda según `riskLevel`                                                              | Síncrono, objetivo `< 2 s`                 | ✅ Es el endpoint que ustedes llaman                                                                                                                                                                        |
+| 2   | **Salvaguarda anti-fuga** (RF-IA-20 / PAR-11) | Compara la respuesta del tutor contra la solución esperada del desafío **antes** de mostrarla; si supera 70% de similitud, la descarta y regenera | Corre dentro de la llamada al tutor        | ✅ Necesita un dato suyo — ver §5.2                                                                                                                                                                         |
+| 3   | **Evaluador de uso de IA** (async)            | Puntúa cómo el alumno usó al tutor durante el intento, 5 dimensiones 0-100                                                                        | Asíncrono, vía evento de cierre de intento | Directo con ustedes desde el 2026-09-13 (ver §0.3): nos avisan el cierre y les devolvemos el score para que se lo reenvíen a Tema 03. Además necesita señales suyas para 2 de las 5 dimensiones — ver §5.3 |
+| 4   | **Golden Set y calibración**                  | Aprueba la rúbrica por curso-cohorte                                                                                                              | —                                          | Indirecto — bloquea si el curso puede tener evaluaciones válidas                                                                                                                                           |
 
 El tutor **nunca** ve la solución esperada ni tests ocultos. Ve enunciado, código actual del alumno,
 teoría/reglas y el nivel de riesgo. La comparación contra la solución corre en un guardarraíl de
