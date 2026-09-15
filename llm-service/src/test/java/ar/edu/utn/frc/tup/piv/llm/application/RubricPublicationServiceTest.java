@@ -28,6 +28,8 @@ class RubricPublicationServiceTest {
     UUID courseId = UUID.randomUUID(); UUID versionId = UUID.randomUUID();
     CallerIdentity actor = new CallerIdentity("admin-service", UUID.randomUUID(), "request", null);
     when(rubrics.dimensionsOfDraft(courseId, versionId)).thenReturn(validDimensions());
+    var version = new ar.edu.utn.frc.tup.piv.llm.application.RubricDraftService.RubricVersion(versionId, courseId, 1, "Name", "DRAFT", 1L, null, java.util.List.of());
+    when(rubrics.find(courseId, versionId)).thenReturn(java.util.Optional.of(version));
     when(rubrics.publishDraft(courseId, versionId)).thenReturn(true);
 
     new RubricPublicationService(rubrics, audit).publish(courseId, versionId, actor);
@@ -53,6 +55,8 @@ class RubricPublicationServiceTest {
   @Test void doesNotPublishWhenRubricIsNotDraftOrWasModifiedConcurrently() {
     UUID courseId = UUID.randomUUID(); UUID versionId = UUID.randomUUID();
     when(rubrics.dimensionsOfDraft(courseId, versionId)).thenReturn(validDimensions());
+    var version = new ar.edu.utn.frc.tup.piv.llm.application.RubricDraftService.RubricVersion(versionId, courseId, 1, "Name", "DRAFT", 1L, null, java.util.List.of());
+    when(rubrics.find(courseId, versionId)).thenReturn(java.util.Optional.of(version));
     when(rubrics.publishDraft(courseId, versionId)).thenReturn(false);
 
     assertThatThrownBy(() -> new RubricPublicationService(rubrics, audit).publish(courseId, versionId,

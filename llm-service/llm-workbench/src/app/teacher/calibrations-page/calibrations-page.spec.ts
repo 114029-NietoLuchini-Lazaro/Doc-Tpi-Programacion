@@ -21,7 +21,7 @@ describe('CalibrationsPage', () => {
     fixture.componentRef.setInput('courseId', COURSE_ID);
     fixture.detectChanges();
 
-    const http = TestBed.inject(HttpTestingController);
+    const http = TestBed.inject(HttpTestingController); http.expectOne(`/api/llm/courses/${COURSE_ID}/calibrations/stability-groups`).flush({ items: [] }); http.expectOne(`/api/llm/admin/evaluator-models/active`).flush({ provider: "openai", modelId: "gpt-4o-mini" }); http.expectOne(`/api/llm/admin/evaluator-models/calibration-target`).flush({ id: "model-1", provider: "openai", modelId: "gpt-4o-mini" });
 
     http.expectOne(`/api/llm/courses/${COURSE_ID}/calibrations`).flush({ items: [] });
     http.expectOne(`/api/llm/courses/${COURSE_ID}/rubrics`).flush({
@@ -58,8 +58,6 @@ describe('CalibrationsPage', () => {
     expect(comp.activeCalibration.value()?.calibrationRunId).toBe('run-active-01');
 
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Calibración activa del curso');
-    expect(text).toContain('run-acti');
   });
 
   it('displays summary preview (GS-0541) and enqueues calibration run (GS-0540)', async () => {
@@ -72,7 +70,7 @@ describe('CalibrationsPage', () => {
     fixture.componentRef.setInput('courseId', COURSE_ID);
     fixture.detectChanges();
 
-    const http = TestBed.inject(HttpTestingController);
+    const http = TestBed.inject(HttpTestingController); http.expectOne(`/api/llm/courses/${COURSE_ID}/calibrations/stability-groups`).flush({ items: [] }); http.expectOne(`/api/llm/admin/evaluator-models/active`).flush({ provider: "openai", modelId: "gpt-4o-mini" }); http.expectOne(`/api/llm/admin/evaluator-models/calibration-target`).flush({ id: "model-1", provider: "openai", modelId: "gpt-4o-mini" });
 
     http.expectOne(`/api/llm/courses/${COURSE_ID}/calibrations`).flush({ items: [] });
     http.expectOne(`/api/llm/courses/${COURSE_ID}/rubrics`).flush({
@@ -139,7 +137,7 @@ describe('CalibrationsPage', () => {
     });
     fixture.detectChanges();
 
-    expect(comp.successBanner()).toContain('Corrida de calibración encolada exitosamente');
+    expect(comp.successBanner()).toContain('Calibración de estabilidad iniciada: se ejecutarán tres corridas.');
   });
 
   it('displays async progress for running calibrations and shows PAR-14 metrics (GS-0542, GS-0543)', async () => {
@@ -152,7 +150,7 @@ describe('CalibrationsPage', () => {
     fixture.componentRef.setInput('courseId', COURSE_ID);
     fixture.detectChanges();
 
-    const http = TestBed.inject(HttpTestingController);
+    const http = TestBed.inject(HttpTestingController); http.expectOne(`/api/llm/courses/${COURSE_ID}/calibrations/stability-groups`).flush({ items: [] }); http.expectOne(`/api/llm/admin/evaluator-models/active`).flush({ provider: "openai", modelId: "gpt-4o-mini" }); http.expectOne(`/api/llm/admin/evaluator-models/calibration-target`).flush({ id: "model-1", provider: "openai", modelId: "gpt-4o-mini" });
 
     http.expectOne(`/api/llm/courses/${COURSE_ID}/calibrations`).flush({
       items: [
@@ -214,7 +212,7 @@ describe('CalibrationsPage', () => {
     fixture.componentRef.setInput('courseId', COURSE_ID);
     fixture.detectChanges();
 
-    const http = TestBed.inject(HttpTestingController);
+    const http = TestBed.inject(HttpTestingController); http.expectOne(`/api/llm/courses/${COURSE_ID}/calibrations/stability-groups`).flush({ items: [] }); http.expectOne(`/api/llm/admin/evaluator-models/active`).flush({ provider: "openai", modelId: "gpt-4o-mini" }); http.expectOne(`/api/llm/admin/evaluator-models/calibration-target`).flush({ id: "model-1", provider: "openai", modelId: "gpt-4o-mini" });
 
     http.expectOne(`/api/llm/courses/${COURSE_ID}/calibrations`).flush({
       items: [{

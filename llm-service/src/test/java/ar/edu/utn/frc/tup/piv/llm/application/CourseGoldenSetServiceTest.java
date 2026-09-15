@@ -65,6 +65,7 @@ class CourseGoldenSetServiceTest {
     var service = new CourseGoldenSetService(repository, audit);
     UUID course = UUID.randomUUID(), version = UUID.randomUUID();
     CallerIdentity actor = new CallerIdentity("gateway", UUID.randomUUID(), null, null);
+    when(repository.countCases(version)).thenReturn(3);
     when(repository.publishDraft(course, version)).thenReturn(true);
 
     service.publish(course, version, actor);
