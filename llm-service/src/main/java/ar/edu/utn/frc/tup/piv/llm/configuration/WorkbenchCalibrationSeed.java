@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Profile("workbench")
 public class WorkbenchCalibrationSeed implements ApplicationRunner {
-  private static final UUID COURSE = UUID.fromString("00000000-0000-0000-0000-000000000010");
+  private static final UUID COURSE = UUID.fromString("22222222-2222-2222-2222-222222222222");
   private static final UUID ACTOR = UUID.fromString("11111111-1111-1111-1111-111111111111");
   private static final UUID TEMPLATE = UUID.fromString("10000000-0000-0000-0000-000000000002");
   private final RubricDraftService rubrics; private final RubricPublicationService publication;
