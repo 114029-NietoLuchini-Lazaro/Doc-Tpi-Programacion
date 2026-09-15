@@ -266,7 +266,7 @@ interface CalibrationRunItem {
   createdAt: string;
   finishedAt?: string | null;
 }
-interface RubricItem { id: string; name: string; version: number; state: string; }
+interface RubricItem { id: string; name: string; version: number; state: string; dimensions: { key: string; label: string; weight: number; criterion: string; }[]; }
 interface GoldenSetItem { id: string; name: string; version: number; state: string; cases: any[]; }
 interface ModelDeploymentItem { id: string; provider: string; modelId: string; modelVersion: string; state: string; }
 interface ActiveEvaluator { id: string; provider: string; modelId: string; state: string; }

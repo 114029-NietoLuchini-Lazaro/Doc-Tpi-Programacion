@@ -38,22 +38,28 @@
     <div class="form-grid">
       <label>
         Rúbrica publicada *
-        <select formControlName="rubricVersionId" required>
+        <div class="input-with-button">
+          <select formControlName="rubricVersionId" required>
           <option value="">-- Seleccionar rúbrica --</option>
           @for (rub of publishedRubrics(); track rub.id) {
             <option [value]="rub.id">{{ rub.name }} (v{{ rub.version }})</option>
           }
         </select>
+          <button type="button" class="secondary" [disabled]="!selectedRubric()" (click)="rubricModal.showModal()">Ver detalle</button>
+        </div>
       </label>
 
       <label>
         Golden Set publicado *
-        <select formControlName="goldenSetVersionId" required>
+        <div class="input-with-button">
+          <select formControlName="goldenSetVersionId" required>
           <option value="">-- Seleccionar Golden Set --</option>
           @for (gs of publishedGoldenSets(); track gs.id) {
             <option [value]="gs.id">{{ gs.name }} (v{{ gs.version }}) · {{ gs.cases.length }} casos</option>
           }
         </select>
+          <button type="button" class="secondary" [disabled]="!selectedGoldenSet()" (click)="gsModal.showModal()">Ver detalle</button>
+        </div>
       </label>
 
     </div>
@@ -309,3 +315,43 @@
     </div>
   }
 </section>
+
+<!-- Modals for details -->
+<dialog #rubricModal class="native-modal">
+  @if (selectedRubric(); as rub) {
+    <div class="modal-header">
+      <h2>{{ rub.name }} (v{{ rub.version }})</h2>
+      <button type="button" class="close-btn" (click)="rubricModal.close()" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-content">
+      <p class="hint">Esta rúbrica contiene {{ rub.dimensions?.length || 0 }} dimensiones evaluativas.</p>
+      <div class="dimension-grid">
+        @for (dim of rub.dimensions; track dim.key) {
+          <div class="dimension-card">
+            <h4>{{ dim.label }} <span class="weight-badge">{{ dim.weight }}%</span></h4>
+            <p>{{ dim.criterion }}</p>
+          </div>
+        }
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="secondary" (click)="rubricModal.close()">Cerrar detalles</button>
+    </div>
+  }
+</dialog>
+
+<dialog #gsModal class="native-modal">
+  @if (selectedGoldenSet(); as gs) {
+    <div class="modal-header">
+      <h2>{{ gs.name }} (v{{ gs.version }})</h2>
+      <button type="button" class="close-btn" (click)="gsModal.close()" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-content">
+      <p class="hint">Este Golden Set contiene {{ gs.cases?.length || 0 }} casos de referencia.</p>
+      <p>Los casos de prueba del Golden Set son utilizados para evaluar empíricamente la concordancia de los modelos de IA contra la rúbrica seleccionada.</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="secondary" (click)="gsModal.close()">Cerrar detalles</button>
+    </div>
+  }
+</dialog>
