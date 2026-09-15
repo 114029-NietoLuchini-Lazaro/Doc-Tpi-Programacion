@@ -23,7 +23,7 @@ nosotros y Tema 03:
 2. **Nosotros les pedimos datos suyos** — contexto del desafío, la solución esperada y una señal de actividad del IDE — porque sin ellos no podemos tutorear ni evaluar bien. Esta parte todavía tiene puntos abiertos (§5) y es la que más nos bloquea.
 3. **Nos avisan cuando cierra un intento, y les devolvemos el score.** Ustedes publican el
    evento de cierre de intento (con la transcripción completa) y nosotros les entregamos el
-   resultado del evaluador por el mismo canal (evento Kafka, `score_de_ia_calculado`). Ustedes son quienes se lo reenvían a Tema 03 para el impacto en XP — nosotros ya no hablamos directo con el Motor de Desafíos. Detalle completo en [`tema-05-desafios-practicos/contratos.md`](../equipos/tema-05-desafios-practicos/contratos.md).
+   resultado del evaluador por el mismo canal (evento Kafka, `score_de_ia_calculado`). Ustedes son quienes se lo reenvían a Tema 03 para el impacto en XP — nosotros ya no hablamos directo con el Motor de Desafíos. Detalle completo en [`contracts/equipos/tema-05-desafios-practicos.md`](../../contracts/equipos/tema-05-desafios-practicos.md).
 
 El punto 1 sigue siendo HTTP síncrono vía Gateway — eso no cambia. El punto 3 es Kafka: es el
 único evento que hoy corre entre `llm-service` y `practice-service`, con el mismo estado que el resto de este documento (acordado en contenido, todavía no volcado al AsyncAPI ejecutable). El punto 2 se resuelve con los mecanismos a acordar en §5.
