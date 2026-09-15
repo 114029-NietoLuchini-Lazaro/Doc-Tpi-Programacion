@@ -1,38 +1,31 @@
 # Demo del Entorno con MockServer y API Gateway
 
-Este directorio contiene todo lo necesario para ejecutar la aplicación de forma local, simulando la infraestructura real de microservicios mediante MockServer y Nginx.
+Este directorio contiene todo lo necesario para ejecutar la aplicación de forma local, simulando la infraestructura real de microservicios mediante MockServer y Nginx. Ahora todo el stack completo está dockerizado para iniciar con un solo comando.
 
 ## Arquitectura Simulada
 
-- **Frontend (Angular)**: Levanta localmente en el puerto 4200.
+- **Frontend (llm-workbench)**: Construido y servido en Docker en el puerto 4200.
 - **Nginx (API Gateway)**: Corre en el puerto `8080`. Recibe las peticiones del frontend, inyecta los headers de identidad obligatorios (`X-Service-Id`, `X-Delegated-User`) y rutea el tráfico.
-- **Backend (Spring Boot)**: Es tu aplicación `llm-service`, levantada de forma nativa o en docker.
+- **Backend (Spring Boot)**: Es tu aplicación `llm-service`, levantada en Docker (puerto interno 8080).
 - **MockServer**: Simula a `courses-service` respondiendo en el puerto `1080` (interno).
 
 ## Instrucciones de Inicio
 
-1. **Levantar la Infraestructura:**
+1. **Levantar Todo el Stack:**
    Abre una terminal en este directorio (`demo/`) y ejecuta:
    ```bash
-   docker compose up -d
+   docker compose up --build -d
    ```
-   Esto iniciará `llm-service`, el proxy Nginx y el MockServer preconfigurado.
+   *(Esto compilará el backend en Java, compilará el frontend en Angular y levantará todos los servicios conectados)*.
 
-2. **Levantar el Frontend (Workbench):**
-   Abre otra terminal en la carpeta raíz del proyecto, navega a `llm-workbench/` e inicia la aplicación Angular:
-   ```bash
-   npm start
-   ```
-   El frontend utilizará automáticamente el archivo `proxy.local.json` para enviar todo el tráfico de `/api/*` al API Gateway (Nginx) en `http://localhost:8080`.
-
-3. **Abrir la Aplicación:**
-   Ingresa a [http://localhost:4200](http://localhost:4200)
+2. **Abrir la Aplicación:**
+   Una vez que termine el build y los contenedores estén corriendo, ingresa a [http://localhost:4200](http://localhost:4200)
 
 ## Escenarios de Prueba (UUIDs Mágicos)
 
 Para probar cómo reacciona la interfaz y el backend a distintas respuestas del servicio de cursos (como fallas, permisos insuficientes, o demoras), utilizamos "UUIDs mágicos".
 
-Podes forzar distintos escenarios simplemente navegando al curso correspondiente en el frontend (modificando la URL en la barra de direcciones `http://localhost:4200/courses/<UUID>` o inyectándolo en tu estado de prueba).
+Podes forzar distintos escenarios simplemente navegando al curso correspondiente en el frontend (modificando la URL en la barra de direcciones `http://localhost:4200/courses/<UUID>`).
 
 | UUID del Curso | Rol Simulado | Escenario a Probar | Código HTTP que devuelve el Mock |
 | :--- | :--- | :--- | :--- |
