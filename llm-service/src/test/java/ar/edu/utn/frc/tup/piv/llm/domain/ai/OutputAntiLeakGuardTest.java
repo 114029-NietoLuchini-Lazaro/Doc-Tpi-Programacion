@@ -14,9 +14,9 @@ class OutputAntiLeakGuardTest {
   }
 
   @Test
-  void doesNotFlagAShortCodeSnippet() {
+  void flagsEvenAShortCodeSnippet() {
     String shortBlock = "```java\nSystem.out.println(1);\n```";
-    assertThat(guard.containsLeak(shortBlock, null)).isFalse();
+    assertThat(guard.containsLeak(shortBlock, null)).isTrue();
   }
 
   @Test

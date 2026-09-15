@@ -2,6 +2,11 @@
   "/api/llm": {
     "target": "http://llm-service:8080",
     "secure": false,
-    "changeOrigin": true
+    "changeOrigin": true,
+    "headers": {
+      "X-Service-Id": "admin-service",
+      "X-Service-Scopes": "llm.golden-set.manage llm.rubric-template.manage",
+      "X-Delegated-User": "11111111-1111-1111-1111-111111111111"
+    }
   }
 }

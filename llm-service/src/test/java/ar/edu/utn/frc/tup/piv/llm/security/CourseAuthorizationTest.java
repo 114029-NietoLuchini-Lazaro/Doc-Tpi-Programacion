@@ -1,8 +1,8 @@
 package ar.edu.utn.frc.tup.piv.llm.security;
 
-import java.util.Set;
 import java.util.UUID;
-import ar.edu.utn.frc.tup.piv.llm.configuration.WorkbenchDemoCatalog;
+import ar.edu.utn.frc.tup.piv.llm.application.CourseMembershipPort;
+import org.springframework.http.HttpHeaders;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -10,13 +10,27 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class CourseAuthorizationTest {
   @Test void allowsAssignedTeacher() {
     UUID course = UUID.randomUUID();
-    assertThatCode(() -> new CourseAuthorization(org.mockito.Mockito.mock(WorkbenchDemoCatalog.class)).requireTeacher(course, UUID.randomUUID(), Set.of("TEACHER"), Set.of(course))).doesNotThrowAnyException();
+    CourseMembershipPort memberships = org.mockito.Mockito.mock(CourseMembershipPort.class);
+    UUID teacher = UUID.randomUUID();
+    org.mockito.Mockito.when(memberships.membership(org.mockito.Mockito.eq(course), org.mockito.Mockito.eq(teacher), org.mockito.Mockito.any()))
+        .thenReturn(new CourseMembershipPort.Membership("DOCENTE", "ACTIVE"));
+    assertThatCode(() -> new CourseAuthorization(memberships).requireTeacher(course,
+        new CallerIdentity("admin-service", teacher, "request", null), new HttpHeaders())).doesNotThrowAnyException();
   }
   @Test void rejectsUnassignedCourse() {
-    assertThatThrownBy(() -> new CourseAuthorization(org.mockito.Mockito.mock(WorkbenchDemoCatalog.class)).requireTeacher(UUID.randomUUID(), UUID.randomUUID(), Set.of("TEACHER"), Set.of())).isInstanceOf(RuntimeException.class);
+    CourseMembershipPort memberships = org.mockito.Mockito.mock(CourseMembershipPort.class);
+    UUID course = UUID.randomUUID(); UUID teacher = UUID.randomUUID();
+    org.mockito.Mockito.when(memberships.membership(org.mockito.Mockito.eq(course), org.mockito.Mockito.eq(teacher), org.mockito.Mockito.any()))
+        .thenReturn(new CourseMembershipPort.Membership("DOCENTE", "INACTIVE"));
+    assertThatThrownBy(() -> new CourseAuthorization(memberships).requireTeacher(course,
+        new CallerIdentity("admin-service", teacher, "request", null), new HttpHeaders())).isInstanceOf(RuntimeException.class);
   }
   @Test void rejectsNonTeacherRole() {
-    UUID course = UUID.randomUUID();
-    assertThatThrownBy(() -> new CourseAuthorization(org.mockito.Mockito.mock(WorkbenchDemoCatalog.class)).requireTeacher(course, UUID.randomUUID(), Set.of("STUDENT"), Set.of(course))).isInstanceOf(RuntimeException.class);
+    CourseMembershipPort memberships = org.mockito.Mockito.mock(CourseMembershipPort.class);
+    UUID course = UUID.randomUUID(); UUID learner = UUID.randomUUID();
+    org.mockito.Mockito.when(memberships.membership(org.mockito.Mockito.eq(course), org.mockito.Mockito.eq(learner), org.mockito.Mockito.any()))
+        .thenReturn(new CourseMembershipPort.Membership("ESTUDIANTE", "ACTIVE"));
+    assertThatThrownBy(() -> new CourseAuthorization(memberships).requireTeacher(course,
+        new CallerIdentity("admin-service", learner, "request", null), new HttpHeaders())).isInstanceOf(RuntimeException.class);
   }
 }

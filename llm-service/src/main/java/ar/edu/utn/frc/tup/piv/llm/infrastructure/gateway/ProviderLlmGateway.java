@@ -3,6 +3,10 @@ package ar.edu.utn.frc.tup.piv.llm.infrastructure.gateway;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ar.edu.utn.frc.tup.piv.llm.application.CalibrationInferencePolicy.Settings;
+import dev.langchain4j.model.anthropic.AnthropicChatModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
 
 import java.net.InetAddress;
 import java.net.URI;
@@ -44,80 +48,22 @@ public class ProviderLlmGateway {
         return chat(provider, baseUrl, secret, model, message, null);
     }
 
-    /** Sends only the parameters supported by the selected provider profile. */
+    /**
+     * Runs inference through LangChain4j. The remaining JDK client is intentionally restricted
+     * to provider catalog discovery and the legacy SSE reader; no model response is parsed here.
+     */
     public Reply chat(Provider provider, String baseUrl, String secret, String model, String message, Settings settings) {
         try {
-            URI uri;
-            String payload;
-            HttpRequest.Builder builder;
-            switch (provider) {
-                case OPENAI_COMPATIBLE -> {
-                    uri = URI.create(normalize(baseUrl) + "/chat/completions");
-                    var body = new java.util.LinkedHashMap<String, Object>();
-                    body.put("model", model); body.put("messages", List.of(java.util.Map.of("role", "user", "content", message)));
-                    if (settings != null) { put(body, "temperature", settings.temperature()); put(body, "top_p", settings.topP()); put(body, "seed", settings.seed()); body.put("max_completion_tokens", settings.maxOutputTokens()); if (settings.structuredJson()) body.put("response_format", java.util.Map.of("type", "json_object")); }
-                    payload = json.writeValueAsString(body);
-                    builder = HttpRequest.newBuilder(uri).header("Authorization", "Bearer " + secret);
-                }
-                case ANTHROPIC -> {
-                    uri = URI.create("https://api.anthropic.com/v1/messages");
-                    payload = json.writeValueAsString(java.util.Map.of("model", model, "max_tokens", settings == null ? 512 : settings.maxOutputTokens(), "messages", List.of(java.util.Map.of("role", "user", "content", message))));
-                    builder = HttpRequest.newBuilder(uri).headers("x-api-key", secret, "anthropic-version", "2023-06-01");
-                }
-                case GEMINI -> {
-                    uri = URI.create("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + java.net.URLEncoder.encode(secret, java.nio.charset.StandardCharsets.UTF_8));
-                    var body = new java.util.LinkedHashMap<String, Object>(); body.put("contents", List.of(java.util.Map.of("parts", List.of(java.util.Map.of("text", message)))));
-                    if (settings != null) { var config = new java.util.LinkedHashMap<String, Object>(); put(config, "temperature", settings.temperature()); put(config, "topP", settings.topP()); put(config, "topK", settings.topK()); put(config, "seed", settings.seed()); config.put("maxOutputTokens", settings.maxOutputTokens()); if (settings.structuredJson()) config.put("responseMimeType", "application/json"); body.put("generationConfig", config); }
-                    payload = json.writeValueAsString(body);
-                    builder = HttpRequest.newBuilder(uri);
-                }
-                default -> throw new IllegalStateException("Proveedor no soportado");
-            }
-            JsonNode root = read(send(builder.header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(payload)).build()));
-            String text = switch (provider) {
-                case OPENAI_COMPATIBLE -> root.path("choices").path(0).path("message").path("content").asText();
-                case ANTHROPIC -> root.path("content").path(0).path("text").asText();
-                case GEMINI ->
-                        root.path("candidates").path(0).path("content").path("parts").path(0).path("text").asText();
-            };
-            int input = provider == Provider.GEMINI ? root.path("usageMetadata").path("promptTokenCount").asInt() : root.path("usage").path(provider == Provider.ANTHROPIC ? "input_tokens" : "prompt_tokens").asInt();
-            int output = provider == Provider.GEMINI ? root.path("usageMetadata").path("candidatesTokenCount").asInt() : root.path("usage").path(provider == Provider.ANTHROPIC ? "output_tokens" : "completion_tokens").asInt();
-            String fingerprint = provider == Provider.OPENAI_COMPATIBLE ? root.path("system_fingerprint").asText(null) : root.path("modelVersion").asText(null);
-            return new Reply(text, input, output, fingerprint);
+            return new Reply(model(provider, baseUrl, secret, model, settings).chat(message), 0, 0, null);
         } catch (Exception exception) {
             throw new IllegalStateException("El proveedor no pudo responder la prueba", exception);
         }
     }
 
-    private static void put(java.util.Map<String, Object> body, String key, Object value) { if (value != null) body.put(key, value); }
-
     public Reply streamChat(Provider provider, String baseUrl, String secret, String model, String message, Consumer<String> onDelta) {
-        if (provider != Provider.OPENAI_COMPATIBLE) {
-            Reply reply = chat(provider, baseUrl, secret, model, message);
-            onDelta.accept(reply.text());
-            return reply;
-        }
-        try {
-            String payload = json.writeValueAsString(java.util.Map.of("model", model, "stream", true, "messages", List.of(java.util.Map.of("role", "user", "content", message))));
-            HttpRequest request = HttpRequest.newBuilder(URI.create(normalize(baseUrl) + "/chat/completions")).timeout(Duration.ofSeconds(90)).header("Authorization", "Bearer " + secret).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(payload)).build();
-            HttpResponse<java.util.stream.Stream<String>> response = client.send(request, HttpResponse.BodyHandlers.ofLines());
-            if (response.statusCode() < 200 || response.statusCode() >= 300)
-                throw new IllegalStateException("El proveedor respondió HTTP " + response.statusCode());
-            StringBuilder complete = new StringBuilder();
-            try (var lines = response.body()) {
-                lines.filter(line -> line.startsWith("data: ") && !"data: [DONE]".equals(line)).forEach(line -> {
-                    JsonNode delta = read(line.substring(6)).path("choices").path(0).path("delta").path("content");
-                    if (!delta.isMissingNode() && !delta.isNull()) {
-                        String text = delta.asText();
-                        complete.append(text);
-                        onDelta.accept(text);
-                    }
-                });
-            }
-            return new Reply(complete.toString(), 0, 0, null);
-        } catch (Exception exception) {
-            throw new IllegalStateException("El proveedor no pudo transmitir la prueba", exception);
-        }
+        Reply reply = chat(provider, baseUrl, secret, model, message);
+        onDelta.accept(reply.text());
+        return reply;
     }
 
     public void validateBaseUrl(String value) {
@@ -172,6 +118,33 @@ public class ProviderLlmGateway {
 
     private String normalize(String baseUrl) {
         return baseUrl.replaceFirst("/+$", "") + "/v1".replace(baseUrl.endsWith("/v1") ? "/v1" : "", "");
+    }
+
+    private ChatModel model(Provider provider, String baseUrl, String secret, String modelId, Settings settings) {
+        Duration timeout = Duration.ofSeconds(90);
+        int maxTokens = settings == null ? 512 : settings.maxOutputTokens();
+        return switch (provider) {
+            case OPENAI_COMPATIBLE -> {
+                var builder = OpenAiChatModel.builder().baseUrl(normalize(baseUrl)).apiKey(secret).modelName(modelId)
+                    .maxCompletionTokens(maxTokens).timeout(timeout).logRequests(false).logResponses(false);
+                if (settings != null) { builder.temperature(settings.temperature()).topP(settings.topP()).seed(Math.toIntExact(settings.seed())); }
+                yield builder.build();
+            }
+            case ANTHROPIC -> {
+                var builder = AnthropicChatModel.builder().apiKey(secret).modelName(modelId).maxTokens(maxTokens)
+                    .timeout(timeout).logRequests(false).logResponses(false);
+                if (baseUrl != null && !baseUrl.isBlank()) builder.baseUrl(baseUrl);
+                if (settings != null) { builder.temperature(settings.temperature()).topP(settings.topP()).topK(settings.topK()); }
+                yield builder.build();
+            }
+            case GEMINI -> {
+                var builder = GoogleAiGeminiChatModel.builder().apiKey(secret).modelName(modelId).maxOutputTokens(maxTokens)
+                    .timeout(timeout).logRequests(false).logResponses(false);
+                if (baseUrl != null && !baseUrl.isBlank()) builder.baseUrl(baseUrl);
+                if (settings != null) { builder.temperature(settings.temperature()).topP(settings.topP()).topK(settings.topK()).seed(Math.toIntExact(settings.seed())); }
+                yield builder.build();
+            }
+        };
     }
 
     public enum Provider {OPENAI_COMPATIBLE, ANTHROPIC, GEMINI}

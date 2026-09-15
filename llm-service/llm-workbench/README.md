@@ -7,16 +7,24 @@ Frontend Angular temporal para desarrollar y probar golden sets en S1. No reempl
 La ruta `/docente` (también la página inicial) permite gestionar lotes de exámenes,
 presets completos de rúbricas y calibraciones. `/golden-sets` conserva la integración S1.
 
-Para ejecutarlo sin backend:
+Para ejecutar el workbench contra el backend real en local:
 
 ```bash
 cd llm-workbench
 npm ci
-npm start -- --port 4201 --prebundle=false
+npm run gateway:simulator
+# en otra terminal
+npm run start:local -- --port 4201 --prebundle=false
 ```
 
 Abrir `http://localhost:4201/docente`. La opción `--prebundle=false` evita reutilizar
 la caché de Vite que puede haber sido creada por root en Docker.
+
+El simulador local representa exclusivamente al Gateway y a `courses-service`: entrega las
+cohortes y responde la consulta de pertenencia. No contiene rutas ni respuestas de `llm-service`;
+`/api/llm/**` se reenvía al backend real y el proxy de desarrollo agrega los headers M2M/delegados
+que en producción agrega el Gateway. Antes de arrancar el backend, usar el perfil `workbench` para
+que su cliente de Courses apunte al simulador (`http://localhost:4300`).
 
 ### Recorrido de prueba
 

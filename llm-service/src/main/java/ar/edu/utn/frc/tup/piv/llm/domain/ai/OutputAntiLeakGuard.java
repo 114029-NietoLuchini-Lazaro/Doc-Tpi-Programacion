@@ -16,6 +16,9 @@ public final class OutputAntiLeakGuard {
       + "antes de que revisemos más detalles?";
 
   private static final Pattern CODE_BLOCK_PATTERN = Pattern.compile("```[a-zA-Z]*\\n[\\s\\S]*?```");
+  private static final Pattern INLINE_CODE_PATTERN = Pattern.compile("`[^`]{2,}`");
+  private static final Pattern CODE_LINE_PATTERN = Pattern.compile(
+      "(?m)^\\s*(?:public|private|protected|class|interface|record|def|function|fn|let|const|var|if|for|while|return|import|package)\\b|[{};]\\s*$");
   private static final int MAX_CODE_LINES = 8;
 
   public boolean containsLeak(String response, String expectedSolution) {
@@ -26,9 +29,17 @@ public final class OutputAntiLeakGuard {
       if (matcher.group().lines().count() > MAX_CODE_LINES) return true;
     }
 
+    // The product policy is code-free tutoring. Do not rely on the model following its prompt:
+    // reject inline snippets and code-shaped lines before any response reaches the learner.
+    if (INLINE_CODE_PATTERN.matcher(response).find() || CODE_LINE_PATTERN.matcher(response).find()) return true;
+
     if (expectedSolution != null && !expectedSolution.isBlank()) {
-      return response.toLowerCase().contains(expectedSolution.toLowerCase().trim());
+      return normalized(response).contains(normalized(expectedSolution));
     }
     return false;
+  }
+
+  private String normalized(String value) {
+    return value.toLowerCase().replaceAll("\\s+", " ").trim();
   }
 }

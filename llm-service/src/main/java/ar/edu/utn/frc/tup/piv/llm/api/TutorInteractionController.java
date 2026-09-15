@@ -36,7 +36,7 @@ public class TutorInteractionController {
     var actor = authorization.require(headers);
     validate(body);
     var request = new TutorInteractionService.Request(body.attemptId(), body.challengeId(),
-        body.courseCohortId(), body.learnerId(), body.message(), body.riskLevel());
+        body.courseCohortId(), body.learnerId(), body.message(), body.riskLevel(), body.expectedSolution());
     return service.respond(request, idempotencyKey, actor);
   }
 
@@ -53,5 +53,10 @@ public class TutorInteractionController {
   }
 
   /** Espejo de `TutorInteractionRequest` del contrato v1. */
-  public record Request(UUID attemptId, UUID challengeId, UUID courseCohortId, UUID learnerId, String message, String riskLevel) {}
+  /**
+   * {@code expectedSolution} only travels from practice-service over M2M. It is intentionally
+   * absent from the response, audit trail and persistence; the tutor model never receives it.
+   */
+  public record Request(UUID attemptId, UUID challengeId, UUID courseCohortId, UUID learnerId,
+                        String message, String riskLevel, String expectedSolution) {}
 }

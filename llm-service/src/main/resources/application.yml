@@ -29,5 +29,8 @@ llm:
     template-required-scope: llm.rubric-template.manage
   tutor:
     trusted-service: practice-service
-    required-scope: llm.tutor.interact
+    required-scope: llm.tutor.invoke
     invocation-timeout-ms: 8000
+  courses:
+    base-url: ${LLM_COURSES_BASE_URL}
+    service-token: ${LLM_COURSES_SERVICE_TOKEN}

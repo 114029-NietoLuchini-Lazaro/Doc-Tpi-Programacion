@@ -54,7 +54,7 @@ class TutorInteractionServiceTest {
   }
 
   @Test
-  void aLowRiskResponseIsNotFilteredByTheOutputGuard() {
+  void aLowRiskResponseWithCodeIsAlsoFilteredByTheOutputGuard() {
     var models = mock(ModelInvocationService.class);
     String longButLowRisk = "```java\n" + "line;\n".repeat(9) + "```";
     when(models.invoke(eq(ModelFunction.TUTOR), anyString(), anyString(), any()))
@@ -65,7 +65,28 @@ class TutorInteractionServiceTest {
 
     var response = service.respond(request("code review de mi solución", "low"), UUID.randomUUID(), actor);
 
-    assertThat(response.message()).isEqualTo(longButLowRisk);
+    assertThat(response.message()).doesNotContain("```");
+  }
+
+  @Test
+  void anExpectedSolutionIsUsedOnlyForTheOutputCheck() {
+    var models = mock(ModelInvocationService.class);
+    String expectedSolution = "return ordenarPorInsercion(valores);";
+    when(models.invoke(eq(ModelFunction.TUTOR), anyString(), anyString(), any()))
+        .thenReturn(new ModelInvocationResult(expectedSolution, "fake", "fake-socratic-v1"));
+    var idempotency = idempotencyThatAlwaysProceeds();
+    var audit = mock(AuditRepository.class);
+    var service = new TutorInteractionService(models, idempotency, audit, mapper, 1000);
+
+    var request = new TutorInteractionService.Request(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+        UUID.randomUUID(), "¿cómo continúo?", "low", expectedSolution);
+    var response = service.respond(request, UUID.randomUUID(), actor);
+
+    assertThat(response.message()).doesNotContain(expectedSolution);
+    verify(models).invoke(eq(ModelFunction.TUTOR), anyString(),
+        org.mockito.ArgumentMatchers.argThat(value -> value != null && !value.contains(expectedSolution)), any());
+    verify(audit).record(anyString(), anyString(), any(), any(),
+        org.mockito.ArgumentMatchers.argThat(value -> value != null && !value.contains(expectedSolution)));
   }
 
   @Test
@@ -84,7 +105,7 @@ class TutorInteractionServiceTest {
   }
 
   private TutorInteractionService.Request request(String message, String riskLevel) {
-    return new TutorInteractionService.Request(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), message, riskLevel);
+    return new TutorInteractionService.Request(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), message, riskLevel, null);
   }
 
   private IdempotencyRepository idempotencyThatAlwaysProceeds() {

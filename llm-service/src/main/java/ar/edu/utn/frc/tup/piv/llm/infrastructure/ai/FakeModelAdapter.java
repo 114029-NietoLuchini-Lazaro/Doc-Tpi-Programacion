@@ -5,7 +5,6 @@ import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationPort;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationRequest;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationResult;
 import java.time.Duration;
-import org.springframework.stereotype.Component;
 
 /** El fake que pide `LLM-S01-H10` (T3): no llama a ningún proveedor real. Adaptado de
  * `codigo-ejemplo/ms-evaluacion-llm/.../adapter/GroqAdapter.java` — acá no hay rama "real" que
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Component;
  *
  * <p>El constructor con parámetros es solo para tests: permite simular una demora (H10·CA5,
  * timeout) o una respuesta inválida (H10·CA4, schema) sin depender de un mock de red. */
-@Component
 public class FakeModelAdapter implements ModelInvocationPort {
   private static final String PROVIDER = "fake";
   private static final String MODEL = "fake-socratic-v1";

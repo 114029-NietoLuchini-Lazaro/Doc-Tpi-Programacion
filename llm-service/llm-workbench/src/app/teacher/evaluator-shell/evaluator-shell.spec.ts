@@ -14,7 +14,7 @@ describe('EvaluatorShell', () => {
     fixture.componentRef.setInput('courseId', '00000000-0000-0000-0000-000000000010');
     fixture.detectChanges();
     TestBed.inject(HttpTestingController)
-      .expectOne('/api/llm/courses')
+      .expectOne('/api/courses/me/course-cohorts')
       .flush({ items: [{ id: '00000000-0000-0000-0000-000000000010', name: 'Programación III' }] });
     TestBed.inject(HttpTestingController)
       .expectOne('/api/llm/courses/00000000-0000-0000-0000-000000000010/active-calibration')

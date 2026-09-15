@@ -1,7 +1,5 @@
 package ar.edu.utn.frc.tup.piv.llm.api;
 
-import ar.edu.utn.frc.tup.piv.llm.security.GoldenSetAuthorization;
-import ar.edu.utn.frc.tup.piv.llm.configuration.WorkbenchDemoCatalog;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -13,7 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.mockito.Mockito.mock;
 
 class LegacyGoldenSetRouteAbsentTest {
-  private final MockMvc mvc = MockMvcBuilders.standaloneSetup(new CourseContextController(mock(GoldenSetAuthorization.class), mock(WorkbenchDemoCatalog.class))).build();
+  private final MockMvc mvc = MockMvcBuilders.standaloneSetup().build();
 
   @Test void everyLegacyGoldenSetMethodIsUnmapped() throws Exception {
     mvc.perform(get("/api/llm/golden-sets")).andExpect(status().isNotFound());

@@ -81,8 +81,8 @@ public class TutorInteractionService {
       guardTriggered = true;
     } else {
       response = invokeModel(request);
-      if ("completed".equals(response.state()) && !"low".equals(request.riskLevel())
-          && outputGuard.containsLeak(response.message(), null)) {
+      if ("completed".equals(response.state())
+          && outputGuard.containsLeak(response.message(), request.expectedSolution())) {
         response = new Response(OutputAntiLeakGuard.SAFE_REPLACEMENT, "completed");
         guardTriggered = true;
       }
@@ -140,7 +140,8 @@ public class TutorInteractionService {
   }
 
   /** Espejo de `TutorInteractionRequest` del contrato v1. */
-  public record Request(UUID attemptId, UUID challengeId, UUID courseCohortId, UUID learnerId, String message, String riskLevel) {}
+  public record Request(UUID attemptId, UUID challengeId, UUID courseCohortId, UUID learnerId,
+                        String message, String riskLevel, String expectedSolution) {}
 
   /** Espejo de `TutorInteractionResponse` del contrato v1 (`state`: completed | blocked | unavailable). */
   public record Response(String message, String state) {}

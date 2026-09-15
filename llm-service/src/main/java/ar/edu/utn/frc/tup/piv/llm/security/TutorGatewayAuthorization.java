@@ -16,23 +16,14 @@ import org.springframework.web.server.ResponseStatusException;
 public class TutorGatewayAuthorization {
   private final String trustedService;
   private final String requiredScope;
-  private final boolean workbench;
-  private final UUID workbenchUser;
 
   public TutorGatewayAuthorization(@Value("${llm.tutor.trusted-service}") String trustedService,
-      @Value("${llm.tutor.required-scope}") String requiredScope,
-      @Value("${llm.workbench.enabled:false}") boolean workbench,
-      @Value("${llm.workbench.user-id:11111111-1111-1111-1111-111111111111}") UUID workbenchUser) {
+      @Value("${llm.tutor.required-scope}") String requiredScope) {
     this.trustedService = trustedService;
     this.requiredScope = requiredScope;
-    this.workbench = workbench;
-    this.workbenchUser = workbenchUser;
   }
 
   public CallerIdentity require(HttpHeaders headers) {
-    if (workbench) {
-      return new CallerIdentity("workbench", workbenchUser, headers.getFirst("X-Request-Id"), headers.getFirst("traceparent"));
-    }
     String serviceId = headers.getFirst("X-Service-Id");
     String scopes = headers.getFirst("X-Service-Scopes");
     String delegated = headers.getFirst("X-Delegated-User");
