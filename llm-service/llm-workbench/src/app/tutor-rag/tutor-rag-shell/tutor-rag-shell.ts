@@ -71,6 +71,23 @@ export class TutorRagShell {
     });
   }
 
+  uploadSample(): void {
+    if (!this.courseId()) return;
+    this.uploading.set(true);
+    this.uploadError.set('');
+    this.api.uploadSampleDocument(this.courseId()).pipe(
+      catchError((error) => {
+        this.uploadError.set(error?.error?.detail ?? 'No se pudo cargar el PDF de muestra.');
+        return of(null);
+      }),
+    ).subscribe((document) => {
+      this.uploading.set(false);
+      if (!document) return;
+      this.sources.reload();
+      this.toggleSource(document.id);
+    });
+  }
+
   removeDocument(id: string): void {
     this.api.deleteDocument(id).pipe(catchError(() => of(null))).subscribe(() => {
       this.sources.reload();

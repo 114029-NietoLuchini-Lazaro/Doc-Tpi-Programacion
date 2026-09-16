@@ -5,10 +5,15 @@
     <p>Subí uno o más PDFs y marcá cuáles participan de la consulta.</p>
   </header>
 
-  <label class="upload-button">
-    {{ uploading() ? 'Subiendo…' : 'Subir PDF' }}
-    <input type="file" accept="application/pdf" [disabled]="uploading()" (change)="onFileSelected($event)" hidden />
-  </label>
+  <div class="actions-row">
+    <label class="upload-button">
+      {{ uploading() ? 'Subiendo…' : 'Subir PDF' }}
+      <input type="file" accept="application/pdf" [disabled]="uploading()" (change)="onFileSelected($event)" hidden />
+    </label>
+    <button type="button" class="sample-button" [disabled]="uploading()" (click)="uploadSample.emit()">
+      Cargar PDF de prueba (PRD)
+    </button>
+  </div>
 
   @if (uploadError()) {
     <p class="error" role="alert">{{ uploadError() }}</p>
@@ -21,17 +26,44 @@
   } @else {
     <ul class="source-list">
       @for (source of sources(); track source.id) {
-        <li class="source-item">
-          <label>
-            <input type="checkbox" [checked]="isSelected(source.id)" (change)="toggle.emit(source.id)" />
-            <span class="source-name">{{ source.fileName }}</span>
-          </label>
-          <div class="source-meta">
-            <span>{{ source.pageCount }} pág.</span>
-            <span>{{ source.chunkCount }} fragmentos</span>
-            <span>{{ formatSize(source.fileSizeBytes) }}</span>
+        <li class="source-item-wrapper">
+          <div class="source-item">
+            <label>
+              <input type="checkbox" [checked]="isSelected(source.id)" (change)="toggle.emit(source.id)" />
+              <span class="source-name">{{ source.fileName }}</span>
+            </label>
+            <div class="source-meta">
+              <span>{{ source.pageCount }} pág.</span>
+              <span>{{ source.chunkCount }} fragmentos</span>
+              <span>{{ formatSize(source.fileSizeBytes) }}</span>
+            </div>
+            <button type="button" class="small secondary" (click)="toggleChunks(source)">
+              {{ activeChunkDocId() === source.id ? 'Ocultar fragmentos' : 'Ver fragmentos' }}
+            </button>
+            <button type="button" class="small danger" (click)="remove.emit(source.id)">Retirar</button>
           </div>
-          <button type="button" class="small danger" (click)="remove.emit(source.id)">Retirar</button>
+
+          @if (activeChunkDocId() === source.id) {
+            <div class="chunks-drawer" aria-label="Fragmentos del documento">
+              <h4>Fragmentos vectorizados de <em>{{ source.fileName }}</em></h4>
+              @if (loadingChunks()) {
+                <p class="loading-hint">Cargando fragmentos…</p>
+              } @else if (!chunks().length) {
+                <p class="empty">No se encontraron fragmentos para este documento.</p>
+              } @else {
+                <ul class="chunks-list">
+                  @for (chunk of chunks(); track chunk.id) {
+                    <li class="chunk-card">
+                      <div class="chunk-header">
+                        <strong>Pág. {{ chunk.pageNumber }}</strong> · Fragmento #{{ chunk.chunkIndex + 1 }}
+                      </div>
+                      <p class="chunk-content">{{ chunk.content }}</p>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          }
         </li>
       }
     </ul>

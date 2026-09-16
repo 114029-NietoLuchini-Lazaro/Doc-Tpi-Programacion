@@ -254,6 +254,32 @@ class RagIngestionServiceTest {
     verify(vectorStore).addChunk(any(), org.mockito.ArgumentMatchers.isNull());
   }
 
+  @Test
+  void uploadSampleLoadsTheSampleDocument() throws Exception {
+    String pageText = "Contenido de la página uno con longitud suficiente para que TextChunker genere un chunk.";
+    var extractor = mock(PdfTextExtractionPort.class);
+    when(extractor.extractTextWithPages(any()))
+        .thenReturn(new ExtractedPdf(1, List.of(new ExtractedPage(1, pageText)), pageText));
+    var detector = mock(DiagramDetectionPort.class);
+    when(detector.detectImages(any())).thenReturn(List.of());
+    var vectorStore = mock(VectorStorePort.class);
+    var repository = mock(RagDocumentRepository.class);
+    when(repository.save(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
+    var embeddings = mock(EmbeddingInvocationService.class);
+    when(embeddings.embedBatch(anyList(), any())).thenReturn(List.of(new EmbeddingResult(new float[768], "fake", "fake-embedding-768")));
+
+    var service = buildService(extractor, detector, vectorStore, repository, embeddings);
+    UUID courseCohortId = UUID.randomUUID();
+
+    RagDocument doc = service.uploadSample(courseCohortId);
+
+    assertThat(doc).isNotNull();
+    assertThat(doc.fileName()).isEqualTo("PRD-Plataforma-Gamificada-TP.pdf");
+    assertThat(doc.courseCohortId()).isEqualTo(courseCohortId);
+    verify(repository).save(any(), any());
+    verify(vectorStore).indexChunks(any(), anyList(), anyList());
+  }
+
   private RagDocument sampleDocument(UUID id) {
     return new RagDocument(id, UUID.randomUUID(), "docker.pdf", 1000, 5, 3, OffsetDateTime.now(), "preview", true);
   }

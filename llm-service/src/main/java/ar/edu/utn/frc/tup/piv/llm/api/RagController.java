@@ -58,6 +58,14 @@ public class RagController {
     return ResponseEntity.status(HttpStatus.CREATED).body(document);
   }
 
+  @PostMapping("/documents/sample")
+  public ResponseEntity<RagDocument> uploadSample(@RequestParam UUID courseCohortId,
+      @RequestHeader HttpHeaders headers) {
+    authorization.require(headers);
+    RagDocument document = ingestion.uploadSample(courseCohortId);
+    return ResponseEntity.status(HttpStatus.CREATED).body(document);
+  }
+
   @DeleteMapping("/documents/{id}")
   public ResponseEntity<Void> deleteDocument(@PathVariable UUID id, @RequestHeader HttpHeaders headers) {
     authorization.require(headers);

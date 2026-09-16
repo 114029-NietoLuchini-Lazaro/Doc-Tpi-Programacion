@@ -45,7 +45,118 @@ public class FakeModelAdapter implements ModelInvocationPort {
     if (forceInvalidResponse) {
       return new ModelInvocationResult("", PROVIDER, MODEL);
     }
+    ModelInvocationResult real = callRealProviderIfConfigured(request);
+    if (real != null) {
+      return real;
+    }
     return new ModelInvocationResult(respond(request), PROVIDER, MODEL);
+  }
+
+  private ModelInvocationResult callRealProviderIfConfigured(ModelInvocationRequest request) {
+    String geminiKey = System.getenv("GEMINI_API_KEY");
+    String groqKey = System.getenv("GROQ_API_KEY");
+    String openaiKey = System.getenv("OPENAI_API_KEY");
+
+    String apiKey = null;
+    String endpoint = null;
+    String providerName = null;
+    String modelName = null;
+
+    if (geminiKey != null && !geminiKey.isBlank()) {
+      apiKey = geminiKey;
+      endpoint = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+      providerName = "gemini";
+      modelName = System.getenv().getOrDefault("GEMINI_MODEL", "gemini-flash-lite-latest");
+    } else if (groqKey != null && !groqKey.isBlank()) {
+      apiKey = groqKey;
+      endpoint = "https://api.groq.com/openai/v1/chat/completions";
+      providerName = "groq";
+      modelName = System.getenv().getOrDefault("GROQ_MODEL", "llama-3.3-70b-versatile");
+    } else if (openaiKey != null && !openaiKey.isBlank()) {
+      apiKey = openaiKey;
+      endpoint = "https://api.openai.com/v1/chat/completions";
+      providerName = "openai";
+      modelName = System.getenv().getOrDefault("OPENAI_MODEL", "gpt-4o-mini");
+    }
+
+    if (apiKey == null) {
+      return null;
+    }
+
+    try {
+      java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+      String payload = buildJsonPayload(modelName, request.systemPrompt(), request.userPrompt());
+      Duration timeout = request.timeout() != null ? request.timeout() : Duration.ofSeconds(15);
+
+      java.net.http.HttpRequest httpRequest = java.net.http.HttpRequest.newBuilder()
+          .uri(java.net.URI.create(endpoint))
+          .header("Content-Type", "application/json")
+          .header("Authorization", "Bearer " + apiKey)
+          .timeout(timeout)
+          .POST(java.net.http.HttpRequest.BodyPublishers.ofString(payload, java.nio.charset.StandardCharsets.UTF_8))
+          .build();
+
+      java.net.http.HttpResponse<String> response = client.send(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+      if (response.statusCode() >= 200 && response.statusCode() < 300) {
+        String content = extractContentFromOpenAiJson(response.body());
+        if (content != null && !content.isBlank()) {
+          return new ModelInvocationResult(content, providerName, modelName);
+        }
+      }
+    } catch (Exception ignored) {
+      // Modo degradado / fallback al comportamiento simulado
+    }
+    return null;
+  }
+
+  private String buildJsonPayload(String model, String systemPrompt, String userPrompt) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("{\"model\":\"").append(escapeJson(model)).append("\",\"messages\":[");
+    boolean hasSystem = systemPrompt != null && !systemPrompt.isBlank();
+    if (hasSystem) {
+      sb.append("{\"role\":\"system\",\"content\":\"").append(escapeJson(systemPrompt)).append("\"},");
+    }
+    sb.append("{\"role\":\"user\",\"content\":\"").append(escapeJson(userPrompt != null ? userPrompt : "")).append("\"}");
+    sb.append("],\"temperature\":0.3}");
+    return sb.toString();
+  }
+
+  private String extractContentFromOpenAiJson(String json) {
+    if (json == null) return null;
+    int contentIdx = json.indexOf("\"content\":");
+    if (contentIdx == -1) return null;
+    int startQuote = json.indexOf('"', contentIdx + 10);
+    if (startQuote == -1) return null;
+    StringBuilder sb = new StringBuilder();
+    boolean escaped = false;
+    for (int i = startQuote + 1; i < json.length(); i++) {
+      char c = json.charAt(i);
+      if (escaped) {
+        if (c == 'n') sb.append('\n');
+        else if (c == 'r') sb.append('\r');
+        else if (c == 't') sb.append('\t');
+        else sb.append(c);
+        escaped = false;
+      } else if (c == '\\') {
+        escaped = true;
+      } else if (c == '"') {
+        break;
+      } else {
+        sb.append(c);
+      }
+    }
+    return sb.toString();
+  }
+
+  private String escapeJson(String text) {
+    if (text == null) return "";
+    return text.replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\b", "\\b")
+        .replace("\f", "\\f")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t");
   }
 
   private String respond(ModelInvocationRequest request) {

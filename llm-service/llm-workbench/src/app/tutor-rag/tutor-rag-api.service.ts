@@ -110,6 +110,17 @@ export class TutorRagApiService {
     return this.http.post<RagDocument>('/api/llm/rag/documents', form, { headers: { 'Idempotency-Key': createIdempotencyKey() } });
   }
 
+  uploadSampleDocument(courseCohortId: string) {
+    return this.http.post<RagDocument>(
+      '/api/llm/rag/documents/sample',
+      null,
+      {
+        params: { courseCohortId },
+        headers: { 'Idempotency-Key': createIdempotencyKey() }
+      }
+    );
+  }
+
   deleteDocument(id: string) {
     return this.http.delete<void>(`/api/llm/rag/documents/${id}`);
   }

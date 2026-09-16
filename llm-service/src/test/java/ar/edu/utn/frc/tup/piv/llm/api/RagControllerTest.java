@@ -68,6 +68,25 @@ class RagControllerTest {
   }
 
   @Test
+  void authorizesAndUploadsSampleDocument() {
+    var ingestion = mock(RagIngestionService.class);
+    var authorization = mock(RagGatewayAuthorization.class);
+    var headers = new HttpHeaders();
+    when(authorization.require(headers)).thenReturn(actor);
+    UUID courseCohortId = UUID.randomUUID();
+    var expected = sampleDocument();
+    when(ingestion.uploadSample(courseCohortId)).thenReturn(expected);
+    var controller = new RagController(ingestion, mock(RagChatService.class), authorization);
+
+    var response = controller.uploadSample(courseCohortId, headers);
+
+    assertThat(response.getStatusCode().value()).isEqualTo(201);
+    assertThat(response.getBody()).isEqualTo(expected);
+    verify(authorization).require(headers);
+    verify(ingestion).uploadSample(courseCohortId);
+  }
+
+  @Test
   void rejectsAnEmptyUploadWithoutCallingTheService() {
     var ingestion = mock(RagIngestionService.class);
     var authorization = mock(RagGatewayAuthorization.class);

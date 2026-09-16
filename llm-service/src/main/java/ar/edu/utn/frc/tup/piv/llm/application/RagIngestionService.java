@@ -12,6 +12,9 @@ import ar.edu.utn.frc.tup.piv.llm.domain.rag.TextChunker;
 import ar.edu.utn.frc.tup.piv.llm.domain.rag.VectorStorePort;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.RagDocumentRepository;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -175,5 +178,33 @@ public class RagIngestionService {
         fileName, result.pageNumber(), result.tituloDetectado(), result.tipoDiagrama(),
         result.interpretacion() != null ? result.interpretacion() : "",
         result.mermaidCode() != null ? result.mermaidCode() : "");
+  }
+
+  /** Carga y auto-indexa el PDF de demostración PRD en la base de datos para la cohorte indicada.
+   * Portado de `RagController.loadSamplePdf` de la demo. */
+  public RagDocument uploadSample(UUID courseCohortId) {
+    try (var is = getClass().getResourceAsStream("/fuentes/PRD-Plataforma-Gamificada-TP.pdf")) {
+      if (is != null) {
+        return upload(courseCohortId, "PRD-Plataforma-Gamificada-TP.pdf", is.readAllBytes());
+      }
+    } catch (IOException ignored) {}
+
+    Path[] candidates = new Path[] {
+        Paths.get("src", "main", "resources", "fuentes", "PRD-Plataforma-Gamificada-TP.pdf"),
+        Paths.get("docs", "fuentes", "PRD-Plataforma-Gamificada-TP.pdf"),
+        Paths.get("llm-service", "docs", "fuentes", "PRD-Plataforma-Gamificada-TP.pdf"),
+        Paths.get("..", "docs", "fuentes", "PRD-Plataforma-Gamificada-TP.pdf")
+    };
+    for (Path path : candidates) {
+      if (Files.exists(path)) {
+        try {
+          byte[] bytes = Files.readAllBytes(path);
+          return upload(courseCohortId, "PRD-Plataforma-Gamificada-TP.pdf", bytes);
+        } catch (IOException e) {
+          throw new IllegalStateException("Error al leer el archivo de muestra: " + path, e);
+        }
+      }
+    }
+    throw new IllegalArgumentException("No se encontró el archivo de muestra 'PRD-Plataforma-Gamificada-TP.pdf'.");
   }
 }
