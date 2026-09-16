@@ -7,11 +7,16 @@ services:
       POSTGRES_DB: llm
       POSTGRES_USER: llm
       POSTGRES_PASSWORD: llm
+    volumes:
+      - llm-postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U llm -d llm"]
       interval: 5s
       timeout: 3s
       retries: 12
+    # Sin "ports" acá: para conectarse con un cliente SQL o reproducir el escenario de puerto
+    # ocupado de H02 (CA4), usar el overlay compose.debug.yaml — no se publica en el compose base
+    # (docs/02-arquitectura-y-plataforma/05-servicios-docker.md).
 
   llm-service:
     build: .
@@ -81,6 +86,9 @@ services:
   # cliente; EUREKA_URL (.env.example) pasa a apuntar al nombre de red de ese contenedor
   # cuando exista.
 
-# volumes:
-#   llm-redis-data:
-#   llm-minio-data:
+volumes:
+  # Persiste los datos de Postgres entre `down`/`up` (necesario para H06). Solo se borra con
+  # `docker compose down --volumes`.
+  llm-postgres-data:
+  # llm-redis-data:   # descomentar junto con el servicio `redis` de más arriba
+  # llm-minio-data:   # descomentar junto con el servicio `minio` de más arriba

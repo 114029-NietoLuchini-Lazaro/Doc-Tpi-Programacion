@@ -1,7 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.api;
 
 import ar.edu.utn.frc.tup.piv.llm.application.GoldenSetImportService;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.GoldenSetImportRepository.ImportBatch;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.ImportBatch;
 import ar.edu.utn.frc.tup.piv.llm.security.CallerIdentity;
 import ar.edu.utn.frc.tup.piv.llm.security.CourseAuthorization;
 import ar.edu.utn.frc.tup.piv.llm.security.GoldenSetAuthorization;

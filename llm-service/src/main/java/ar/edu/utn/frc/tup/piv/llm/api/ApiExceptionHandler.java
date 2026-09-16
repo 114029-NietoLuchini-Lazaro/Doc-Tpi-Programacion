@@ -9,10 +9,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
   private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
+  @ExceptionHandler(ResponseStatusException.class)
+  ProblemDetail statusException(ResponseStatusException exception, HttpServletRequest request) {
+    return problem(HttpStatus.valueOf(exception.getStatusCode().value()), exception.getReason(), request);
+  }
   @ExceptionHandler(IllegalArgumentException.class)
   ProblemDetail invalid(IllegalArgumentException exception, HttpServletRequest request) { return problem(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage(), request); }
   @ExceptionHandler(OptimisticLockException.class)
@@ -30,7 +35,14 @@ public class ApiExceptionHandler {
   }
   private ProblemDetail problem(HttpStatus status, String detail, HttpServletRequest request) {
     ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
-    problem.setProperty("requestId", request.getHeader("X-Request-Id"));
+    String requestId = request.getHeader("X-Request-Id");
+    if (requestId == null) {
+      Object attr = request.getAttribute("X-Request-Id");
+      if (attr != null) {
+        requestId = attr.toString();
+      }
+    }
+    problem.setProperty("requestId", requestId);
     return problem;
   }
 }

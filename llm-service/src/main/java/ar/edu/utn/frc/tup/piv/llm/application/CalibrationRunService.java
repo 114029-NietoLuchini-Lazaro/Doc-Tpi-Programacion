@@ -1,10 +1,12 @@
 package ar.edu.utn.frc.tup.piv.llm.application;
 
+import ar.edu.utn.frc.tup.piv.llm.domain.calibration.CalibrationRun;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.AuditRepository;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationReproducibilityRepository;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationRunRepository;
 import ar.edu.utn.frc.tup.piv.llm.security.CallerIdentity;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +25,7 @@ public class CalibrationRunService {
   }
 
   @Transactional
-  public CalibrationRunRepository.Run enqueue(UUID courseId, UUID rubricVersionId, UUID goldenSetVersionId,
+  public CalibrationRun enqueue(UUID courseId, UUID rubricVersionId, UUID goldenSetVersionId,
       UUID modelDeploymentId, UUID idempotencyKey, CallerIdentity actor) {
     var run = runs.create(courseId, rubricVersionId, goldenSetVersionId, modelDeploymentId,
         idempotencyKey, actor.delegatedUserId());
@@ -36,13 +38,13 @@ public class CalibrationRunService {
   }
 
   @Transactional(readOnly = true)
-  public CalibrationRunRepository.Run get(UUID courseId, UUID runId) {
+  public CalibrationRun get(UUID courseId, UUID runId) {
     return runs.find(courseId, runId)
         .orElseThrow(() -> new IllegalStateException("La calibración no existe en el curso"));
   }
 
   @Transactional(readOnly = true)
-  public java.util.List<CalibrationRunRepository.Run> list(UUID courseId) {
+  public List<CalibrationRun> list(UUID courseId) {
     return runs.list(courseId);
   }
 }

@@ -52,4 +52,24 @@ class TextChunkerTest {
 
     assertThat(chunks).isEmpty();
   }
+
+  @Test
+  void splitsAtParagraphAndQuestionBoundaries() {
+    String textWithParagraphs = "Párrafo inicial con información relevante sobre el tema estudiado. ".repeat(15)
+        + "\n\nSegundo párrafo que inicia aquí con más detalles necesarios para la prueba. ".repeat(15);
+    var chunks = chunker.createChunks(documentId, "doc.pdf", List.of(new ExtractedPage(1, textWithParagraphs)));
+    assertThat(chunks.size()).isGreaterThan(1);
+
+    String textWithQuestions = "¿Cuál es la respuesta correcta a este problema planteado aquí? ".repeat(25);
+    var questionChunks = chunker.createChunks(documentId, "doc.pdf", List.of(new ExtractedPage(2, textWithQuestions)));
+    assertThat(questionChunks.size()).isGreaterThan(1);
+
+    String textWithExclamations = "¡Atención a este paso fundamental en la arquitectura del sistema! ".repeat(25);
+    var exclChunks = chunker.createChunks(documentId, "doc.pdf", List.of(new ExtractedPage(3, textWithExclamations)));
+    assertThat(exclChunks.size()).isGreaterThan(1);
+
+    String textWithLinebreaks = "Línea sin punto pero con salto de línea continuo para probar\n".repeat(30);
+    var lbChunks = chunker.createChunks(documentId, "doc.pdf", List.of(new ExtractedPage(4, textWithLinebreaks)));
+    assertThat(lbChunks.size()).isGreaterThan(1);
+  }
 }

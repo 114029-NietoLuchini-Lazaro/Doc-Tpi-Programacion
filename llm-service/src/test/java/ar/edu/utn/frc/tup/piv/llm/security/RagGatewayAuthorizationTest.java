@@ -48,7 +48,13 @@ class RagGatewayAuthorizationTest {
     headers.set("X-Service-Scopes", REQUIRED_SCOPE);
     headers.set("X-Delegated-User", UUID.randomUUID().toString());
 
-    assertThatThrownBy(() -> authorization.require(headers)).isInstanceOf(ResponseStatusException.class);
+    assertThatThrownBy(() -> authorization.require(headers))
+        .isInstanceOf(ResponseStatusException.class)
+        .satisfies(ex -> {
+          var rse = (ResponseStatusException) ex;
+          assertThat(rse.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.UNAUTHORIZED);
+          assertThat(rse.getReason()).isEqualTo("Falta el permiso requerido");
+        });
   }
 
   @Test
@@ -59,7 +65,29 @@ class RagGatewayAuthorizationTest {
     headers.set("X-Service-Scopes", "llm.tutor.interact");
     headers.set("X-Delegated-User", UUID.randomUUID().toString());
 
-    assertThatThrownBy(() -> authorization.require(headers)).isInstanceOf(ResponseStatusException.class);
+    assertThatThrownBy(() -> authorization.require(headers))
+        .isInstanceOf(ResponseStatusException.class)
+        .satisfies(ex -> {
+          var rse = (ResponseStatusException) ex;
+          assertThat(rse.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.UNAUTHORIZED);
+          assertThat(rse.getReason()).isEqualTo("Falta el permiso requerido");
+        });
+  }
+
+  @Test
+  void rejectsATrustedServiceWithNullScopes() {
+    var authorization = new RagGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE, false, UUID.randomUUID());
+    var headers = new HttpHeaders();
+    headers.set("X-Service-Id", TRUSTED_SERVICE);
+    headers.set("X-Delegated-User", UUID.randomUUID().toString());
+
+    assertThatThrownBy(() -> authorization.require(headers))
+        .isInstanceOf(ResponseStatusException.class)
+        .satisfies(ex -> {
+          var rse = (ResponseStatusException) ex;
+          assertThat(rse.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.UNAUTHORIZED);
+          assertThat(rse.getReason()).isEqualTo("Falta el permiso requerido");
+        });
   }
 
   @Test
@@ -69,7 +97,13 @@ class RagGatewayAuthorizationTest {
     headers.set("X-Service-Id", TRUSTED_SERVICE);
     headers.set("X-Service-Scopes", REQUIRED_SCOPE);
 
-    assertThatThrownBy(() -> authorization.require(headers)).isInstanceOf(ResponseStatusException.class);
+    assertThatThrownBy(() -> authorization.require(headers))
+        .isInstanceOf(ResponseStatusException.class)
+        .satisfies(ex -> {
+          var rse = (ResponseStatusException) ex;
+          assertThat(rse.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.FORBIDDEN);
+          assertThat(rse.getReason()).isEqualTo("Identidad delegada ausente");
+        });
   }
 
   @Test
@@ -80,6 +114,12 @@ class RagGatewayAuthorizationTest {
     headers.set("X-Service-Scopes", REQUIRED_SCOPE);
     headers.set("X-Delegated-User", "not-a-uuid");
 
-    assertThatThrownBy(() -> authorization.require(headers)).isInstanceOf(ResponseStatusException.class);
+    assertThatThrownBy(() -> authorization.require(headers))
+        .isInstanceOf(ResponseStatusException.class)
+        .satisfies(ex -> {
+          var rse = (ResponseStatusException) ex;
+          assertThat(rse.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.FORBIDDEN);
+          assertThat(rse.getReason()).isEqualTo("Identidad delegada inválida");
+        });
   }
 }

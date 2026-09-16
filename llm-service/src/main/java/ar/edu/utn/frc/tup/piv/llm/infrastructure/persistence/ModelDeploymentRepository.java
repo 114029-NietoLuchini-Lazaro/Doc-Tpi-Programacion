@@ -1,5 +1,6 @@
 package ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence;
 
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelDeploymentSummary;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -41,5 +42,4 @@ public class ModelDeploymentRepository {
     );
   }
 
-  public record ModelDeploymentSummary(UUID id, String provider, String modelId, String modelVersion, String state) {}
 }

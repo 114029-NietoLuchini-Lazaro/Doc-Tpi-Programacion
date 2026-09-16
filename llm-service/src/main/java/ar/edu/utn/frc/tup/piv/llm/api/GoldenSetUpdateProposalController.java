@@ -1,7 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.api;
 
 import ar.edu.utn.frc.tup.piv.llm.application.GoldenSetUpdateProposalService;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.GoldenSetUpdateProposalRepository.GoldenSetUpdateProposal;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetUpdateProposal;
 import ar.edu.utn.frc.tup.piv.llm.security.CourseAuthorization;
 import ar.edu.utn.frc.tup.piv.llm.security.GoldenSetAuthorization;
 import java.util.List;
@@ -19,8 +19,12 @@ public class GoldenSetUpdateProposalController {
   private final GoldenSetUpdateProposalService service;
   private final GoldenSetAuthorization authorization;
   private final CourseAuthorization courseAuthorization;
-  public GoldenSetUpdateProposalController(GoldenSetUpdateProposalService service, GoldenSetAuthorization authorization, CourseAuthorization courseAuthorization) {
-    this.service = service; this.authorization = authorization; this.courseAuthorization = courseAuthorization;
+
+  public GoldenSetUpdateProposalController(GoldenSetUpdateProposalService service,
+      GoldenSetAuthorization authorization, CourseAuthorization courseAuthorization) {
+    this.service = service;
+    this.authorization = authorization;
+    this.courseAuthorization = courseAuthorization;
   }
 
   @GetMapping

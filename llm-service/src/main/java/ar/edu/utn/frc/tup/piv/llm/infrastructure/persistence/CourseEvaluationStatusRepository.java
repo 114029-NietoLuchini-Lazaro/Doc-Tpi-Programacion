@@ -1,5 +1,8 @@
 package ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence;
 
+import ar.edu.utn.frc.tup.piv.llm.domain.evaluation.ActiveCalibration;
+import ar.edu.utn.frc.tup.piv.llm.domain.evaluation.ChallengeAssignment;
+import ar.edu.utn.frc.tup.piv.llm.domain.evaluation.PendingEvaluation;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +30,4 @@ public class CourseEvaluationStatusRepository {
         where assignment.course_id = ? order by pending.queued_at desc
         """, (rs, row) -> new PendingEvaluation(rs.getObject("id", UUID.class), rs.getObject("attempt_id", UUID.class), rs.getObject("assignment_challenge_id", UUID.class), rs.getObject("calibration_run_id", UUID.class), rs.getString("state"), rs.getString("reason"), rs.getObject("queued_at", OffsetDateTime.class)), courseId);
   }
-  public record ActiveCalibration(UUID courseId, UUID calibrationRunId, OffsetDateTime activatedAt) {}
-  public record ChallengeAssignment(UUID challengeId, UUID calibrationRunId, OffsetDateTime lockedAt) { public boolean locked() { return lockedAt != null; } }
-  public record PendingEvaluation(UUID id, UUID attemptId, UUID assignmentId, UUID calibrationRunId, String state, String reason, OffsetDateTime queuedAt) {}
 }

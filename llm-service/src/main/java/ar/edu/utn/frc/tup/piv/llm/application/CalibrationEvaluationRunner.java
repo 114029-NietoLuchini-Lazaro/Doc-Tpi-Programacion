@@ -4,10 +4,11 @@ import ar.edu.utn.frc.tup.piv.llm.domain.CalibrationMetrics;
 import ar.edu.utn.frc.tup.piv.llm.domain.CalibrationMetrics.CaseScores;
 import ar.edu.utn.frc.tup.piv.llm.domain.CalibrationMetrics.Dimension;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelFunction;
+import ar.edu.utn.frc.tup.piv.llm.domain.calibration.CalibrationRun;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetCaseDetail;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationCaseResultRepository;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationRunRepository;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CourseGoldenSetRepository;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CourseGoldenSetRepository.GoldenSetCaseDetail;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.RubricVersionRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -75,7 +76,7 @@ public class CalibrationEvaluationRunner {
     }
   }
 
-  private void evaluate(UUID runId, CalibrationRunRepository.Run run) {
+  private void evaluate(UUID runId, CalibrationRun run) {
     Map<Dimension, Integer> weights = new EnumMap<>(Dimension.class);
     String systemPrompt = buildSystemPromptAndWeights(rubrics.weightsAndPrompts(run.rubricVersionId()), weights);
 

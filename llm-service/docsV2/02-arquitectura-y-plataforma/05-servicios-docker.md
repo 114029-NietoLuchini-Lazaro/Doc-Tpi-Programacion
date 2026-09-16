@@ -48,12 +48,13 @@ sí vive en este repo es el lado cliente:
 Cuando el proyecto de cátedra provea esos contenedores, `EUREKA_URL` se agrega a `compose.yaml`
 apuntando al nombre de red de ese servicio — no hay nada más que preparar de este lado.
 
-## 4. Cómo se combinan los dos archivos
+## 4. Cómo se combinan los archivos
 
 | Comando | Qué levanta |
 |---|---|
-| `docker compose up --build` | Solo `postgres` + `llm-service`, sin perfil `workbench`, sin puertos de negocio publicados. |
+| `docker compose up --build` | Solo `postgres` + `llm-service`, sin perfil `workbench`, sin puertos de negocio publicados. Los datos de `postgres` persisten en el volumen nombrado `llm-postgres-data` entre `down`/`up` (solo se borran con `down --volumes`). |
 | `docker compose -f compose.yaml -f compose.workbench.yaml up --build` | Lo anterior, más `workbench` en `localhost:4200`, y le agrega `SPRING_PROFILES_ACTIVE=workbench` a `llm-service` (CORS para `localhost:4200`, identidad docente fija — `WorkbenchCorsConfiguration`, `WorkbenchDemoCatalog`). |
+| `docker compose -f compose.yaml -f compose.debug.yaml up --build` | Lo anterior (sin `workbench`), más el puerto `5432` de `postgres` publicado al host — solo para debug local (cliente SQL, o reproducir el escenario "puerto ocupado" de H02). No se usa en la plataforma real ni en CI. |
 
 Detalle línea por línea de cada variable de entorno: [`.env.example`](../../.env.example)
 Smoke test automatizado que valida que este compose realmente levanta sano:

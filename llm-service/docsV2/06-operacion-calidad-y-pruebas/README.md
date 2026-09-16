@@ -8,7 +8,8 @@ Esta carpeta indica **cómo sabemos que el servicio funciona correctamente y có
 2. [Convenciones de cobertura](02-convenciones-de-cobertura.md): qué probar y cómo interpretar cobertura y calidad.
 3. [Matriz de pruebas de infraestructura](03-matriz-de-pruebas-de-infraestructura.md): pruebas necesarias para componentes y dependencias de plataforma.
 4. [Estado de implementación](04-estado-de-implementacion/README.md): evidencia de código y diferencia entre el objetivo documentado y lo que ya existe.
-5. [Operación y pruebas V2](../05-operacion-y-pruebas.md): referencia breve de criterios verificables del MVP.
+5. [Guía de demo reproducible de S1](05-guia-demo-s1.md): recorrido paso a paso de verificación de S1 (alta, carga, reinicio y persistencia).
+6. [Operación y pruebas V2](../05-operacion-y-pruebas.md): referencia breve de criterios verificables del MVP.
 
 ## Cómo leerla
 

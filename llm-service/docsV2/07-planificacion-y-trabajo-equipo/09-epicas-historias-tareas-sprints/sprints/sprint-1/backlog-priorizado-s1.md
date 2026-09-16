@@ -29,28 +29,28 @@ de IA."* — más lo que aporta el Hilo F si avanza a tiempo.
 
 ### Tier 1 — Corazón del recorrido de demo (lo que se muestra en vivo)
 
-| # | Ítem | Hilo | Por qué este lugar | h |
-|---:|---|---|---|---:|
-| 1 | **Rúbrica versionada por curso** (`EP03-H04`) | E | Sin rúbrica publicada no hay contra qué calibrar ni evaluar — su propia ficha la marca **Must** | *(a estimar)* |
-| 2 | **Golden set versionado por curso** (`EP03-H05`) | E | Insumo directo de la calibración — también **Must** en su ficha | *(a estimar)* |
-| 3 | **Alta de golden set y carga de entradas** (`EP03-H01`) | E | Es la acción central del guion: "el docente crea su golden set" | 24 |
-| 4 | **Consulta del golden set persistente tras reinicio** (`EP03-H02`) | E | La historia **canónica** de todo S1 — es literalmente el criterio de aceptación de la demo | 14 |
-| 5 | **Pantalla docente mínima del golden set** (`EP03-H03`) | E | Sin pantalla no hay nada que mostrar en vivo | 24 |
-| 6 | **Calibración de curso con PAR-14** (`EP04-H01`) | D | "El docente lo calibra" — segundo paso explícito del guion de demo | 46 |
-| 7 | **Ingesta e indexado de un PDF** (`EP09-H01`) | C | "Carga un PDF de material" — tercer paso del guion | *(sin asignar)* |
-| 8 | **Consulta al tutor con citas de fuente/página** (`EP09-H02`) | C | "El tutor responde con citas del PDF" — cuarto paso, literal en el guion | *(~20–26 con H01)* |
-| 9 | **Interacción socrática del tutor** (`EP05-H01`) | C | "Consulta al tutor" — quinto paso del guion | 28 |
-| 10 | **Guardarraíles anti-jailbreak** (`EP05-H02`) | C | "Un intento de jailbreak se bloquea" — último paso explícito del guion | 26 |
-| 11 | **Proveedor real de IA (Groq/LangChain4j)** (`EP02-H02`) | B | "Todo con el proveedor real de IA" es una condición explícita de la demo, no un detalle técnico | 20 |
+|   # | Ítem                                                               | Hilo | Por qué este lugar                                                                              |                  h |
+| --: | ------------------------------------------------------------------ | ---- | ----------------------------------------------------------------------------------------------- | -----------------: |
+|   1 | **Rúbrica versionada por curso** (`EP03-H04`)                      | E    | Sin rúbrica publicada no hay contra qué calibrar ni evaluar — su propia ficha la marca **Must** |      *(a estimar)* |
+|   2 | **Golden set versionado por curso** (`EP03-H05`)                   | E    | Insumo directo de la calibración — también **Must** en su ficha                                 |      *(a estimar)* |
+|   3 | **Alta de golden set y carga de entradas** (`EP03-H01`)            | E    | Es la acción central del guion: "el docente crea su golden set"                                 |                 24 |
+|   4 | **Consulta del golden set persistente tras reinicio** (`EP03-H02`) | E    | La historia **canónica** de todo S1 — es literalmente el criterio de aceptación de la demo      |                 14 |
+|   5 | **Pantalla docente mínima del golden set** (`EP03-H03`)            | E    | Sin pantalla no hay nada que mostrar en vivo                                                    |                 24 |
+|   6 | **Calibración de curso con PAR-14** (`EP04-H01`)                   | D    | "El docente lo calibra" — segundo paso explícito del guion de demo                              |                 46 |
+|   7 | **Ingesta e indexado de un PDF** (`EP09-H01`)                      | C    | "Carga un PDF de material" — tercer paso del guion                                              |    *(sin asignar)* |
+|   8 | **Consulta al tutor con citas de fuente/página** (`EP09-H02`)      | C    | "El tutor responde con citas del PDF" — cuarto paso, literal en el guion                        | *(~20–26 con H01)* |
+|   9 | **Interacción socrática del tutor** (`EP05-H01`)                   | C    | "Consulta al tutor" — quinto paso del guion                                                     |                 28 |
+|  10 | **Guardarraíles anti-jailbreak** (`EP05-H02`)                      | C    | "Un intento de jailbreak se bloquea" — último paso explícito del guion                          |                 26 |
+|  11 | **Proveedor real de IA (Groq/LangChain4j)** (`EP02-H02`)           | B    | "Todo con el proveedor real de IA" es una condición explícita de la demo, no un detalle técnico |                 20 |
 
 ### Tier 2 — Sostiene la demo pero no se ve en pantalla (habilitadores obligatorios)
 
-| # | Ítem | Hilo | Por qué este lugar | h |
-|---:|---|---|---|---:|
-| 12 | **Puerto de modelos y fake** (`EP02-H01`) | B | Toda la IA de arriba (calibración, tutor) invoca este puerto — invisible, pero nada de Tier 1 funciona sin él | 32 |
-| 13 | **Esquema inicial versionado con auditoría** (`EP01-H04`) | A | Toda la persistencia de golden set/rúbrica de Tier 1 corre sobre este esquema | 38 |
-| 14 | **Esqueleto transversal del servicio** (`EP01-H03`) | A | Condición de la propia definición de demo: corre en **ambiente integrado** (Gateway/Eureka/Security), no en una máquina aislada | 34 |
-| 15 | **Entorno reproducible con un comando** (`EP01-H02`) | A | Sin esto nadie levanta el ambiente donde se hace la demo | 30 |
+|   # | Ítem                                                      | Hilo | Por qué este lugar                                                                                                              |   h |
+| --: | --------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------- | --: |
+|  12 | **Puerto de modelos y fake** (`EP02-H01`)                 | B    | Toda la IA de arriba (calibración, tutor) invoca este puerto — invisible, pero nada de Tier 1 funciona sin él                   |  32 |
+|  13 | **Esquema inicial versionado con auditoría** (`EP01-H04`) | A    | Toda la persistencia de golden set/rúbrica de Tier 1 corre sobre este esquema                                                   |  38 |
+|  14 | **Esqueleto transversal del servicio** (`EP01-H03`)       | A    | Condición de la propia definición de demo: corre en **ambiente integrado** (Gateway/Eureka/Security), no en una máquina aislada |  34 |
+|  15 | **Entorno reproducible con un comando** (`EP01-H02`)      | A    | Sin esto nadie levanta el ambiente donde se hace la demo                                                                        |  30 |
 
 ### Tier 3 — Complementa la demo si hay tiempo (Hilo F, y UX secundaria)
 
@@ -67,13 +67,13 @@ de IA."* — más lo que aporta el Hilo F si avanza a tiempo.
 
 ### Tier 4 — Invisible en la demo, importa para la nota de proceso/calidad
 
-| # | Ítem | Hilo | Por qué este lugar | h |
-|---:|---|---|---|---:|
-| 24 | **ADR de arquitectura y convenciones** (`EP01-H01`) | A | Documentación de proceso — igual que en el cierre de S1, un PO de producto lo prioriza último aunque a la cátedra sí le importe | 16 |
-| 25 | **Contrato OpenAPI y mock del golden set** (`EP01-H05`) | A | Sirve a `admin-service` para avanzar en paralelo, no a quien mira la demo | 10 |
-| 26 | **Suite de pruebas y guía de demo** (`EP01-H06`) | A | Es la evidencia de que todo lo de arriba funciona — se escribe último porque necesita que el resto ya exista | 18 |
-| 27 | **Consumo asíncrono de eventos de entrega** (`EP06-H01`) | E | Plomería backend pura, sin nada visible en pantalla | 24 |
-| 28 | **429 y Retry-After en rutas con límite** (`EP07-H03`, ex `S09-H03`) | F | El detalle técnico menos vistoso del Hilo F | 22 |
+|   # | Ítem                                                                 | Hilo | Por qué este lugar                                                                                                              |   h |
+| --: | -------------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------- | --: |
+|  24 | **ADR de arquitectura y convenciones** (`EP01-H01`)                  | A    | Documentación de proceso — igual que en el cierre de S1, un PO de producto lo prioriza último aunque a la cátedra sí le importe |  16 |
+|  25 | **Contrato OpenAPI y mock del golden set** (`EP01-H05`)              | A    | Sirve a `admin-service` para avanzar en paralelo, no a quien mira la demo                                                       |  10 |
+|  26 | **Suite de pruebas y guía de demo** (`EP01-H06`)                     | A    | Es la evidencia de que todo lo de arriba funciona — se escribe último porque necesita que el resto ya exista                    |  18 |
+|  27 | **Consumo asíncrono de eventos de entrega** (`EP06-H01`)             | E    | Plomería backend pura, sin nada visible en pantalla                                                                             |  24 |
+|  28 | **429 y Retry-After en rutas con límite** (`EP07-H03`, ex `S09-H03`) | F    | El detalle técnico menos vistoso del Hilo F                                                                                     |  22 |
 
 > **Nota importante — la misma que en el cierre de S1.** Esta vista asume un PO que solo mira "¿el
 > recorrido de la demo funciona?". **La cátedra de este TP no es ese PO** — exige ADR, CI y DoD

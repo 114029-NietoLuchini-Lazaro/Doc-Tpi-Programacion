@@ -1,7 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.api;
 
+import ar.edu.utn.frc.tup.piv.llm.application.ModelAssignmentService;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelFunction;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.FunctionModelConfigRepository;
 import ar.edu.utn.frc.tup.piv.llm.security.GoldenSetAuthorization;
 import java.util.Locale;
 import java.util.UUID;
@@ -22,18 +22,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/llm/model-assignments")
 public class ModelAssignmentController {
-  private final FunctionModelConfigRepository configs;
+  private final ModelAssignmentService service;
   private final GoldenSetAuthorization authorization;
 
-  public ModelAssignmentController(FunctionModelConfigRepository configs, GoldenSetAuthorization authorization) {
-    this.configs = configs;
+  public ModelAssignmentController(ModelAssignmentService service, GoldenSetAuthorization authorization) {
+    this.service = service;
     this.authorization = authorization;
   }
 
   @GetMapping("/{function}")
   public Assignment get(@PathVariable String function, @RequestHeader HttpHeaders headers) {
     authorization.require(headers);
-    var config = configs.find(parse(function))
+    var config = service.find(parse(function))
         .orElseThrow(() -> new IllegalStateException("La función no tiene modelo asignado"));
     return new Assignment(config.provider(), config.modelId(), config.modelVersion());
   }
@@ -48,7 +48,7 @@ public class ModelAssignmentController {
     if (body.provider() == null || body.provider().isBlank() || body.modelId() == null || body.modelId().isBlank()) {
       throw new IllegalArgumentException("provider y modelId son obligatorios");
     }
-    configs.upsert(parse(function), body.provider(), body.modelId(), body.modelVersion(), actor);
+    service.upsert(parse(function), body.provider(), body.modelId(), body.modelVersion(), actor);
     return body;
   }
 

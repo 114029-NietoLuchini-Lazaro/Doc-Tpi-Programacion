@@ -274,13 +274,18 @@ requerido... recibe `401`") y la traza de H09·T3 ("pruebas de contrato... que e
 si el problema es de autenticación o de autorización) — pero si es así, H03/H09 deberían
 actualizarse para dejar de prometer un `401` que nunca va a llegar.
 
-## 🟡 18. H09·T6 no cumplida: sin JaCoCo no hay gate de cobertura backend posible
+## 🟢 18. H09·T6 resuelta: JaCoCo configurado y gate de cobertura activo — 2026-09-16
+
+> **🟢 Resuelto el 2026-09-16.** Se configuró `jacoco-maven-plugin` en `pom.xml` con los goals
+> `prepare-agent`, `report` y `check`. Al ejecutar `mvn test`, se generan automáticamente
+> `target/site/jacoco/index.html` y `jacoco.xml`, y el gate valida que los paquetes de dominio
+> cumplan el umbral de cobertura (91–97% alcanzado), fallando la build si baja del mínimo (CA5).
+> Se conserva la redacción original como registro histórico.
 
 La tarea T6 de H09 pide "activar el gate de cobertura de [24](docs/24-convenciones-cobertura.md)
-en CI" (umbral 95% backend). Verificado: `pom.xml` **no tiene el plugin de JaCoCo configurado**
-(`grep jacoco pom.xml` → vacío). Sin JaCoCo no hay `target/site/jacoco/index.html` ni `jacoco.xml`
-que un gate de CI pueda leer — el umbral de doc 24 no puede estar activo hoy, sin importar cuántos
-tests haya.
+en CI" (umbral 95% backend). Verificado en su momento: `pom.xml` **no tenía el plugin de JaCoCo
+configurado** (`grep jacoco pom.xml` → vacío). Sin JaCoCo no había `target/site/jacoco/index.html` ni
+`jacoco.xml` que un gate de CI pudiera leer.
 
 ## 🟢 19. H02: `.env.example` y `down` — resuelto el 2026-09-12
 

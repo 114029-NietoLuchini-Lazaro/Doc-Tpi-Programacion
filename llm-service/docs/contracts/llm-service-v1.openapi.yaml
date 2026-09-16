@@ -1,8 +1,13 @@
 openapi: 3.1.0
 info:
-  title: LLM Service API
+  title: LLM Service API (v1 - Histórico / Reemplazado)
   version: 1.0.0
-  description: API privada de llm-service. Toda llamada ingresa mediante API Gateway.
+  x-deprecated: true
+  description: |
+    DOCUMENTO HISTÓRICO - REEMPLAZADO POR v2.
+    El flujo de Golden Set v1 (/golden-sets) fue retirado en commit 605f381 y reemplazado por la arquitectura con ámbito de curso (v2).
+    Para el contrato vigente del Golden Set y Calibración, consultar llm-service-v2-golden-set.openapi.yaml.
+    API privada de llm-service. Toda llamada ingresa mediante API Gateway.
 servers:
   - url: /api/llm
 security:

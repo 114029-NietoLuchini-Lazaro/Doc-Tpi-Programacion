@@ -10,8 +10,8 @@
 | ID | Título | Estado | Nota en una línea |
 |---|---|---|---|
 | [H01](h01.md) | ADR de arquitectura y convenciones técnicas | 🔴 | No existe ningún ADR de `llm-service` en el repo |
-| [H02](h02.md) | Entorno reproducible con un comando | 🟡 | `docker compose` existe; falta `.env.example` y documentar `down` |
-| [H03](h03.md) | Esqueleto transversal del servicio | 🔴 | No se registra en Eureka; nunca devuelve `401` (todo es `403`) |
+| [H02](h02.md) | Entorno reproducible con un comando | 🟢 | CA1–CA4 y T7 verificados con evidencia real 2026-09-16; se agregó volumen persistente de Postgres (gap real) |
+| [H03](h03.md) | Esqueleto transversal del servicio | 🟡 | Cliente Eureka configurado; 401/403 separados con Problem Details; eco de X-Request-Id verificado |
 | [H04](h04.md) | Esquema inicial versionado con auditoría | 🟢 | Migración `V1` cumple lo que pide la ficha |
 | [H08](h08.md) | Contrato OpenAPI y mock del golden set publicados | 🟡 | Contratos publicados; no hay mock levantable con un comando |
 | [H09](h09.md) | Suite de pruebas y guía de demo de S1 | 🔴 | 32 clases de test, pero sin JaCoCo no hay gate de cobertura; sin guía de demo |

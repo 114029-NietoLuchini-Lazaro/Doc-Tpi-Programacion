@@ -1,7 +1,10 @@
 package ar.edu.utn.frc.tup.piv.llm.api;
 
 import ar.edu.utn.frc.tup.piv.llm.application.CourseGoldenSetService;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CourseGoldenSetRepository.CourseGoldenSetVersion;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.CourseGoldenSetVersion;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.CourseGoldenSetView;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetCaseInput;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetCaseSummary;
 import ar.edu.utn.frc.tup.piv.llm.security.CourseAuthorization;
 import ar.edu.utn.frc.tup.piv.llm.security.GoldenSetAuthorization;
 import java.net.URI;
@@ -24,8 +27,12 @@ public class CourseGoldenSetController {
   private final CourseGoldenSetService service;
   private final GoldenSetAuthorization authorization;
   private final CourseAuthorization courseAuthorization;
-  public CourseGoldenSetController(CourseGoldenSetService service, GoldenSetAuthorization authorization, CourseAuthorization courseAuthorization) {
-    this.service = service; this.authorization = authorization; this.courseAuthorization = courseAuthorization;
+
+  public CourseGoldenSetController(CourseGoldenSetService service,
+      GoldenSetAuthorization authorization, CourseAuthorization courseAuthorization) {
+    this.service = service;
+    this.authorization = authorization;
+    this.courseAuthorization = courseAuthorization;
   }
 
   @PostMapping("/copy-from-base/{baseVersionId}")
@@ -54,33 +61,38 @@ public class CourseGoldenSetController {
   }
 
   @PostMapping("/{versionId}/cases")
-  public ResponseEntity<ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CourseGoldenSetRepository.GoldenSetCaseSummary> addCase(@PathVariable UUID courseId, @PathVariable UUID versionId, @RequestBody ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CourseGoldenSetRepository.GoldenSetCaseInput input, @RequestHeader HttpHeaders headers) {
-    var actor = authorization.require(headers); courseAuthorization.requireTeacher(courseId, actor, headers);
+  public ResponseEntity<GoldenSetCaseSummary> addCase(@PathVariable UUID courseId, @PathVariable UUID versionId,
+      @RequestBody GoldenSetCaseInput input, @RequestHeader HttpHeaders headers) {
+    var actor = authorization.require(headers);
+    courseAuthorization.requireTeacher(courseId, actor, headers);
     var created = service.addCase(courseId, versionId, input);
     return ResponseEntity.created(URI.create("/api/llm/courses/" + courseId + "/golden-sets/" + versionId + "/cases/" + created.id())).body(created);
   }
 
   @PostMapping("/{versionId}/publish")
   public ResponseEntity<Void> publish(@PathVariable UUID courseId, @PathVariable UUID versionId, @RequestHeader HttpHeaders headers) {
-    var actor = authorization.require(headers); courseAuthorization.requireTeacher(courseId, actor, headers);
+    var actor = authorization.require(headers);
+    courseAuthorization.requireTeacher(courseId, actor, headers);
     service.publish(courseId, versionId, actor);
     return ResponseEntity.ok().build();
   }
 
   @PostMapping("/{versionId}/next-version")
   public ResponseEntity<CourseGoldenSetVersion> createNextVersion(@PathVariable UUID courseId, @PathVariable UUID versionId, @RequestHeader HttpHeaders headers) {
-    var actor = authorization.require(headers); courseAuthorization.requireTeacher(courseId, actor, headers);
+    var actor = authorization.require(headers);
+    courseAuthorization.requireTeacher(courseId, actor, headers);
     var created = service.createNextVersion(courseId, versionId, actor);
     return ResponseEntity.created(URI.create("/api/llm/courses/" + courseId + "/golden-sets/" + created.id())).body(created);
   }
 
   @DeleteMapping("/{versionId}")
   public ResponseEntity<Void> deleteUnusedDraft(@PathVariable UUID courseId, @PathVariable UUID versionId, @RequestHeader HttpHeaders headers) {
-    var actor = authorization.require(headers); courseAuthorization.requireTeacher(courseId, actor, headers);
+    var actor = authorization.require(headers);
+    courseAuthorization.requireTeacher(courseId, actor, headers);
     service.deleteUnusedDraft(courseId, versionId, actor);
     return ResponseEntity.noContent().build();
   }
 
-  public record GoldenSetPage(List<ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CourseGoldenSetRepository.CourseGoldenSetView> items) {}
+  public record GoldenSetPage(List<CourseGoldenSetView> items) {}
   public record CreateGoldenSetDraft(String name) {}
 }

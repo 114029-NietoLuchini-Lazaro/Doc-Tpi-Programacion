@@ -18,6 +18,7 @@ de otra contraparte.
    [mapa histórico](90-mapa-de-integracion-historico.md) y
    [contratos históricos inter-equipos](91-contratos-inter-equipos-historicos.md): antecedentes
    útiles para entender cambios, no fuentes para crear una integración nueva.
+7. [Simulador y Mock](MOCK.md): comando de una línea (Prism) y simulación local con Docker Workbench para habilitar integración desacoplada (CA2).
 
 ## Cómo leerla
 

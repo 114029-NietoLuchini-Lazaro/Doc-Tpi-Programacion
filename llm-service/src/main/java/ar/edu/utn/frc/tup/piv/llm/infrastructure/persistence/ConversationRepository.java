@@ -14,7 +14,7 @@ import org.springframework.stereotype.Repository;
  * no hay JPA en `llm-service`. Portado de `demoLLMSpringAi/.../repository/ConversacionRepository.java`
  * (EP-05, ver `docs/estado-implementacion/ep-05/conversations.md`). */
 @Repository
-public class ConversationRepository {
+public class ConversationRepository implements ar.edu.utn.frc.tup.piv.llm.domain.tutor.ConversationRepository {
   private final JdbcTemplate jdbc;
 
   public ConversationRepository(JdbcTemplate jdbc) {

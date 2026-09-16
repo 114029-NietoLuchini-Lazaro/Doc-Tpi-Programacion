@@ -38,8 +38,11 @@ public class RagGatewayAuthorization {
     String scopes = headers.getFirst("X-Service-Scopes");
     String delegated = headers.getFirst("X-Delegated-User");
     if (!trustedService.equals(serviceId) || scopes == null
-        || Arrays.stream(scopes.split("\\s+")).noneMatch(requiredScope::equals) || delegated == null) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El actor no puede invocar el RAG");
+        || Arrays.stream(scopes.split("\\s+")).noneMatch(requiredScope::equals)) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Falta el permiso requerido");
+    }
+    if (delegated == null) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Identidad delegada ausente");
     }
     try {
       return new CallerIdentity(serviceId, UUID.fromString(delegated), headers.getFirst("X-Request-Id"), headers.getFirst("traceparent"));

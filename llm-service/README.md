@@ -57,7 +57,32 @@ docker compose ps              # healthcheck en columna STATUS
 curl http://localhost:8080/actuator/health   # sólo si se expuso el puerto para debug local
 ```
 
+### Persistencia y debug local
+
+Los datos de PostgreSQL viven en el volumen nombrado `llm-postgres-data`; sobreviven a
+`docker compose down` y solo se borran con `docker compose down --volumes`.
+
+Para conectarte a Postgres con un cliente SQL desde el host (uso de debug, no para la plataforma
+real — ver [`compose.debug.yaml`](compose.debug.yaml)):
+
+```bash
+docker compose -f compose.yaml -f compose.debug.yaml up --build
+# psql -h localhost -U llm -d llm
+```
+
 Variables de entorno: ver [`.env.example`](.env.example).
+
+### Guía de Demo y Verificación de Reinicio (Sprint 1)
+
+Para la Sprint Review y verificación reproducible con evidencia técnica:
+- **Guía de demo paso a paso:** [`docs/guia-demo-s1.md`](docs/guia-demo-s1.md) (versión canónica V2: [`docsV2/06-operacion-calidad-y-pruebas/05-guia-demo-s1.md`](docsV2/06-operacion-calidad-y-pruebas/05-guia-demo-s1.md)).
+- **Prueba automatizada de reinicio de Compose (H06·T4):**
+  - Linux / macOS / Git Bash: `bash scripts/test-compose-restart.sh`
+  - Windows PowerShell: `powershell -File scripts/test-compose-restart.ps1`
+- **Suite de pruebas y reporte de cobertura JaCoCo (H06·T6):**
+  - Ejecutar `mvn test` para correr las 218 pruebas unitarias y de arquitectura.
+  - El reporte de cobertura se genera automáticamente en `target/site/jacoco/index.html` y `jacoco.xml`.
+  - El gate de calidad en CI verifica que los paquetes de dominio superen el umbral exigido.
 
 ## El problema
 

@@ -1,5 +1,10 @@
 package ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence;
 
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.CourseGoldenSetVersion;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.CourseGoldenSetView;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetCaseDetail;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetCaseInput;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetCaseSummary;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -72,12 +77,14 @@ public class CourseGoldenSetRepository {
 
   public Optional<GoldenSetCaseSummary> addDraftCase(UUID courseId, UUID versionId, GoldenSetCaseInput input) {
     UUID id = UUID.randomUUID();
+    String metadataJson = input.metadata() != null ? input.metadata().toString() : "{}";
+    String justificationsJson = input.scoreJustifications() != null ? input.scoreJustifications().toString() : "{}";
     int inserted = jdbc.update("""
         insert into llm.golden_set_cases (id, golden_set_version_id, case_order, transcript, challenge_context, safe_metadata, author, reference_scores, score_justifications)
         select ?, v.id, coalesce((select max(case_order) + 1 from llm.golden_set_cases where golden_set_version_id = v.id), 0), cast(? as jsonb), cast(? as jsonb), cast(? as jsonb), ?, cast(? as jsonb), cast(? as jsonb)
         from llm.golden_set_versions v join llm.golden_set_families f on f.id = v.family_id
         where v.id = ? and v.state = 'DRAFT' and f.scope = 'COURSE' and f.course_id = ?
-        """, id, input.transcript().toString(), input.challengeContext().toString(), input.metadata().toString(), input.author(), input.referenceScores().toString(), input.scoreJustifications().toString(), versionId, courseId);
+        """, id, input.transcript().toString(), input.challengeContext().toString(), metadataJson, input.author(), input.referenceScores().toString(), justificationsJson, versionId, courseId);
     return inserted == 0 ? Optional.empty() : Optional.of(new GoldenSetCaseSummary(id, cases(versionId).size() - 1, input.author(), "DRAFT"));
   }
 
@@ -155,12 +162,5 @@ public class CourseGoldenSetRepository {
     catch (Exception exception) { throw new IllegalStateException("No se pudo leer un caso del golden set", exception); }
   }
 
-  public record CourseGoldenSetVersion(UUID id, UUID familyId, int version, String state, UUID basedOnVersionId) {}
-  public record GoldenSetCaseDetail(UUID id, JsonNode transcript, JsonNode challengeContext, JsonNode referenceScores) {}
-  public record CourseGoldenSetView(UUID id, UUID familyId, String name, int version, String state, UUID basedOnVersionId,
-      List<GoldenSetCaseSummary> cases) {}
-  public record GoldenSetCaseSummary(UUID id, int order, String author, String reviewState) {}
-  public record GoldenSetCaseInput(JsonNode transcript, JsonNode challengeContext, JsonNode metadata, String author,
-      JsonNode referenceScores, JsonNode scoreJustifications) {}
   private record Source(UUID id, String name) {}
 }

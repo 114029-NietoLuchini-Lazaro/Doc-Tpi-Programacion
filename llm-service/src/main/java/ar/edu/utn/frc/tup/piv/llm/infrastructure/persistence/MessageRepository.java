@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 /** Persistencia JDBC directa de {@link Message}, sin puerto — ver {@link ConversationRepository}.
  * Portado de `demoLLMSpringAi/.../repository/MensajeRepository.java`. */
 @Repository
-public class MessageRepository {
+public class MessageRepository implements ar.edu.utn.frc.tup.piv.llm.domain.tutor.MessageRepository {
   private final JdbcTemplate jdbc;
 
   public MessageRepository(JdbcTemplate jdbc) {

@@ -12,11 +12,11 @@ import ar.edu.utn.frc.tup.piv.llm.domain.CalibrationMetrics.Dimension;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.InvalidModelResponseException;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelFunction;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationResult;
+import ar.edu.utn.frc.tup.piv.llm.domain.calibration.CalibrationRun;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetCaseDetail;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationCaseResultRepository;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationRunRepository;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationRunRepository.Run;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CourseGoldenSetRepository;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CourseGoldenSetRepository.GoldenSetCaseDetail;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.RubricVersionRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
@@ -98,7 +98,7 @@ class CalibrationEvaluationRunnerTest {
       CalibrationWorkflowService workflow, String humanScoresJson) {
     var runs = mock(CalibrationRunRepository.class);
     when(runs.findById(runId)).thenReturn(Optional.of(
-        new Run(runId, "RUNNING", 0, rubricVersionId, goldenSetVersionId, UUID.randomUUID(), null, null, "MANUAL", null, null)));
+        new CalibrationRun(runId, "RUNNING", 0, rubricVersionId, goldenSetVersionId, UUID.randomUUID(), null, null, "MANUAL", null, null)));
 
     var rubrics = mock(RubricVersionRepository.class);
     when(rubrics.weightsAndPrompts(rubricVersionId)).thenReturn(List.of(

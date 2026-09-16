@@ -9,6 +9,11 @@ servers:
 security:
   - serviceJwt: []
 paths:
+  /courses:
+    get:
+      summary: List Authorized Courses for Current Teacher
+      operationId: listAuthorizedCourses
+      responses: {'200': {$ref: '#/components/responses/CoursePage'}, '403': {$ref: '#/components/responses/Problem'}}
   /courses/{courseId}/rubrics:
     get:
       summary: List Rubrics
@@ -76,6 +81,12 @@ paths:
       operationId: publishGoldenSetVersion
       parameters: [{$ref: '#/components/parameters/CourseId'}, {$ref: '#/components/parameters/GoldenSetVersionId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
       responses: {'200': {$ref: '#/components/responses/GoldenSetVersion'}, '403': {$ref: '#/components/responses/Problem'}}
+  /courses/{courseId}/golden-sets/{goldenSetVersionId}/next-version:
+    post:
+      summary: Create Next Golden Set Version
+      operationId: createNextGoldenSetVersion
+      parameters: [{$ref: '#/components/parameters/CourseId'}, {$ref: '#/components/parameters/GoldenSetVersionId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      responses: {'201': {$ref: '#/components/responses/GoldenSetVersion'}, '403': {$ref: '#/components/responses/Problem'}}
   /courses/{courseId}/golden-sets/{goldenSetVersionId}:
     delete:
       summary: Logically delete an unused draft Golden Set family
@@ -182,6 +193,12 @@ paths:
       operationId: listPendingEvaluations
       parameters: [{$ref: '#/components/parameters/CourseId'}]
       responses: {'200': {$ref: '#/components/responses/PendingEvaluationPage'}, '403': {$ref: '#/components/responses/Problem'}}
+  /courses/{courseId}/model-deployments:
+    get:
+      summary: List Model Deployments for Course
+      operationId: listModelDeploymentsForCourse
+      parameters: [{$ref: '#/components/parameters/CourseId'}]
+      responses: {'200': {$ref: '#/components/responses/ModelDeploymentPage'}, '403': {$ref: '#/components/responses/Problem'}}
   /admin/model-adapters:
     get:
       summary: List Model Adapters
@@ -239,6 +256,9 @@ components:
     ModelAdapter: {description: Adapter, content: {application/json: {schema: {$ref: '#/components/schemas/ModelAdapter'}}}}
     PendingEvaluationPage: {description: Página, content: {application/json: {schema: {$ref: '#/components/schemas/PendingEvaluationPage'}}}}
     ModelAdapterPage: {description: Página, content: {application/json: {schema: {$ref: '#/components/schemas/ModelAdapterPage'}}}}
+    CoursePage: {description: Lista de cursos, content: {application/json: {schema: {$ref: '#/components/schemas/CoursePage'}}}}
+    ModelDeploymentPage: {description: Lista de deployments, content: {application/json: {schema: {$ref: '#/components/schemas/ModelDeploymentPage'}}}}
+    GoldenSetUpdateProposalPage: {description: Propuestas de actualización, content: {application/json: {schema: {$ref: '#/components/schemas/GoldenSetUpdateProposalPage'}}}}
   schemas:
     Dimensions:
       type: object
@@ -314,3 +334,25 @@ components:
     AssignmentPage: {type: object, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/ChallengeCalibrationAssignment'}}}}
     ModelAdapterPage: {type: object, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/ModelAdapter'}}}}
     PendingEvaluationPage: {type: object, required: [items], properties: {items: {type: array, items: {$ref: '#/components/schemas/PendingEvaluation'}}}}
+    CourseSummary:
+      type: object
+      required: [id, name]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        subtitle: {type: string, nullable: true}
+    CoursePage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/CourseSummary'}
+    ModelDeploymentPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ModelDeployment'}
+

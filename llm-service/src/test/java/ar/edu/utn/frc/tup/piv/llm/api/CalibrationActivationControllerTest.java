@@ -3,8 +3,8 @@ package ar.edu.utn.frc.tup.piv.llm.api;
 import ar.edu.utn.frc.tup.piv.llm.application.CalibrationActivationPreviewService;
 import ar.edu.utn.frc.tup.piv.llm.application.CalibrationActivationService;
 import ar.edu.utn.frc.tup.piv.llm.application.CalibrationMigrationConfirmation;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.ChallengeCalibrationAssignmentRepository.Preview;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CourseEvaluationStatusRepository;
+import ar.edu.utn.frc.tup.piv.llm.application.CourseEvaluationStatusService;
+import ar.edu.utn.frc.tup.piv.llm.domain.evaluation.CalibrationMigrationPreview;
 import ar.edu.utn.frc.tup.piv.llm.security.CallerIdentity;
 import ar.edu.utn.frc.tup.piv.llm.security.CourseAuthorization;
 import ar.edu.utn.frc.tup.piv.llm.security.GoldenSetAuthorization;
@@ -21,12 +21,12 @@ import static org.mockito.Mockito.when;
 class CalibrationActivationControllerTest {
   @Test void previewIssuesAConfirmationForOnlyMigrableChallenges() {
     var previews = mock(CalibrationActivationPreviewService.class); var confirmations = new CalibrationMigrationConfirmation();
-    var activation = mock(CalibrationActivationService.class); var status = mock(CourseEvaluationStatusRepository.class);
+    var activation = mock(CalibrationActivationService.class); var status = mock(CourseEvaluationStatusService.class);
     var identity = mock(GoldenSetAuthorization.class); var courses = mock(CourseAuthorization.class);
     var controller = new CalibrationActivationController(previews, confirmations, activation, status, identity, courses);
     UUID courseId = UUID.randomUUID(), runId = UUID.randomUUID(), migrable = UUID.randomUUID(), locked = UUID.randomUUID();
     HttpHeaders headers = new HttpHeaders(); CallerIdentity actor = new CallerIdentity("gateway", UUID.randomUUID(), null, null);
-    when(identity.require(headers)).thenReturn(actor); when(previews.preview(courseId, runId)).thenReturn(new Preview(List.of(migrable), List.of(locked)));
+    when(identity.require(headers)).thenReturn(actor); when(previews.preview(courseId, runId)).thenReturn(new CalibrationMigrationPreview(List.of(migrable), List.of(locked)));
 
     var result = controller.preview(courseId, runId, headers);
 

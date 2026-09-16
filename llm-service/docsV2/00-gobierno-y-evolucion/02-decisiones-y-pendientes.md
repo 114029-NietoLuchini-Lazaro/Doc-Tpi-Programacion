@@ -433,6 +433,63 @@ parece contradecir a otra, probablemente sea una de estas.
 
 ---
 
+### ADR-019 — Árbol de paquetes, fronteras de dependencia y variables de entorno de `llm-service`
+
+**Decisión:** `llm-service` mantiene ocho fronteras de paquete (fuente: playbook de construcción,
+[06 §4](../07-planificacion-y-trabajo-equipo/06-playbook-de-construccion.md)): `api`, `application`,
+`domain`, `infrastructure/persistence`, `infrastructure/messaging`, `infrastructure/ai`, `security`
+y `configuration`, bajo el paquete raíz `ar.edu.utn.frc.tup.piv.llm`. El flujo esperado de una
+petición es `controller (api) -> application -> domain` / `infrastructure`; `api` no conoce JPA/JDBC
+directo y **`domain` no depende de Spring, Kafka ni de ningún SDK de proveedor de modelos** — solo
+`java.*`. **Excepción documentada:** Jackson (`com.fasterxml.jackson.*`) está permitido en `domain`
+por ser una librería de serialización neutral, no un framework de aplicación; hoy la usan
+`domain/RealCaseAnonymizer.java` y `domain/ai/ModelResponseSchema.java`.
+
+`infrastructure/messaging` (Kafka, Tema 11) sigue reservada y no existe todavía.
+`infrastructure/ai` ya existe con adapters fake (`FakeModelAdapter`, `FakeEmbeddingAdapter`); los
+adapters reales `langchain4j` detrás de `LlmAdapter` (ADR-016) van ahí cuando entren. La pregunta
+abierta de [37 §7](../02-arquitectura-y-plataforma/04-estructura-del-backend.md) sobre dónde vive el
+pipeline de RAG (EP-09) ya quedó resuelta en el código: se creó `domain/rag/` e
+`infrastructure/rag/` como sub-fronteras propias, con la misma regla — `domain/rag/` sin Spring —.
+Este ADR no corrige el hueco ya conocido de 7 de los 12 controllers de `api/` que hoy acceden a
+`infrastructure/persistence/` sin pasar por `application/` — queda señalado en
+[CORRECCIONES-SUGERIDAS.md](../06-operacion-calidad-y-pruebas/04-estado-de-implementacion/codigo-ejemplo/fuentes/CORRECCIONES-SUGERIDAS.md)
+y se revisa aparte.
+
+Variables de entorno del servicio (fuente: `.env.example`, `application.yml`,
+`application-workbench.yml`):
+
+| Variable | Propósito | Valor por defecto |
+|---|---|---|
+| `SERVER_PORT` | Puerto HTTP interno; nunca se publica afuera, solo lo alcanza el API Gateway vía Eureka (ADR-015) | `8080` |
+| `SPRING_DATASOURCE_URL` | Conexión JDBC a Postgres, esquema `llm` | `jdbc:postgresql://localhost:5432/llm` |
+| `SPRING_DATASOURCE_USERNAME` | Usuario de esa base | `llm` |
+| `SPRING_DATASOURCE_PASSWORD` | Contraseña de esa base | `llm` (solo en local; nunca un valor real commiteado) |
+| `EUREKA_URL` | URL del Eureka server del proyecto integrado (gateway + discovery de la cátedra) | `http://localhost:8761/eureka/` |
+| `LLM_WORKBENCH_USER_ID` | Identidad docente fija de demo, perfil `workbench` | `11111111-1111-1111-1111-111111111111` |
+
+Los secretos reales (usuario/contraseña de base, credenciales de proveedor cuando existan) **nunca
+se commitean**: solo sus placeholders viven en `.env.example`; el valor real se inyecta como
+variable de entorno del contenedor/entorno de despliegue o CI. Usar una variable de entorno nueva
+que no esté en esta tabla bloquea la aprobación del PR hasta que se actualice este ADR.
+
+**Por qué:** las cinco parejas de S1 arrancan sus módulos en paralelo desde el día 1; sin una
+frontera común escrita, cada una decide su propio criterio y el costo aparece después, como
+refactor. El árbol ya existe en el código (verificado: `domain/` sin imports de Spring/Kafka salvo
+la excepción de Jackson) y en la foto descriptiva de
+[37](../02-arquitectura-y-plataforma/04-estructura-del-backend.md); este ADR lo fija como decisión
+versionada y citable en revisión de PR, en vez de dejarlo solo como una foto informal.
+
+**Se revisa si:** entra Kafka o un adapter `langchain4j` real y hace falta ajustar la regla a las
+carpetas `infrastructure/messaging`/`infrastructure/ai` recién creadas, o si el equipo decide
+corregir el hueco de los 7 controllers en vez de tolerarlo.
+
+📄 [06 — Playbook de construcción](../07-planificacion-y-trabajo-equipo/06-playbook-de-construccion.md) ·
+[37 — Estructura de carpetas del backend](../02-arquitectura-y-plataforma/04-estructura-del-backend.md) ·
+Historia [LLM-EP01-H01](../07-planificacion-y-trabajo-equipo/09-epicas-historias-tareas-sprints/historias/ep-01/h01.md)
+
+---
+
 ## Parte B — Preguntas abiertas para el Product Owner
 
 Van con recomendación, no solo con la pregunta.
@@ -802,13 +859,14 @@ El API Gateway figura como **extra asignado al Tema 01** (columna «podría ser�
 
 **Recomendación:** pedir fecha comprometida para los tres. Mientras tanto, desarrollá contra un stub — tu servicio no debería quedar bloqueado esperando infraestructura ajena.
 
-**Aplicado el 2026-09-12 para D01/Eureka:** el sprint de cierre adopta esta recomendación para la
-fila 1 de [`s1-cierre.md`](../07-planificacion-y-trabajo-equipo/09-epicas-historias-tareas-sprints/sprints/sprint-1/s1-cierre.md) (registro en Eureka) — se desarrolla y se prueba
-contra una instancia local de Eureka (la que ya levanta `compose.yaml`, [`H02·T2`](../07-planificacion-y-trabajo-equipo/09-epicas-historias-tareas-sprints/tareas/ep-01/h02.md)
-mientras no haya confirmación de la compartida. **Lo que esto no reemplaza:** la prueba real de
-que el Gateway compartido descubre y rutea al servicio (CA1 de H03) solo se puede dar por cerrada
-contra la infraestructura real, no contra el stub — la fecha comprometida sigue pendiente, esto
-solo evita que el sprint se frene mientras se consigue.
+**Aplicado el 2026-09-12 para D01/Eureka (actualizado 2026-09-16):** el sprint adopta esta
+recomendación para el registro en Eureka: se configura el cliente en `application.yml`
+(`register-with-eureka: true`, `fetch-registry: false`, variable `EUREKA_URL`) sin levantar un
+Eureka local en `compose.yaml` (alineado con la decisión de H02 y
+[`05-servicios-docker.md`](../02-arquitectura-y-plataforma/05-servicios-docker.md) §3). **Lo que esto
+no reemplaza:** la prueba real de que el Gateway compartido descubre y rutea al servicio (CA1 de
+H03) solo se puede dar por cerrada contra la infraestructura real compartida de la plataforma
+— la fecha comprometida sigue pendiente, esto solo evita que el servicio o el desarrollo se frenen.
 
 ---
 

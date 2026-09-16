@@ -1,5 +1,10 @@
 # Adenda S1 — Golden sets
 
+> **DOCUMENTO HISTÓRICO — REEMPLAZADO POR CONTRATO v2 (2026-09-12 / 2026-09-13).**  
+> Esta adenda fue revisada y **aprobada por `admin-service`** (cerrado el 2026-09-13, ver `docs/historias/PREGUNTAS-ABIERTAS.md`).  
+> Sin embargo, el flujo v1 (`/golden-sets`) fue retirado por el commit `605f381` y migrado a la arquitectura de cursos v2 (`/courses/{courseId}/golden-sets`).  
+> El contrato vigente se encuentra en [`llm-service-v2-golden-set.openapi.yaml`](llm-service-v2-golden-set.openapi.yaml). Este documento se conserva únicamente como antecedente.
+
 Esta adenda completa el contrato v1 para satisfacer la demo de S1: un docente autorizado crea, carga y consulta un golden set después de reiniciar. Debe fusionarse en `llm-service-v1.openapi.yaml` cuando se apruebe el cambio de contrato con `admin-service`.
 
 ## Lectura

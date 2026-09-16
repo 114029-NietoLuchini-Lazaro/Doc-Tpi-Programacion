@@ -1,11 +1,11 @@
 package ar.edu.utn.frc.tup.piv.llm.application;
 
 import ar.edu.utn.frc.tup.piv.llm.domain.tutor.Conversation;
+import ar.edu.utn.frc.tup.piv.llm.domain.tutor.ConversationRepository;
 import ar.edu.utn.frc.tup.piv.llm.domain.tutor.Message;
+import ar.edu.utn.frc.tup.piv.llm.domain.tutor.MessageRepository;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.AuditRepository;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.ConversationRepository;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.IdempotencyRepository;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.MessageRepository;
 import ar.edu.utn.frc.tup.piv.llm.security.CallerIdentity;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
