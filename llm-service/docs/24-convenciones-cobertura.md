@@ -15,7 +15,7 @@ La medición se realiza sobre todo el código de producción de cada aplicación
 
 ## Alcance de la medición
 
-- Backend: `llm-service/src/main/java/**`.
+- Backend: `llm-service/app/src/main/java/**`.
 - Frontend: `llm-workbench/src/**/*.ts` y, cuando se incorpore, el frontend Angular compartido.
 - Se excluye únicamente código generado automáticamente por una herramienta. La exclusión requiere que el archivo o patrón esté documentado en la configuración de cobertura y que el PR indique su motivo.
 - No se excluyen controllers, servicios, repositorios, guards, interceptores, componentes, configuraciones ni ramas de manejo de errores sólo para aumentar la cifra.
@@ -26,7 +26,7 @@ El pipeline debe ejecutar las pruebas y publicar los reportes HTML/XML de cobert
 
 | Aplicación | Comando esperado | Evidencia |
 |---|---|---|
-| Backend | `mvn test` con JaCoCo configurado | `target/site/jacoco/index.html` y `jacoco.xml` |
+| Backend | `./mvnw test` con JaCoCo configurado | `app/target/site/jacoco/index.html` y `jacoco.xml` |
 | Frontend | `npm test -- --coverage` | reporte V8/Istanbul y resumen en consola/CI |
 
 El PR debe informar el porcentaje de backend y frontend, enlazar ambos reportes y describir cualquier exclusión aprobada. La Review valida el reporte generado por CI; no acepta porcentajes declarados manualmente.

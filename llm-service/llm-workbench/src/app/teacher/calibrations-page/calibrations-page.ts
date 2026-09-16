@@ -52,8 +52,8 @@ export class CalibrationsPage implements OnDestroy {
     () => this.courseId() ? `/api/llm/courses/${this.courseId()}/active-calibration` : undefined,
     { defaultValue: null }
   );
-  readonly activeEvaluator = httpResource<ActiveEvaluator>(() => '/api/llm/admin/evaluator-models/active');
-  readonly calibrationTarget = httpResource<ActiveEvaluator>(() => '/api/llm/admin/evaluator-models/calibration-target');
+  readonly activeEvaluator = httpResource<ActiveEvaluator | null>(() => '/api/llm/admin/evaluator-models/active', { defaultValue: null });
+  readonly calibrationTarget = httpResource<ActiveEvaluator | null>(() => '/api/llm/admin/evaluator-models/calibration-target', { defaultValue: null });
 
   readonly activeRubric = computed(() => {
     const activeRunId = this.activeCalibration.value()?.calibrationRunId;

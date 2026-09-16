@@ -5,13 +5,13 @@
     Valida la concordancia del evaluador de tutoría pedagógica contra el estándar PAR-14.
     Requiere una rúbrica y un Golden Set publicados. No califica código ni soluciones académicas.
   </p>
-  @if (activeEvaluator.hasValue()) {
-    <p class="active-badge" role="status"><strong>Modelo evaluador activo:</strong> {{ activeEvaluator.value().provider }} / {{ activeEvaluator.value().modelId }}</p>
+  @if (activeEvaluator.value(); as evaluator) {
+    <p class="active-badge" role="status"><strong>Modelo evaluador activo:</strong> {{ evaluator.provider }} / {{ evaluator.modelId }}</p>
   } @else if (!activeEvaluator.isLoading()) {
     <p class="warning-banner" role="status">No hay modelo evaluador global activo. Un admin debe activar un candidato que haya aprobado PAR-14.</p>
   }
-  @if (calibrationTarget.hasValue()) {
-    <p class="active-badge" role="status"><strong>Modelo candidato para esta calibración:</strong> {{ calibrationTarget.value().provider }} / {{ calibrationTarget.value().modelId }}</p>
+  @if (calibrationTarget.value(); as target) {
+    <p class="active-badge" role="status"><strong>Modelo candidato para esta calibración:</strong> {{ target.provider }} / {{ target.modelId }}</p>
   }
 </header>
 
@@ -65,7 +65,7 @@
     </div>
 
     <!-- GS-0541 Resumen previo con versiones exactas y cantidad de casos -->
-    @if (selectedRubric() || selectedGoldenSet() || calibrationTarget.hasValue()) {
+    @if (selectedRubric() || selectedGoldenSet() || calibrationTarget.value()) {
       <div class="preview-box">
         <h3>Resumen previo de la calibración</h3>
         <ul class="preview-list">
@@ -79,7 +79,7 @@
           </li>
           <li>
             <strong>Modelo:</strong>
-            {{ calibrationTarget.hasValue() ? calibrationTarget.value().provider + ' / ' + calibrationTarget.value().modelId : 'No hay candidato seleccionado por el admin' }}
+            {{ calibrationTarget.value() ? calibrationTarget.value()!.provider + ' / ' + calibrationTarget.value()!.modelId : 'No hay candidato seleccionado por el admin' }}
           </li>
           <li>
             <strong>Criterio PAR-14:</strong>
@@ -93,7 +93,7 @@
       <button
         type="submit"
         class="save-button"
-        [disabled]="runForm.invalid || launching() || !selectedRubric() || !selectedGoldenSet() || !calibrationTarget.hasValue()"
+        [disabled]="runForm.invalid || launching() || !selectedRubric() || !selectedGoldenSet() || !calibrationTarget.value()"
       >
         {{ launching() ? 'Iniciando calibración…' : 'Lanzar calibración de estabilidad (3 corridas)' }}
       </button>

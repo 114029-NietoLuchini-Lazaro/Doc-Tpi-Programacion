@@ -18,6 +18,10 @@ services:
       SPRING_DATASOURCE_USERNAME: llm
       SPRING_DATASOURCE_PASSWORD: llm
       LLM_CREDENTIALS_MASTER_KEY: ${LLM_CREDENTIALS_MASTER_KEY:?Set a base64-encoded 32-byte AES key before starting llm-service}
+      # The base stack has no Courses mock. These defaults make configuration
+      # explicit so Spring can start; deployments must override both values.
+      LLM_COURSES_BASE_URL: ${LLM_COURSES_BASE_URL:-http://host.docker.internal:4300}
+      LLM_COURSES_SERVICE_TOKEN: ${LLM_COURSES_SERVICE_TOKEN:-local-gateway-m2m-token}
     depends_on:
       postgres:
         condition: service_healthy
