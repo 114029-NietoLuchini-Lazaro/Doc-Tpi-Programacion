@@ -48,8 +48,12 @@ flowchart TD
 | Capa | Mecanismo | Configuración Típica | Objetivo |
 | :--- | :--- | :--- | :--- |
 | **Capa 1: Red/IP** | `Bucket4j` / Redis Token Bucket | Max 15 req/minuto por usuario autenticado | Mitigar DoS / Fuzzing |
-| **Capa 2: Negocio** | Base de datos / Redis | Max 10-20 preguntas por desafío | Pedagógico (evitar dependencia del LLM) |
+| **Capa 2: Negocio** | Base de datos / Redis | Max 10-20 preguntas por desafío; opcionalmente, un techo distinto por alumno y por día (cantidad de usos + tokens) si el back office lo configura | Pedagógico (evitar dependencia del LLM) |
 | **Capa 3: Proveedor** | `Resilience4j RateLimiter` | Acorde al tier del proveedor (ej. 25 RPM en Groq free tier) | Evitar errores 429 en cascada |
+
+> El override por alumno de la Capa 2 es una extensión propuesta del diseño de cuotas de
+> [EP-07](epicas/ep-07.md) ([`historias/ep-07/h02.md`](historias/ep-07/h02.md),
+> [08 P-12](08-decisiones-y-pendientes.md)) — el back office (Tema 12) sería quien lo configura.
 
 ---
 

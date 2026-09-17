@@ -1,7 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.application;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.GoldenSetImportRepository;
 import ar.edu.utn.frc.tup.piv.llm.domain.RealCaseAnonymizer;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.GoldenSetImportRepository.ImportBatch;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.ImportBatch;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List; import java.util.UUID;

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelFunction;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationRequest;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelResponseSchema;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +31,18 @@ class FakeModelAdapterTest {
     var result = adapter.invoke(request);
 
     assertThat(result.text()).isBlank();
+  }
+
+  @Test
+  void respondsWithAValidDeterministicScoreJsonForTheEvaluator() {
+    var adapter = new FakeModelAdapter(Duration.ZERO, false);
+    var request = new ModelInvocationRequest(ModelFunction.EVALUATOR, "system", "transcripción de prueba", Duration.ofSeconds(1));
+
+    var first = adapter.invoke(request);
+    var second = adapter.invoke(request);
+
+    new ModelResponseSchema().validate(ModelFunction.EVALUATOR, first.text());
+    assertThat(first.text()).isEqualTo(second.text());
   }
 
   @Test

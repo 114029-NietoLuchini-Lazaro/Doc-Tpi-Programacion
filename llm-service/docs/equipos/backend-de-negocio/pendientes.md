@@ -1,7 +1,8 @@
 # Backend de negocio — pendientes
 
-> Fuente completa: [17 §7.3](../../17-mapa-de-integracion.md#73-quién-nos-bloquea-y-a-quién-bloqueamos)
-> (N4, N5), [18 §4.6](../../18-contratos-inter-equipos.md#46-backend-de-negocio).
+> Este documento es la fuente completa de lo pendiente con Backend de negocio. Antecedentes:
+> [17 §7.3](../../17-mapa-de-integracion.md#73-quién-nos-bloquea-y-a-quién-bloqueamos) (N4, N5),
+> [01 §3](../../01-problema-y-alcance.md#3-lo-que-necesitás-pedirle-a-los-otros-equipos).
 
 ## 🟡 Cruzado — endpoint de contexto del desafío
 
@@ -21,6 +22,19 @@ El tutor necesita el enunciado del desafío para armar el prompt. Sin asignar to
 
 Ni el endpoint ni estos campos están decididos — sirve como punto de partida para que el
 Backend de negocio proponga la forma real que ya tienen modelada.
+
+## 🟡 Cruzado — endpoint para devolver resultados
+
+No escribimos en la base académica (ADR-001) — necesitamos que el Backend exponga el endpoint
+donde volcamos el resultado del evaluador (`score_agregado`, desglose, confianza). Sin asignar
+todavía; ver [01 §3](../../01-problema-y-alcance.md#3-lo-que-necesitás-pedirle-a-los-otros-equipos).
+
+## 🟡 Cruzado — identidad y `curso_id` derivados de la sesión, nunca del cliente
+
+Regla de seguridad, no propuesta: si `alumno_id` / `curso_cohorte_id` vienen como parámetro del
+cliente en vez de derivarse del token de sesión, el aislamiento entre alumnos y cursos no vale
+nada (ver [05-seguridad.md](../../05-seguridad.md)). Confirmar que el Backend los deriva siempre
+del lado servidor antes de reenviarnos cualquier pedido.
 
 ## 🔴 Cruzado — aceptar entregas con el evaluador caído
 

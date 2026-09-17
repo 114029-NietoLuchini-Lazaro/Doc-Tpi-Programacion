@@ -66,10 +66,10 @@ no en la ficha. Si un dato de una ficha no coincide con esta tabla, **manda la t
 
 | Sprint | Épicas activas | Historias | Fichas de HU |
 |---|---|---|---|
-| **S1** | EP-01 (H01–H04, H08, H09) · EP-02 (H10) · EP-03 (H05–H07, histórico) | 10 | [`historias/ep-01/`](../historias/ep-01/README.md) · [`historias/ep-02/`](../historias/ep-02/README.md) · [`historias/ep-03/`](../historias/ep-03/README.md) |
-| **S2** | EP-03 (LLM-S02-H01, H02) | 2 — **ya construidas, escritas a posteriori** | [`historias/ep-03/`](../historias/ep-03/README.md) |
-| **S3** | EP-04 (LLM-S03-H01) | 1 — esqueleto construido, hueco de implementación | [`historias/ep-04/`](../historias/ep-04/README.md) |
-| **S4–S19** | ver catálogo | *(a desglosar sprint a sprint)* | — |
+| **S1** | EP-01 (H01–H06) · EP-02 (H01) · EP-03 (H01–H03, histórico) | 10 | [`historias/ep-01/`](../historias/ep-01/README.md) · [`historias/ep-02/`](../historias/ep-02/README.md) · [`historias/ep-03/`](../historias/ep-03/README.md) |
+| **S2** | EP-03 (LLM-EP03-H04, H05) · EP-02 (LLM-EP02-H02) | 3 — **ya construidas, escritas a posteriori** | [`historias/ep-03/`](../historias/ep-03/README.md) · [`historias/ep-02/`](../historias/ep-02/README.md) |
+| **S3** | EP-04 (LLM-EP04-H01) | 1 — completa, hueco de implementación cerrado el 2026-09-13 (T7) | [`historias/ep-04/`](../historias/ep-04/README.md) |
+| **S4–S19** | ver catálogo y [plan de 5 sprints](../38-plan-de-5-sprints.md) | *(a desglosar sprint a sprint)* | — |
 
 > **S1–S3 pasaron de "a construir" a "auditar contra lo ya construido"** tras el commit
 > `605f381` — ver [decision-605f381.md](../entregas/decision-605f381.md) y

@@ -19,8 +19,8 @@ Kafka. Todas las rutas usan `/api/llm/**`, los servicios se identifican con M2M
 
 | Par | Responsabilidad acordada |
 |---|---|
-| `practice-service` | Envía contexto validado al tutor y conserva la frontera de UI. |
-| `challenges-service` | Publica `intento_cerrado.v1`; recibe score y aplica XP. |
+| `practice-service` | Envía contexto validado al tutor y conserva la frontera de UI. Desde el 2026-09-13, también publica `intento_cerrado.v1` (con transcripción) y recibe el score — antes lo hacía `challenges-service` directo. |
+| `challenges-service` | Aplica XP a partir del score que le reenvía `practice-service` (PAR-05). **Ya no se comunica directo con `llm-service`** — ver [§4.2](#42-tema-03--motor-de-desafíos). |
 | `courses-service` | Consulta calibración y pendientes antes de activar/cerrar. |
 | `admin-service` | Gestiona modelo, golden set y calibración como operación delegada. |
 
@@ -164,7 +164,13 @@ es un error o diseño interno que no es parte del contrato público.
 
 ### 2.1 `score_de_ia_calculado`
 
-**Consumidores:** Tema 03 (Motor de desafíos), Tema 10
+**Consumidor:** Tema 05 (Desafíos Prácticos), Tema 10.
+
+> ⚠️ **Cambió el 2026-09-13.** Antes el consumidor era Tema 03 (Motor de desafíos) directo. Desde
+> la decisión de diseño que centraliza el intercambio del evaluador en Tema 05, es Tema 05 quien
+> consume este evento y quien se lo reenvía a Tema 03 para que aplique el modificador de XP —
+> nosotros ya no publicamos nada directo para Tema 03. Ver
+> [`equipos/tema-05-desafios-practicos/contratos.md`](equipos/tema-05-desafios-practicos/contratos.md).
 
 ```json
 {
@@ -193,7 +199,9 @@ es un error o diseño interno que no es parte del contrato público.
 
 ### 2.2 `score_pendiente_diferido`
 
-**Consumidores:** Tema 03, Backend
+**Consumidores:** Tema 05, Backend.
+
+> ⚠️ Mismo cambio que 2.1: Tema 05 es el consumidor desde el 2026-09-13, no Tema 03.
 
 ```json
 {
@@ -253,7 +261,7 @@ es un error o diseño interno que no es parte del contrato público.
 
 | Evento | Lo publica | Qué dispara en nosotros |
 |---|---|---|
-| `intento_cerrado` | Tema 03 — Motor de desafíos | Encola la evaluación del intento |
+| `intento_cerrado` | Tema 05 — Desafíos Prácticos (desde el 2026-09-13; antes lo publicaba Tema 03 directo — ver [§4.2](#42-tema-03--motor-de-desafíos)) | Encola la evaluación del intento |
 | `curso_archivado` | Tema 02 — Cursos | Frena todos los trabajos pendientes de ese curso-cohorte |
 | `modelo_llm_cambiado` | Tema 12 — Backoffice | Dispara recalibración automática (RF-IA-32) |
 
@@ -280,174 +288,51 @@ es un error o diseño interno que no es parte del contrato público.
 
 ## 4. Lo que necesitamos de cada equipo
 
-### 4.1 Tema 02 — Cursos y Matrícula
+> **El detalle completo de cada equipo se mudó a su carpeta** — `docs/equipos/<equipo>/`
+> (`contratos.md` para lo acordado, `pendientes.md` para lo que falta), con JSON y diagramas
+> incluidos. Esta sección queda como índice para no tener que adivinar en qué carpeta buscar.
 
-**Nos llaman para:**
-
-- `GET /ai/calibracion/{curso_cohorte_id}` — verificar si la calibración está aprobada antes de activar el curso
-
-**Nos tienen que dar:**
-
-- Material del curso para indexar (via `POST /ai/ingesta`)
-- Confirmación del modelo `curso_template_id` vs `curso_cohorte_id` (I-09)
-
-**🔴 Bloqueo crítico:**
-
-- El **golden set** (muestras del docente para calibrar la rúbrica). Sin esto, ningún curso puede activarse. Es la dependencia con el plazo más largo del proyecto.
-
----
-
-### 4.2 Tema 03 — Motor de Desafíos
-
-**Nos llaman para:**
-
-- `POST /ai/evaluador` (async)
-- `GET /ai/jobs/{job_id}`
-
-**Nos tienen que dar:**
-
-- Publicar `intento_cerrado` con los campos de §3
-- **🔴 Aceptar la entrega con el evaluador caído**: si respondemos `503`, el backend acepta igual con `score_agregado = null` y espera `score_pendiente_diferido`. La resiliencia de este punto es del lado que escribe en la base académica, no del nuestro.
-
-**🔴 Pendiente sin resolver (I-04):**
-Hay cuatro mecanismos escritos para que el score llegue al motor de desafíos. Ninguno tiene payload definido. Acordar **uno solo** antes de que cualquiera empiece a codear.
-
----
-
-### 4.3 Tema 05 — Desafíos Prácticos
-
-**Nos llaman para:**
-
-- `POST /ai/tutor` — asistencia
-
-**🔴 Nos tienen que dar (crítico):**
-
-1. **La solución esperada del desafío** — sin esto el anti-fuga (RF-IA-20) no tiene contra qué comparar. Falta definir: ¿endpoint? ¿campo en el evento? ¿verbo?
-2. **Evento de ediciones y ejecuciones de tests del IDE** — 30% del score depende de esta señal. Si no se pide ahora, no va a existir.
-
----
-
-### 4.4 Tema 11 — Chat
-
-**Nos llaman para:**
-
-- `POST /ai/moderador` — siempre sync, siempre antes de entregar el mensaje al hilo
-
-**Nos tienen que dar:**
-
-- Incluir nuestros campos en el contrato de eventos del bus (ver §3)
-- Aclarar qué enum viaja en `estado` (I-05)
-
-**Contrato del moderador que Tema 11 necesita para diseñar el chat:**
-
-> ⚠️ **Actualizado 2026-09-12.** Esta sección tenía un bosquejo más viejo (`veredicto` +
-> `categorias` como objeto de 6 booleanos con nombres que no eran los de RF-CHT-10). Quedó
-> reemplazado por la forma de
-> [`contracts/llm-service-v1-moderacion-borrador.yaml`](contracts/llm-service-v1-moderacion-borrador.yaml)
-> (`RespuestaModeracion`), que es más nueva, más detallada, y usa las seis categorías exactas
-> de RF-CHT-10. Es la única forma vigente — si aparece la vieja en otro lado (una presentación,
-> por ejemplo), es histórica.
-
-```json
-{
-  "resultado": {
-    "categorias": ["integridad_academica"],
-    "severidad": "alta | media | baja",
-    "confianza": 0.94,
-    "origen": "lista | heuristica | clasificador",
-    "version_lista": "2025-05-v3"
-  },
-  "trace_id": "uuid",
-  "metadata": {
-    "model_id": null,
-    "model_version": null,
-    "latencia_ms": 45
-  }
-}
-```
-
-`categorias` es un **array** de las seis categorías de RF-CHT-10 (`ofensivo_discriminatorio`,
-`acoso`, `sexual_violencia`, `spam_no_academico`, `integridad_academica`,
-`elusion_solo_texto`) — vacío si el mensaje está limpio, y puede traer más de una a la vez
-porque los detectores clásicos corren todos y fusionan veredictos. No hay campo `veredicto`
-separado: el bloqueo se infiere de `severidad` (`baja` no bloquea, `media`/`alta` sí).
-
-> Tema 11 **NO entrega el mensaje al hilo** hasta recibir `200` con `severidad: baja`.
-
----
-
-### 4.5 Tema 12 — Backoffice / ADMIN
-
-**Nos llaman para:**
-
-- `GET /ai/calibracion/{curso_cohorte_id}` — ver estado
-- `POST /ai/calibracion` — disparar recalibración
-
-**Nos tienen que dar:**
-
-- Ser dueños de la pantalla de configuración del proveedor LLM
-- Ser dueños de la pantalla del golden set (actualmente sin dueño claro — I-15)
-
----
-
-### 4.6 Backend de negocio
-
-**Nos tienen que dar:**
-
-- **Endpoint de contexto del desafío** — el tutor necesita el enunciado para armar el prompt
-- **Aceptar entregas con evaluador caído** — igual que §4.2
-- Propagación del JWT en cada llamada
-
----
-
-### 4.7 Front End — Angular
-
-**🔴 Las 7 pantallas que necesitamos:**
-
-| # | Pantalla | Para qué |
-|---|---|---|
-| 1 | Chat del tutor en el IDE | Sin esto la función principal no tiene UI |
-| 2 | Estado del evaluador por intento | Para que el alumno vea el feedback |
-| 3 | Rúbrica con desglose por dimensión | RF-IA-16 requiere mostrar la justificación |
-| 4 | Panel de calibración (docente) | Para aprobar el golden set |
-| 5 | Panel de moderación (admin) | Ver incidentes e historial |
-| 6 | Dashboard de costos y uso (admin) | Visualización del Tema 12 |
-| 7 | **Pantalla del golden set** | La más urgente — destraba el plazo más largo |
-
----
-
-### 4.8 Product Owner
-
-| Lo que necesitamos | Por qué no podemos avanzar sin ello |
+| Equipo | Carpeta |
 |---|---|
-| Responsable y fecha del **golden set** | Sin calibración, ningún curso se activa. Es el plazo más largo y no es trabajo de desarrollo |
-| Decisión sobre el techo de cuota (15 / 10 / 8 por día) | El presupuesto del cuatrimestre cambia según el valor (I-06) |
-| Quién construye la pantalla del golden set | Actualmente tiene cuatro dueños distintos en cuatro documentos (I-15) |
+| Tema 02 — Cursos y Matrícula | [`equipos/tema-02-cursos-y-matricula/`](equipos/tema-02-cursos-y-matricula/) |
+| Tema 03 — Motor de Desafíos (integración indirecta desde el 2026-09-13, ver [§4.2 antiguo](equipos/tema-03-motor-de-desafios/contratos.md)) | [`equipos/tema-03-motor-de-desafios/`](equipos/tema-03-motor-de-desafios/) |
+| Tema 05 — Desafíos Prácticos | [`equipos/tema-05-desafios-practicos/`](equipos/tema-05-desafios-practicos/) |
+| Tema 11 — Chat | [`equipos/tema-11-chat/`](equipos/tema-11-chat/) |
+| Tema 12 — Backoffice / ADMIN | [`equipos/tema-12-backoffice-admin/`](equipos/tema-12-backoffice-admin/) |
+| Backend de negocio | [`equipos/backend-de-negocio/`](equipos/backend-de-negocio/) |
+| Front End — Angular | [`equipos/frontend-angular/`](equipos/frontend-angular/) |
+| Product Owner | [`equipos/product-owner/`](equipos/product-owner/) |
 
 ---
 
 ## 5. Mapa de dependencias resumido
 
+> ⚠️ **Desde el 2026-09-13**, el par `IA → Tema 03/10` (score → XP) ya no es una arista directa:
+> pasa por Tema 05. El diagrama lo dibuja como `IA → Tema 05 → Tema 03/10` para reflejar el
+> intermediario; el nodo `N1` de "lo que necesitamos" también creció, porque ahora incluye el
+> cierre de intento además de la solución esperada.
+
 ```mermaid
 flowchart LR
     subgraph damos["LO QUE DAMOS"]
         D1["Tema 02\nno pueden ACTIVAR cursos"]
-        D2["Tema 03/10\nno pueden aplicar modificador XP"]
         D3["Tema 11\nel contrato del moderador"]
         D4["Tema 12\nnada demostrable"]
         D5["Backend\nno pueden cerrar un curso"]
     end
 
     IA(["TEMA 07\nms-evaluacion-llm"])
+    T05IA(["Tema 05\npractice-service"])
+    D2["Tema 03/10\nno pueden aplicar modificador XP"]
 
     subgraph necesitamos["LO QUE NECESITAMOS"]
-        N1["🔴 Tema 05\nla solución esperada"]
+        N1["🔴 Tema 05\nla solución esperada +<br/>cierre de intento (intento_cerrado)"]
         N2["🔴 Tema 11\nnuestros campos en el bus"]
         N3["🔴 Tema 05/06\nevento de ediciones/tests"]
         N4["🔴 PO\ngolden set con fecha y dueño"]
         N5["🟡 Backend\nendpoint contexto del desafío"]
         N6["🔴 Backend\naceptar entrega con evaluador caído"]
-        N7["🔴 Front End\nlas 7 pantallas"]
+        N7["🔴 Front End\nlas pantallas pendientes"]
     end
 
     N1 --> IA
@@ -457,8 +342,9 @@ flowchart LR
     N5 --> IA
     N6 --> IA
     N7 --> IA
+    IA -->|"score_de_ia_calculado"| T05IA
+    T05IA -->|"reenvío a definir<br/>entre Tema 05 y Tema 03"| D2
     IA --> D1
-    IA --> D2
     IA --> D3
     IA --> D4
     IA --> D5
@@ -470,7 +356,7 @@ flowchart LR
 
 | Prioridad | Tema | Equipos | Por qué urgente |
 |---|---|---|---|
-| 🔴 1 | **I-04**: Cómo llega el score al motor de desafíos (un mecanismo, un payload) | Tema 07 + Tema 03 | Tema 03 no puede empezar su lado |
+| ✅ 1 | **I-04**: resuelto de nuestro lado — evento Kafka `score_de_ia_calculado.v1`, un solo mecanismo. Sigue abierto para Tema 05 y Tema 03: cómo Tema 05 le reenvía el resultado a Tema 03 | Tema 05 + Tema 03 | Tema 03 no puede empezar su lado hasta que Tema 05 y Tema 03 lo acuerden entre ellos |
 | 🔴 2 | **I-05**: Qué enum viaja en `estado` del contrato de eventos | Tema 07 + Tema 11 | Contrato ambiguo si no se decide |
 | 🔴 3 | **I-09**: `curso_id` vs `curso_cohorte_id` — de qué cuelga el chunk del RAG | Tema 07 + Tema 02 | Imposible migrar datos después |
 | 🔴 4 | **I-08**: Esquema de la tabla `mensaje` (tres versiones incompatibles) | Tema 07 + Tema 11 | El dato que no se captura hoy no se recupera |

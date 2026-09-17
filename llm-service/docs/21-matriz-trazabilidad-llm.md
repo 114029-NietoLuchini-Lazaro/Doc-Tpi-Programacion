@@ -2,22 +2,23 @@
 
 > Índice operativo para transformar el PRD y las convenciones en historias, contratos y pruebas.
 
-> **Plan de ejecución:** [23 · Construcción del producto LLM](23-plan-construccion-producto-llm.md)
-> distribuye estos requisitos en tres fases y 19 sprints con reuniones presupuestadas. La fase
-> sigue determinando cuándo se habilita cada función; documentar F2/F3 no las adelanta al MVP.
+> **Plan de ejecución:** [38 — Plan de 5 sprints](38-plan-de-5-sprints.md) distribuye estos
+> requisitos con un techo duro de 5 sprints ([23](23-plan-construccion-producto-llm.md) llegó a
+> plantear 19; ese horizonte quedó retirado). La fase sigue determinando cuándo se habilita cada
+> función; documentar F2/F3 no las adelanta al MVP — y F2/F3 no entran en el horizonte de 38.
 
 | Área / requisito | Fase | Evidencia documental | Dependencia | Prueba de aceptación |
 |---|---|---|---|---|
 | RF-IA-01/02/04/06/07/19/20 — tutor seguro y registro | MVP | OpenAPI: `POST /tutor/interactions`; adenda SSE [`contracts/llm-service-v1-tutor-sse-adenda.md`](contracts/llm-service-v1-tutor-sse-adenda.md); [00](00-fuentes-de-verdad-y-convenciones.md) | `practice-service` aporta contexto validado y solución esperada para anti-fuga; **I-10** cerrada por el spike `LLM-S03-SPIKE-01` antes de S5 | No entrega solución; bloquea/regenera salida similar; el Buffer Interceptor no emite un bloque de código sin validar; registra interacción. |
 | Spike `LLM-S03-SPIKE-01` — viabilidad del streaming del tutor (EP-02) | MVP · S3 | Callout en [`35` · S3](35-backlog-ejecutable.md); adenda SSE; nota en [17 · §8 · I-10](17-mapa-de-integracion.md) | Paquete 1 de S3 (puerto AI Gateway + `langchain4j`); solapa I-03 e I-11 | PoC medida —primer token, respuesta completa, costo de regeneración— y recomendación *propagar o revertir* que cierra I-10 y habilita, o no, fusionar la adenda al `openapi.yaml`. |
-| RF-IA-12 a 18/25 — evaluador, detalle y apelación | MVP | OpenAPI: evaluaciones, apelaciones y overrides | `challenges-service` publica `intento_cerrado.v1` | Cinco dimensiones, confianza, justificación, auditoría append-only y nunca XP. |
+| RF-IA-12 a 18/25 — evaluador, detalle y apelación | MVP | OpenAPI: evaluaciones, apelaciones y overrides | `practice-service` publica `intento_cerrado.v1` (desde el 2026-09-13; antes `challenges-service`) | Cinco dimensiones, confianza, justificación, auditoría append-only y nunca XP. |
 | RF-IA-30 a 36 — Golden Set y calibración | MVP | [32](32-especificacion-funcional-golden-set-calibracion.md); OpenAPI: golden sets y calibrations; AsyncAPI | Docentes, `courses-service`, `admin-service` | Versiones publicadas inmutables; solo una calibración aprobada activa por curso; PAR-14 valida MAE final ≤ 5 y máximo caso/dimensión ≤ 10. |
 | ADR-017 — rúbrica por curso | MVP | [08](08-decisiones-y-pendientes.md#adr-017--rúbricas-editables-y-versionadas-por-curso) | Docente, `courses-service` | Cinco dimensiones obligatorias; borrador editable; pesos suman 100 %; publicación inmutable. |
 | ADR-018 — modelo por curso | MVP | [08](08-decisiones-y-pendientes.md#adr-018--selección-de-modelo-por-curso-sujeta-a-doble-calibración) | ADMIN y docente | El docente solo elige modelos habilitados que aprobaron calibración base y del curso. |
 | Asociación desafío-calibración | MVP | [32 §11](32-especificacion-funcional-golden-set-calibracion.md#11-activación-y-asociación-con-desafíos) | `challenges-service`, `courses-service` | Primer intento bloquea la versión; una activación solo migra desafíos con cero intentos y confirmación docente. |
 | Validación académica del desafío | MVP, fuera de Tema 07 | [00 §5](00-fuentes-de-verdad-y-convenciones.md#5-alcance-de-ia-por-fase) | Motor de desafíos o docente | No usa Golden Set ni score de uso de IA para decidir si la respuesta es correcta. |
-| RF-IA-27/34 — cálculo diferido | MVP | AsyncAPI y consulta de pendientes | `challenges-service`, `courses-service` | Entrega aceptada ante caída; evento diferido; cierre bloqueado mientras existan pendientes. |
-| RF-IA-22/23/24/35 — cuota y modelos | MVP | OpenAPI: model assignments | `admin-service` | 429 con `Retry-After`; cambio de modelo auditado sin cambio de código. |
+| RF-IA-27/34 — cálculo diferido | MVP | AsyncAPI y consulta de pendientes | `practice-service` (desde el 2026-09-13; antes `challenges-service`), `courses-service` | Entrega aceptada ante caída; evento diferido; cierre bloqueado mientras existan pendientes. |
+| RF-IA-22/23/24/35 — cuota y modelos | MVP | OpenAPI: model assignments | `admin-service` | 429 con `Retry-After`; cambio de modelo auditado sin cambio de código. Techo global por función; extensión propuesta a un techo por alumno y por día (cantidad de usos y tokens), configurable desde `admin-service` — [08 P-12](08-decisiones-y-pendientes.md). |
 | RF-NFR-01/09/10 — retención y auditoría | MVP | [07](07-datos-y-terminos.md) y contratos v1 | T&C y política de plataforma | Sin hard delete académico; auditoría y retención verificables. |
 | RF-NFR-03/04 — 120 sesiones y fallas | MVP | [06](06-operacion-e-ingenieria.md) | Gateway, Kafka y proveedores | Carga concurrente y degradación sin bloquear entregas. |
 | RF-CHT-09 a 14 — moderación | Fase 2 | Contrato reservado en roadmap | `chat-service` | Se planifica al incorporar chat; no es requisito de release MVP. |

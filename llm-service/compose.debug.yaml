@@ -1,0 +1,16 @@
+services:
+  postgres:
+    # Publica el puerto de Postgres en el host SOLO para depuración local: conectarse con un
+    # cliente SQL, o reproducir manualmente el escenario CA4 ("puerto ocupado") de H02. No se usa
+    # en la plataforma real ni en CI: ahí ningún servicio de datos expone puerto al host (ADR-015 —
+    # solo el API Gateway publica puertos, ver
+    # docs/02-arquitectura-y-plataforma/05-servicios-docker.md).
+    #
+    # Uso: docker compose -f compose.yaml -f compose.debug.yaml up
+    ports:
+      - "5432:5432"
+
+  llm-service:
+    # Publica el puerto 8080 en el host para depuración local y ejecución de la suite de demo / test de reinicio.
+    ports:
+      - "8080:8080"

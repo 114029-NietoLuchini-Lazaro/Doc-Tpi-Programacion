@@ -1,6 +1,6 @@
 # Gitflow de `llm-service`
 
-Este repositorio desarrolla `llm-service` en tres fases y 19 sprints de dos semanas. Se trabaja con un backlog y cinco parejas efectivas; las ramas representan integración, no equipos separados.
+Este repositorio desarrolla `llm-service` con un techo duro de **[5 sprints de dos semanas](38-plan-de-5-sprints.md)** (el horizonte de "tres fases y 19 sprints" quedó retirado el 2026-09-13). Se trabaja con un backlog y cinco parejas efectivas; las ramas representan integración, no equipos separados.
 
 El modelo es GitFlow: las ramas permanentes son `main` y `develop`; las temporales son `feature/*`, `release/*` y `hotfix/*`.
 

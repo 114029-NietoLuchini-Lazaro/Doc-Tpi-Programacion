@@ -1,6 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.api;
 
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.ModelDeploymentRepository;
+import ar.edu.utn.frc.tup.piv.llm.application.ModelDeploymentService;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelDeploymentSummary;
 import ar.edu.utn.frc.tup.piv.llm.security.CallerIdentity;
 import ar.edu.utn.frc.tup.piv.llm.security.CourseAuthorization;
 import ar.edu.utn.frc.tup.piv.llm.security.GoldenSetAuthorization;
@@ -17,18 +18,18 @@ import static org.mockito.Mockito.when;
 class ModelDeploymentControllerTest {
   @Test
   void authorizesTeacherAndListsDeploymentsForCourse() {
-    var repository = mock(ModelDeploymentRepository.class);
+    var service = mock(ModelDeploymentService.class);
     var auth = mock(GoldenSetAuthorization.class);
     var courses = mock(CourseAuthorization.class);
-    var controller = new ModelDeploymentController(repository, auth, courses);
+    var controller = new ModelDeploymentController(service, auth, courses);
 
     UUID courseId = UUID.randomUUID();
     HttpHeaders headers = new HttpHeaders();
     CallerIdentity actor = new CallerIdentity("workbench", UUID.randomUUID(), null, null);
     when(auth.require(headers)).thenReturn(actor);
 
-    when(repository.listEnabledDeployments()).thenReturn(List.of(
-        new ModelDeploymentRepository.ModelDeploymentSummary(UUID.randomUUID(), "openai", "gpt-4o-mini", "2024-07-18", "ENABLED")
+    when(service.listEnabledDeployments()).thenReturn(List.of(
+        new ModelDeploymentSummary(UUID.randomUUID(), "openai", "gpt-4o-mini", "2024-07-18", "ENABLED")
     ));
 
     var page = controller.listForCourse(courseId, headers);

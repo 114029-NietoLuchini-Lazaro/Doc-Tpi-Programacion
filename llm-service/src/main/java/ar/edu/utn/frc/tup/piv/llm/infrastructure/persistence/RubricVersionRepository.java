@@ -175,6 +175,11 @@ public class RubricVersionRepository {
         """, versionId, dimension.key().name(), dimension.label(), dimension.criterion(), serialize(dimension.anchors()), dimension.weight());
   }
 
+  /** Pesos + evaluator_prompt de las 5 dimensiones de una versión de rúbrica — la calibración
+   * siempre referencia una versión ya PUBLICADA (constraint FK), así que a diferencia de
+   * {@link #dimensionsOfDraft} esto no filtra por curso ni por estado DRAFT. */
+  public List<DimensionInput> weightsAndPrompts(UUID rubricVersionId) { return dimensions(rubricVersionId); }
+
   private RubricVersion versionRow(UUID id, UUID familyId, int version, String name, String state, long revision, UUID templateOriginVersionId) { return new RubricVersion(id, familyId, version, name, state, revision, templateOriginVersionId, dimensions(id)); }
   private List<DimensionInput> dimensions(UUID versionId) {
     return jdbc.query("select dimension_key, label, criterion, anchors::text as anchors, weight from llm.rubric_dimension_v2 where rubric_version_id = ? order by dimension_key",

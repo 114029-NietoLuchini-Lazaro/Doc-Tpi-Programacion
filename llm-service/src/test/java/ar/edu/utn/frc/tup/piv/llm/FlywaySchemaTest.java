@@ -13,7 +13,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @EnabledIfSystemProperty(named = "integration", matches = "true")
 class FlywaySchemaTest {
   @Test void migratesPostgresAndArchivesV1BeforeEnforcingV2IntegrityRules() throws Exception {
-    try (PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")) {
+    // pgvector/pgvector:pg16: V14 (EP-09, RAG) necesita la extensión `vector`, ausente en la
+    // imagen postgres:16-alpine plana que se usaba hasta V13.
+    try (PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
+        org.testcontainers.utility.DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres"))) {
       postgres.start();
       Flyway.configure().dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
           .schemas("llm").defaultSchema("llm").createSchemas(true).load().migrate();

@@ -1,6 +1,8 @@
 # Tema 02 — Cursos y Matrícula — contratos
 
-> Fuente completa: [18 §4.1](../../18-contratos-inter-equipos.md#41-tema-02--cursos-y-matrícula).
+> Este documento es el contrato completo y vigente con Tema 02 — `18` ya no repite este
+> detalle, solo indexa hacia acá. Reglas generales (canal sync/async, errores, autenticación):
+> [18 §0](../../18-contratos-inter-equipos.md#0-cómo-leemos-los-contratos).
 
 ## Qué nos llama
 

@@ -1,5 +1,6 @@
 package ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence;
 
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetUpdateProposal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -41,7 +42,4 @@ public class GoldenSetUpdateProposalRepository {
         rs.getObject("course_family_id", UUID.class), rs.getObject("base_version_id", UUID.class), rs.getInt("base_version"),
         rs.getInt("base_case_count"), rs.getObject("detected_at", OffsetDateTime.class)), courseId);
   }
-
-  public record GoldenSetUpdateProposal(UUID id, UUID courseId, UUID courseFamilyId, UUID baseVersionId,
-      int baseVersion, int baseCaseCount, OffsetDateTime detectedAt) {}
 }

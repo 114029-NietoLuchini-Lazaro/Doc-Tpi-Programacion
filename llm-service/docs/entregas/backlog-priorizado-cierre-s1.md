@@ -1,6 +1,6 @@
 # Backlog priorizado — cierre de S1 y Entrega 1, en dos vistas
 
-> **Qué es.** Los mismos 12 ítems del [Sprint Backlog de cierre](../sprints/s1-cierre.md),
+> **Qué es.** Los mismos 12 ítems del [Sprint Backlog de cierre](../sprints/sprint-1/s1-cierre.md),
 > ordenados dos veces: como los ordenaría un **Product Owner** (qué importa primero para que la
 > Entrega 1 se pueda *mostrar*) y como los ordena el **equipo** (qué hay que resolver primero
 > porque técnicamente lo de abajo depende de eso). Son la misma lista — cambia el criterio de
@@ -14,7 +14,7 @@
 >
 > **Fuente de los ítems y sus horas:** [`checklist-cierre-s1.md`](checklist-cierre-s1.md),
 > [`entrega-1.md`](entrega-1.md) y las fichas de tarea firmadas el 2026-09-12
-> ([`ep-04/s03-h01.md`](../tareas/ep-04/s03-h01.md) T7,
+> ([`ep-04/h01.md`](../tareas/ep-04/h01.md) T7,
 > [`ep-02/model-catalog-real.md`](../tareas/ep-02/model-catalog-real.md),
 > [`ep-01/h03.md`](../tareas/ep-01/h03.md) T9).
 
@@ -52,7 +52,7 @@ para decidir qué **saltear**.
 ## Vista 2 — Equipo: orden por dependencia técnica real
 
 Qué hay que resolver antes de qué, sin importar cuánto "se note" en la demo. Es el orden que
-usa la tabla del [Sprint Backlog §4](../sprints/s1-cierre.md#4-historiastareas-comprometidas-y-dependencias).
+usa la tabla del [Sprint Backlog §4](../sprints/sprint-1/s1-cierre.md#4-historiastareas-comprometidas-y-dependencias).
 
 ```
 Día 1 ──┬─ P1: Eureka (5h) ─→ 401 (6h) ─→ 404 (3h) ─→ CI verde (4h)   [secuencial, mismo módulo]
@@ -107,7 +107,7 @@ Semana 2 ── una vez lo de arriba cierra:
 | **Total backlog** | **74** | **+26** | **100** | 581,6 h (equipo completo) | — |
 
 **Quedaron fuera de esta ampliación**, sin costo por postergarlas (siguiente ciclo): formalizar
-T3/T5 de [`ep-01/h09.md`](../tareas/ep-01/h09.md) (~6 h) y unificar "cohorte"/"curso" en el resto
+T3/T5 de [`ep-01/h06.md`](../tareas/ep-01/h06.md) (~6 h) y unificar "cohorte"/"curso" en el resto
 de la documentación (~5 h, [checklist §3.2](checklist-cierre-s1.md)).
 
 Con la ampliación, P1 pasa de ~45% a ~57% de su capacidad — sigue teniendo margen, pero ya no es

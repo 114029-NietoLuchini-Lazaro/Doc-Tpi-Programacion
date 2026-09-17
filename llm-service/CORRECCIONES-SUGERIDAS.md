@@ -82,14 +82,18 @@ contrario.
 > (revisión del código v2 post-`605f381`, 2026-09-12), que pedía explícitamente transcribirlos
 > acá y no se había hecho todavía.
 
-## 🟡 2. La calibración nunca invoca un modelo — todo run queda en `RUNNING` para siempre
+## 🟢 2. La calibración nunca invoca un modelo — todo run queda en `RUNNING` para siempre
 
-> **🟢 Parcialmente resuelto el 2026-09-12.** El puerto de invocación + fake (`LLM-S01-H10`) ya
-> existe (`domain/ai/ModelInvocationPort`, `infrastructure/ai/FakeModelAdapter`,
-> `application/ModelInvocationService`) — ver [`docs/estado-implementacion/ep-02/h10.md`](docs/estado-implementacion/ep-02/h10.md).
-> **Sigue sin conectarse a la calibración**: el párrafo de abajo describe el estado tal como
-> estaba antes de H10 y el paso que falta sigue exactamente igual — solo que ahora existe algo
-> concreto para enchufar.
+> **🟢 Resuelto el 2026-09-13.** El puerto de invocación + fake (`LLM-S01-H10`) ya existía
+> (`domain/ai/ModelInvocationPort`, `infrastructure/ai/FakeModelAdapter`,
+> `application/ModelInvocationService` — ver [`docs/estado-implementacion/ep-02/h10.md`](docs/estado-implementacion/ep-02/h10.md));
+> ahora `application/CalibrationEvaluationRunner` (nuevo) lo conecta con la calibración:
+> `CalibrationRunWorker.dispatch()` llama a `runner.run(runId)` justo después de `workflow.start`,
+> corre cada caso del golden set contra la función `EVALUATOR`, llena `calibration_case_results`
+> y cierra el run con `CalibrationMetrics.assess` + `CalibrationWorkflowService.finish`. Un error
+> de invocación cierra el run `FAILED` en vez de dejarlo colgado. Detalle en
+> [`docs/estado-implementacion/ep-04/s03-h01.md`](docs/estado-implementacion/ep-04/s03-h01.md).
+> El párrafo de abajo queda como registro de cómo estaba antes.
 
 `CalibrationRunController.create` → `CalibrationRunService.enqueue` crea el registro y audita.
 `CalibrationRunWorker.dispatch` (`@Scheduled`, cada 1s) sólo hace la transición `QUEUED → RUNNING`.
@@ -270,13 +274,18 @@ requerido... recibe `401`") y la traza de H09·T3 ("pruebas de contrato... que e
 si el problema es de autenticación o de autorización) — pero si es así, H03/H09 deberían
 actualizarse para dejar de prometer un `401` que nunca va a llegar.
 
-## 🟡 18. H09·T6 no cumplida: sin JaCoCo no hay gate de cobertura backend posible
+## 🟢 18. H09·T6 resuelta: JaCoCo configurado y gate de cobertura activo — 2026-09-16
+
+> **🟢 Resuelto el 2026-09-16.** Se configuró `jacoco-maven-plugin` en `pom.xml` con los goals
+> `prepare-agent`, `report` y `check`. Al ejecutar `mvn test`, se generan automáticamente
+> `target/site/jacoco/index.html` y `jacoco.xml`, y el gate valida que los paquetes de dominio
+> cumplan el umbral de cobertura (91–97% alcanzado), fallando la build si baja del mínimo (CA5).
+> Se conserva la redacción original como registro histórico.
 
 La tarea T6 de H09 pide "activar el gate de cobertura de [24](docs/24-convenciones-cobertura.md)
-en CI" (umbral 95% backend). Verificado: `pom.xml` **no tiene el plugin de JaCoCo configurado**
-(`grep jacoco pom.xml` → vacío). Sin JaCoCo no hay `target/site/jacoco/index.html` ni `jacoco.xml`
-que un gate de CI pueda leer — el umbral de doc 24 no puede estar activo hoy, sin importar cuántos
-tests haya.
+en CI" (umbral 95% backend). Verificado en su momento: `pom.xml` **no tenía el plugin de JaCoCo
+configurado** (`grep jacoco pom.xml` → vacío). Sin JaCoCo no había `target/site/jacoco/index.html` ni
+`jacoco.xml` que un gate de CI pudiera leer.
 
 ## 🟢 19. H02: `.env.example` y `down` — resuelto el 2026-09-12
 

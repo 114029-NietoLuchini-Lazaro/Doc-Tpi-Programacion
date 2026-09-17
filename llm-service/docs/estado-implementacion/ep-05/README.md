@@ -12,7 +12,8 @@
 
 | Endpoint | Código | Estado | Nota |
 |---|---|---|---|
-| [interactions](interactions.md) | `TutorInteractionController`, `TutorInteractionService` | 🟡 | Camino síncrono completo con guardarraíles; streaming/SSE fuera de esta pasada |
+| [interactions](interactions.md) | `TutorInteractionController`, `TutorInteractionService` | 🟡 | Camino síncrono completo con guardarraíles e histórico; streaming/SSE fuera de esta pasada |
+| [conversations](conversations.md) | `ConversationController`, `ConversationService` | 🟢 | CRUD + histórico multi-turno — revisita una decisión previa, ver el archivo |
 
 ## Pendiente (no se hizo en esta pasada, dejarlo dicho en vez de inventarlo)
 

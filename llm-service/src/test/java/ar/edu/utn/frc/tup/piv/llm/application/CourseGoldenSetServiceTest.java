@@ -1,7 +1,9 @@
 package ar.edu.utn.frc.tup.piv.llm.application;
 
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.CourseGoldenSetVersion;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetCaseInput;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetCaseSummary;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CourseGoldenSetRepository;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CourseGoldenSetRepository.CourseGoldenSetVersion;
 import ar.edu.utn.frc.tup.piv.llm.security.CallerIdentity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Optional;
@@ -37,7 +39,7 @@ class CourseGoldenSetServiceTest {
     var repository = mock(CourseGoldenSetRepository.class); var service = new CourseGoldenSetService(repository);
     UUID course = UUID.randomUUID(), version = UUID.randomUUID();
     var mapper = new ObjectMapper();
-    var invalid = new CourseGoldenSetRepository.GoldenSetCaseInput(
+    var invalid = new GoldenSetCaseInput(
         mapper.readTree("[]"), mapper.readTree("{}"), mapper.readTree("{}"), "Docente",
         mapper.readTree("{\"AUTONOMY\":101,\"CLARITY\":0,\"PROGRESSION\":0,\"COMPLIANCE\":0,\"EFFICIENCY\":0}"), mapper.readTree("{}"));
 
@@ -50,10 +52,10 @@ class CourseGoldenSetServiceTest {
     var repository = mock(CourseGoldenSetRepository.class); var service = new CourseGoldenSetService(repository);
     UUID course = UUID.randomUUID(), version = UUID.randomUUID();
     var mapper = new ObjectMapper();
-    var valid = new CourseGoldenSetRepository.GoldenSetCaseInput(
+    var valid = new GoldenSetCaseInput(
         mapper.readTree("[]"), mapper.readTree("{}"), mapper.readTree("{}"), "Docente",
         mapper.readTree("{\"AUTONOMY\":0,\"CLARITY\":100,\"PROGRESSION\":0,\"COMPLIANCE\":100,\"EFFICIENCY\":0}"), mapper.readTree("{}"));
-    var created = new CourseGoldenSetRepository.GoldenSetCaseSummary(UUID.randomUUID(), 0, "Docente", "DRAFT");
+    var created = new GoldenSetCaseSummary(UUID.randomUUID(), 0, "Docente", "DRAFT");
     when(repository.addDraftCase(course, version, valid)).thenReturn(Optional.of(created));
 
     assertThat(service.addCase(course, version, valid)).isEqualTo(created);
@@ -65,6 +67,7 @@ class CourseGoldenSetServiceTest {
     var service = new CourseGoldenSetService(repository, audit);
     UUID course = UUID.randomUUID(), version = UUID.randomUUID();
     CallerIdentity actor = new CallerIdentity("gateway", UUID.randomUUID(), null, null);
+    when(repository.countCases(version)).thenReturn(3);
     when(repository.publishDraft(course, version)).thenReturn(true);
 
     service.publish(course, version, actor);
@@ -119,7 +122,7 @@ class CourseGoldenSetServiceTest {
     var service = new CourseGoldenSetService(repository);
     UUID course = UUID.randomUUID(), version = UUID.randomUUID();
     var mapper = new ObjectMapper();
-    var valid = new CourseGoldenSetRepository.GoldenSetCaseInput(
+    var valid = new GoldenSetCaseInput(
         mapper.readTree("[]"), mapper.readTree("{}"), mapper.readTree("{}"), "Docente",
         mapper.readTree("{\"AUTONOMY\":80,\"CLARITY\":80,\"PROGRESSION\":80,\"COMPLIANCE\":80,\"EFFICIENCY\":80}"), mapper.readTree("{}"));
     when(repository.addDraftCase(course, version, valid)).thenReturn(Optional.empty());

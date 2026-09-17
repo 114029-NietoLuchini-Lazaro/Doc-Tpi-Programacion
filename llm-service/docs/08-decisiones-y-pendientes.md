@@ -536,6 +536,10 @@ Sin un número fijado, no hay nada que hacer cumplir.
 **Nota:** estos límites son también el control de costo. Con el techo de 15 mensajes, el peor caso
 del tutor está acotado por diseño y no depende del comportamiento de los alumnos.
 
+**Nota (2026-09-13):** estos valores son un techo **global**, igual para todos los alumnos. Si el
+back office necesita ajustarlo por alumno individual (cantidad de usos y tokens/día), ver **P-12**
+— es una dimensión nueva que se suma a esta, no la reemplaza.
+
 **Prioridad:** Media — se puede empezar con estos y calibrar.
 
 📄 [03](03-modelos-costos-y-contexto.md)
@@ -666,6 +670,41 @@ arrancar con tres y descubrir que dos no se usan, no.
 
 ---
 
+### ❓ P-12 — ¿El back office configura límites de IA por alumno, o solo por función?
+
+**Abierta (2026-09-13).**
+
+**El hueco:** RF-IA-22 y P-05 fijan un techo **global**, igual para todos los alumnos (60
+mensajes/día, 15 por desafío). `LLM-S09-H02` (la historia que permite a un ADMIN cambiar un límite
+de cuota) hoy solo modela ese límite **por función** (`tutor`, `evaluator`) — nunca por alumno
+individual. Y el back office (Tema 12) no tiene, en ningún contrato vigente
+([`equipos/tema-12-backoffice-admin/contratos.md`](equipos/tema-12-backoffice-admin/contratos.md)),
+la pantalla que configuraría eso.
+
+**Lo que se pide alinear:** que el back office tenga, en teoría, parámetros para limitar el uso de
+IA de **cada alumno por día** en dos ejes: **cantidad de usos** (interacciones — la dimensión que
+P-05 ya fija, pero como valor global) y **cantidad de tokens** (dimensión que hoy no existe a
+nivel alumno, solo agregada por función).
+
+**Recomendación:** extender el modelo de `LLM-S09-H02` con un segundo `scope` (`function` |
+`student`) sobre la misma tabla append-only y el mismo mecanismo de auditoría (`changed_by`,
+`reason`, versionado) — no un componente nuevo. El back office (Tema 12) pasa a ser dueño de la
+pantalla que llama a ese endpoint extendido. Ver [`ep-07`](epicas/ep-07.md) y
+[`historias/ep-07/h02.md`](historias/ep-07/h02.md).
+
+**Tensión sin resolver, a propósito:** el panel agregado de costos (`LLM-S09-H01`) prohíbe
+exponer `studentId` por privacidad (su CA6). Una pantalla que configura un límite **por alumno**
+necesita identificarlo. Son recursos distintos (uno agregado y de solo lectura, el otro puntual y
+de escritura), pero quién puede ver/limitar a qué alumno es una decisión de **Product Owner y
+DPO**, no algo que esta nota resuelva.
+
+**Prioridad:** Media — no bloquea el arranque de EP-07 (que ya cubre el límite por función), pero
+hay que resolverla antes de cerrar `LLM-S09-H02` si el back office la necesita en el primer corte.
+
+📄 [ep-07](epicas/ep-07.md) · [`equipos/tema-12-backoffice-admin/contratos.md`](equipos/tema-12-backoffice-admin/contratos.md)
+
+---
+
 ## Parte C — Cosas por definir cuando llegue el momento
 
 No urgentes, pero anotadas para no redescubrirlas:
@@ -718,7 +757,7 @@ No urgentes, pero anotadas para no redescubrirlas:
 | **B-2** | ¿Quién guarda la transcripción? | 🟢 **Nosotros**, porque el tutor es nuestro. Y capturamos la metadata de tiempos nosotros mismos |
 | — | ¿Quiénes son los "docentes" del golden set? | 🟢 **Personas físicas, nunca un modelo.** En el TP pueden ser 2 del equipo actuando como docentes |
 | — | Tamaño del equipo | 🟢 **12 integrantes** (5 parejas P1–P5 + referente de producto + facilitador). El "6 personas / P1–P6" de [10](10-entregables-y-plan.md) quedó superado; reparto vigente en [23 · §3](23-plan-construccion-producto-llm.md) |
-| — | ¿Producto o demo? | 🟢 **Tiene que funcionar, pero primero demo local.** El "plan de 4 semanas" de [10](10-entregables-y-plan.md) fue reemplazado por los 19 sprints de [23](23-plan-construccion-producto-llm.md) |
+| — | ¿Producto o demo? | 🟢 **Tiene que funcionar, pero primero demo local.** El "plan de 4 semanas" de [10](10-entregables-y-plan.md) fue reemplazado por los 19 sprints de [23](23-plan-construccion-producto-llm.md), y ese horizonte a su vez por el máximo de **5 sprints** de [38](38-plan-de-5-sprints.md) |
 
 **Lo que sigue abierto es lo de abajo.** Los ítems tachados quedan por trazabilidad.
 
@@ -824,6 +863,10 @@ La salvaguarda anti-fuga (**tuya sin discusión**) compara la respuesta del tuto
 
 **Ojo:** la metadata de tiempos entre mensajes y ediciones de código ([07](07-datos-y-terminos.md) §3.1) es **evidencia de la dimensión que más pesa** y no se puede reconstruir después. Si la guarda otro equipo, **hay que pedirles explícitamente que la capturen** — no la van a capturar solos.
 
+> ✅ **Resuelto (2026-09-13), opción A.** Tema 05 guarda la transcripción (dueños de la UI del
+> chat) y nos la entrega completa al notificar el cierre del intento — ver
+> [`equipos/tema-05-desafios-practicos/contratos.md`](equipos/tema-05-desafios-practicos/contratos.md#qué-nos-dan-el-cierre-del-intento).
+
 ---
 
 ### 🔴 B-3 — Tema 11: los campos del contrato de eventos
@@ -833,6 +876,9 @@ El Tema 11 define el contrato de eventos **para toda la plataforma** y su decisi
 **Es urgente por secuencia, no por importancia: una vez cerrado, pedir un campo nuevo es renegociar con todos.**
 
 **Lo que necesitás que incluyan:** `curso_cohorte_id`, `intento_id`, `alumno_id`, `rubric_version`, `model_id`, `model_version`, `score_agregado`, `confianza`, `estado` y `trace_id`.
+
+> 🔴 **Sigue abierto** — trackeado en
+> [`equipos/tema-11-chat/pendientes.md`](equipos/tema-11-chat/pendientes.md#-cruzado--b-3-los-campos-que-tema-11-tiene-que-incluir-en-el-contrato-de-eventos).
 
 ---
 
@@ -851,6 +897,11 @@ El documento de la cátedra lo da como ejemplo textual: *"El Tema 02 le pregunta
 Conceptualmente ya está resuelto ([01](01-problema-y-alcance.md) §2c) y la cátedra coincide. **Falta escribirlo en el contrato.**
 
 Los cuatro puntos: vos devolvés score 0-100 y nunca XP; el Tema 10 aplica PAR-05; vos exponés el contador de pendientes; **el backend implementa la degradación de RF-IA-27** (que la entrega se acepte con tu servicio caído). Ese último es el que más se cae entre equipos.
+
+> ⚠️ **Cambió el 2026-09-13.** Estos cuatro puntos siguen firmes como regla de negocio, pero el
+> tránsito ya no es directo con Tema 03: publicás `score_de_ia_calculado.v1` para **Tema 05**, que
+> es quien se lo reenvía a Tema 03 para que aplique el XP. Detalle en
+> [17 · I-04](17-mapa-de-integracion.md) y [18 §4.2/§4.3](18-contratos-inter-equipos.md).
 
 ---
 

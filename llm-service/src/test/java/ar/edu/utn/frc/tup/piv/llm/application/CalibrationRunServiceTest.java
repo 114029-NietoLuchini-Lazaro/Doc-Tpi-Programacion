@@ -1,5 +1,6 @@
 package ar.edu.utn.frc.tup.piv.llm.application;
 
+import ar.edu.utn.frc.tup.piv.llm.domain.calibration.CalibrationRun;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.AuditRepository;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationReproducibilityRepository;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationRunRepository;
@@ -28,7 +29,7 @@ class CalibrationRunServiceTest {
     UUID runId = UUID.randomUUID();
     CallerIdentity actor = new CallerIdentity("courses-service", UUID.randomUUID(), "req-16", "trace-16");
     when(runs.create(courseId, rubricVersionId, goldenSetVersionId, modelDeploymentId,
-        idempotencyKey, actor.delegatedUserId())).thenReturn(new CalibrationRunRepository.Run(runId, "QUEUED", 0));
+        idempotencyKey, actor.delegatedUserId())).thenReturn(new CalibrationRun(runId, "QUEUED", 0));
 
     new CalibrationRunService(runs, artifacts, audit).enqueue(courseId, rubricVersionId,
         goldenSetVersionId, modelDeploymentId, idempotencyKey, actor);

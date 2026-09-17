@@ -30,7 +30,7 @@
 ### T2 — ~~Sembrar un `model_deployment` para el curso de demo~~ — descartada
 
 > **Resuelto el 2026-09-12, leyendo el código** (ver
-> [`s03-h01.md` · T7`](../ep-04/s03-h01.md)): `CalibrationRunWorker` invoca modelos vía
+> [`h01.md` · T7](../ep-04/h01.md)): `CalibrationRunWorker` invoca modelos vía
 > `ModelInvocationService`/`function_model_config` — el mismo patrón que ya usa `TutorInteractionService`
 > — y **no lee `model_deployments` en ningún punto del camino**. La fila `('evaluator', 'fake', ...)`
 > que hace falta para que T7 funcione se siembra **dentro de T7** (en `function_model_config`, no

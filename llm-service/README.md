@@ -57,7 +57,32 @@ docker compose ps              # healthcheck en columna STATUS
 curl http://localhost:8080/actuator/health   # sólo si se expuso el puerto para debug local
 ```
 
+### Persistencia y debug local
+
+Los datos de PostgreSQL viven en el volumen nombrado `llm-postgres-data`; sobreviven a
+`docker compose down` y solo se borran con `docker compose down --volumes`.
+
+Para conectarte a Postgres con un cliente SQL desde el host (uso de debug, no para la plataforma
+real — ver [`compose.debug.yaml`](compose.debug.yaml)):
+
+```bash
+docker compose -f compose.yaml -f compose.debug.yaml up --build
+# psql -h localhost -U llm -d llm
+```
+
 Variables de entorno: ver [`.env.example`](.env.example).
+
+### Guía de Demo y Verificación de Reinicio (Sprint 1)
+
+Para la Sprint Review y verificación reproducible con evidencia técnica:
+- **Guía de demo paso a paso:** [`docs/guia-demo-s1.md`](docs/guia-demo-s1.md) (versión canónica V2: [`docsV2/06-operacion-calidad-y-pruebas/05-guia-demo-s1.md`](docsV2/06-operacion-calidad-y-pruebas/05-guia-demo-s1.md)).
+- **Prueba automatizada de reinicio de Compose (H06·T4):**
+  - Linux / macOS / Git Bash: `bash scripts/test-compose-restart.sh`
+  - Windows PowerShell: `powershell -File scripts/test-compose-restart.ps1`
+- **Suite de pruebas y reporte de cobertura JaCoCo (H06·T6):**
+  - Ejecutar `mvn test` para correr las 218 pruebas unitarias y de arquitectura.
+  - El reporte de cobertura se genera automáticamente en `target/site/jacoco/index.html` y `jacoco.xml`.
+  - El gate de calidad en CI verifica que los paquetes de dominio superen el umbral exigido.
 
 ## El problema
 
@@ -142,6 +167,7 @@ la verificación de disponibilidad y calibración del modelo que se implemente.
 | 35 | [Backlog ejecutable S0–S19](docs/35-backlog-ejecutable.md) | Catálogo de las diez épicas (EP-01…EP-10), checklist de Sprint 0 y las recetas atómicas S1–S19 con horas, gates y aceptación. Fuente de ID, épica, pareja, dependencias y horas. Antes vivía en `Plan de ejecucion/07`. |
 | 36 | [Playbook de construcción](docs/36-playbook-de-construccion.md) | Reglas de ejecución: autoridad y precedencia, arquitectura y fronteras, secuencia obligatoria para una capacidad nueva (§4), patrones que no se negocian y pruebas mínimas. Antes vivía en `Plan de ejecucion/06`. |
 | 37 | [Estructura de carpetas del backend](docs/37-estructura-carpetas-backend.md) | El árbol real de `llm-service/` mapeado a las capas de 36, guía de en qué carpeta va cada cosa nueva, y el hueco conocido (controllers que saltan a persistencia directo). Sólo backend. |
+| 39 | [Servicios de Docker](docs/39-servicios-docker.md) | Qué levanta `compose.yaml`/`compose.workbench.yaml` hoy (Postgres+pgvector, `llm-service`, `llm-workbench`) y qué queda preparado y comentado para cuando haga falta (Redis, Kafka, MinIO) — y por qué Eureka/Gateway no están ni comentados. |
 | — | [Épicas del `llm-service` (formato Taiga)](docs/epicas/README.md) | Las diez épicas (EP-01…EP-10), una por archivo, en el template oficial de épica: objetivo, suposiciones y restricciones, criterios de aceptación a nivel épico y dependencias. Fuente de verdad del catálogo: `docs/35`. |
 | — | [Historias de usuario (formato Taiga), por épica](docs/historias/README.md) | Las HU en el template oficial, agrupadas por épica ([EP-01](docs/historias/ep-01/README.md), [EP-03](docs/historias/ep-03/README.md)): Como/Quiero/Para, notas, criterios de aceptación con negativos, BDD (≥3 escenarios), prototipo, estimación y dependencias. Versión detallada de la tabla de `docs/35`. |
 | — | [Tareas SMART por historia](docs/tareas/README.md) | El desglose de cada historia en tareas técnicas ([EP-01](docs/tareas/ep-01/README.md), [EP-03](docs/tareas/ep-03/README.md)), método SMART, en el template de Tarea de Taiga: objetivo SMART, pasos, criterio de terminado, estimación y trazabilidad al CA/escenario. |

@@ -1,15 +1,16 @@
 # 10 — Qué entregamos y cómo lo construimos
 
 > **Calendario histórico.** El reparto y la secuencia de este documento se conservan como
-> antecedente. El plan vigente es [23 · Construcción del producto LLM](23-plan-construccion-producto-llm.md):
-> 12 integrantes, tres fases, 19 sprints quincenales y ~571 horas-persona de capacidad por sprint
-> (después de reuniones y reserva; ~208 h de trabajo estimado). Las funciones de F2/F3 entran únicamente en sus fases.
+> antecedente. [23 · Construcción del producto LLM](23-plan-construccion-producto-llm.md) llegó a
+> plantear 12 integrantes, tres fases y 19 sprints quincenales — horizonte **retirado**. El plan
+> de calendario vigente es **[38 — Plan de 5 sprints](38-plan-de-5-sprints.md)**. Las funciones
+> de F2/F3 no entran en ese horizonte (ver 38 · Parte 4).
 >
 > Donde el cuerpo de este documento diga **«las cuatro semanas»**, **«la demo»**, **«seis
 > personas»**, **«P1–P6»** o **«el plan de 14 pasos»**, se refiere al recorte de demo histórico.
-> Su equivalente vigente es: fases y calendario en [23 · §1 y §5](23-plan-construccion-producto-llm.md),
-> reparto en **5 parejas P1–P5** en [23 · §3](23-plan-construccion-producto-llm.md), y la
-> secuencia de construcción en el [backlog ejecutable S1–S19](35-backlog-ejecutable.md).
+> Su equivalente vigente es: reparto en **5 parejas P1–P5** en [23 · §3](23-plan-construccion-producto-llm.md)
+> (esto sí sigue vigente), y la secuencia de construcción en
+> [38 — Plan de 5 sprints](38-plan-de-5-sprints.md).
 
 > **Punto de partida actualizado.** Antes de estimar o repartir pasos, usar la matriz [21](21-matriz-trazabilidad-llm.md) y los contratos v1. Esta planificación previa mantiene información de contexto, pero no habilita trabajo de Fase 2/Fase 3 ni endpoints `/ai/*`.
 
@@ -146,7 +147,7 @@ Lo que otros no pueden terminar sin nosotros:
 | Equipo | Qué les debemos | Si no lo entregamos |
 |---|---|---|
 | **Tema 02** | Endpoint de estado de calibración | 🔴 **No pueden activar ningún curso** |
-| **Tema 03 / 10** | El score de uso de IA con su desglose | No pueden aplicar el modificador de XP |
+| **Tema 05 → Tema 03 / 10** | El score de uso de IA con su desglose (desde el 2026-09-13 se lo entregamos a Tema 05, que se lo reenvía a Tema 03) | No pueden aplicar el modificador de XP |
 | **Tema 11** | Nuestros campos en el contrato de eventos | Hay que renegociar con cinco equipos |
 | **Tema 12** | Contrato de lectura: calibración, deriva, costo | *"No tienen nada demostrable"* |
 | **Front** | El componente del chat del tutor | Los desafíos prácticos no tienen asistencia |
@@ -156,7 +157,7 @@ Y lo que necesitamos de ellos:
 | Equipo | Qué necesitamos | Estado |
 |---|---|---|
 | **Tema 05** | La solución esperada de cada desafío | 🔴 Abierto |
-| **Tema 03** | El evento `intento_cerrado` que dispara la evaluación | Por acordar |
+| **Tema 05** | El evento `intento_cerrado` que dispara la evaluación (desde el 2026-09-13 lo publica Tema 05, ya no Tema 03) | Por acordar |
 | **Tema 02** | El evento `curso_archivado` | Por acordar |
 | **Tema 12** | La configuración del proveedor LLM | Por acordar quién es dueño |
 | **Product Owner** | Golden set con responsable y fecha · consulta legal del free tier | 🔴 Abierto |

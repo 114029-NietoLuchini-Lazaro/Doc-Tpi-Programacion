@@ -245,7 +245,9 @@ La rúbrica, las anclas y las instrucciones son **idénticas en todas las evalua
 ### Las dos palancas estructurales que no son técnicas
 
 **RF-IA-22 — el techo es obligatorio igual.** No es una optimización, es un requerimiento. Y define
-el peor caso:
+el peor caso. Los valores de abajo son el techo **global**, igual para todos los alumnos; si el
+back office necesita un techo distinto por alumno (cantidad de usos y de tokens), es una dimensión
+que se suma encima de esta, sin reemplazarla — ver [08 P-12](08-decisiones-y-pendientes.md):
 
 | Techo de mensajes por desafío | Volumen del tutor | Con Flash-Lite |
 |---|---|---|
@@ -368,7 +370,8 @@ alguien "optimice".
 | Evaluador | 8.000 tok · **transcripción completa** | 800 tok | 🔴 Nunca truncar |
 | Generador | 6.000 tok por pregunta | 600 tok | Incluir las ya generadas |
 
-**Entrada del alumno:** ~500 palabras por mensaje · 8-15 mensajes por desafío (RF-IA-22) · 60 por día.
+**Entrada del alumno:** ~500 palabras por mensaje · 8-15 mensajes por desafío (RF-IA-22) · 60 por día
+(techo global; el back office puede ajustarlo por alumno — [08 P-12](08-decisiones-y-pendientes.md)).
 
 ### Cómo saber si estás en el punto justo
 

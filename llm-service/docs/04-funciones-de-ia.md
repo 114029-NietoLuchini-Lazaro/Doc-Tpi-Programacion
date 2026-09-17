@@ -438,14 +438,19 @@ los tipos de desafío teórico:
 | **Ordenar secuencias** | ❌ **No** | Comparar listas |
 | **Emparejar conceptos** | ❌ **No** | Comparar pares |
 | **Algoritmos con tests** | ❌ **No** | **Los tests deciden**, no un modelo |
+| **Respuesta corta (clave única)** | ❌ **No** | Normalizar (mayúsculas/tildes/espacios) + distancia de edición contra la(s) respuesta(s) aceptada(s) — ver [`docs/entregas/recomendacion-correccion-respuestas-cortas.md`](entregas/recomendacion-correccion-respuestas-cortas.md) |
 | **Respuesta abierta / desarrollo** | Revisión docente | Fuera del evaluador de uso de IA |
 | **Conversación alumno–tutor** | ✅ Evaluador de uso de IA | Conversación completa + contexto + metadata + rúbrica 5D |
 
 > **Usar un LLM para corregir un multiple choice no es caro: es un error.** Es más lento, más caro,
 > menos confiable y no reproducible, para resolver una comparación de enteros.
 
-**Consecuencia de alcance:** los formatos objetivos se validan con código y las respuestas abiertas
-se derivan a revisión docente. Ninguno de esos flujos utiliza el Golden Set del evaluador.
+**Consecuencia de alcance:** los formatos objetivos (incluida la respuesta corta con clave única) se
+validan con código y las respuestas abiertas se derivan a revisión docente. Ninguno de esos flujos
+utiliza el Golden Set del evaluador ni pasa por `llm-service` — la respuesta corta tampoco: es
+lógica de comparación de texto en el motor que la dueño (Tema 04), no una función de IA. Ver
+[P-01](08-decisiones-y-pendientes.md#-p-01--corrector-de-respuestas-abiertas-fuera-de-alcance) para
+por qué la corrección semántica con LLM sigue sin incorporarse.
 
 ## 2. El patrón común: "LLM como juez"
 

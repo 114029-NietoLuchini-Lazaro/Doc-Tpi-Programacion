@@ -26,6 +26,10 @@ public class GoldenSetAuthorization {
     this.workbench = workbench; this.workbenchUser = workbenchUser;
   }
 
+  public GoldenSetAuthorization(String trustedService, String requiredScope, boolean workbench, UUID workbenchUser) {
+    this(trustedService, requiredScope, "llm:evaluator:template:manage", workbench, workbenchUser);
+  }
+
   public CallerIdentity require(HttpHeaders headers) {
     return requireScope(headers, requiredScope);
   }
@@ -40,9 +44,17 @@ public class GoldenSetAuthorization {
     String serviceId = headers.getFirst("X-Service-Id");
     String scopes = headers.getFirst("X-Service-Scopes");
     String delegated = headers.getFirst("X-Delegated-User");
-    if (!trustedService.equals(serviceId) || scopes == null || Arrays.stream(scopes.split("\\s+")).noneMatch(scope::equals) || delegated == null)
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El actor no puede administrar el evaluador");
-    try { return new CallerIdentity(serviceId, UUID.fromString(delegated), headers.getFirst("X-Request-Id"), headers.getFirst("traceparent")); }
-    catch (IllegalArgumentException exception) { throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Identidad delegada inválida"); }
+    if (!trustedService.equals(serviceId) || scopes == null
+        || Arrays.stream(scopes.split("\\s+")).noneMatch(scope::equals)) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Falta el permiso requerido");
+    }
+    if (delegated == null) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Identidad delegada ausente");
+    }
+    try {
+      return new CallerIdentity(serviceId, UUID.fromString(delegated), headers.getFirst("X-Request-Id"), headers.getFirst("traceparent"));
+    } catch (IllegalArgumentException exception) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Identidad delegada inválida");
+    }
   }
 }

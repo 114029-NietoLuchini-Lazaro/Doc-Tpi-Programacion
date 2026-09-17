@@ -8,6 +8,12 @@
 > **Por qué existe.** El código ya entrega más que "solo S1" — golden set y rúbrica
 > versionados, y el esqueleto de calibración. Definir la Entrega 1 recortada a "S1 tal cual
 > lo dice la receta original" desperdiciaría trabajo real ya hecho y probado.
+>
+> **🟢 2026-09-13 — la pieza que faltaba (T7, "conectar calibración con H10") se cerró.** Ver
+> [`docs/sprints/s1-cierre.md`](../sprints/s1-cierre.md) fila 7 y
+> [`docs/estado-implementacion/ep-04/s03-h01.md`](../estado-implementacion/ep-04/s03-h01.md).
+> Las filas de la tabla de abajo que hablaban de este hueco quedan como registro de cómo estaba
+> antes; ya se puede demostrar una calibración real terminando en `PASSED`/`FAILED`.
 
 ---
 
@@ -67,7 +73,7 @@ círculo es más chico de lo que parecía: no hay que construir calibración des
 
 Del punch-list de la verificación, en orden de bloqueo:
 
-1. **H10** — puerto de invocación + fake ([ya con ficha](../historias/ep-02/h10.md), 32 h).
+1. **EP-02·H01** — puerto de invocación + fake ([ya con ficha](../historias/ep-02/h01.md), 32 h, ex-H10).
 2. **Conectar calibración con H10** — nueva pieza (sin ficha todavía) que, al recibir un run
    `RUNNING`, llame al puerto por cada caso del golden set, arme `CaseScores`, corra
    `CalibrationMetrics.assess` y persista `calibration_case_results` + el cierre del run.

@@ -21,7 +21,7 @@
 > | Horas por historia y por sprint (S1) | [`35`](../35-backlog-ejecutable.md) · «S1» |
 > | Criterios de aceptación y escenarios BDD (lo que cada tarea traza) | [`../historias/`](../historias/README.md) |
 > | Orden de construcción de las tareas | [playbook · §4](../36-playbook-de-construccion.md) |
-> | Vista del sprint (índice, demo) | [`../sprints/s1-historias.md`](../sprints/s1-historias.md) |
+> | Vista del sprint (índice, demo) | [`../sprints/sprint-1/s1-historias.md`](../sprints/sprint-1/s1-historias.md) |
 > | Estado real del código (S2/S3, escritas a posteriori) | [`../entregas/verificacion-v2-golden-set-calibracion.md`](../entregas/verificacion-v2-golden-set-calibracion.md) |
 >
 > Las horas por tarea son **orientativas** y suman la referencia de la historia. Si un
@@ -33,10 +33,10 @@
 
 | Épica | Carpeta | Historias | Estado |
 |---|---|---|---|
-| **EP-01** · Plataforma, contratos e integración | [`ep-01/`](ep-01/README.md) | LLM-S01-H01 · H02 · H03 · H04 · H08 · H09 | Planificadas (S1) |
-| **EP-02** · AI Gateway, modelos y resiliencia | [`ep-02/`](ep-02/README.md) | LLM-S01-H10 · [catálogo de adaptadores real (sin HU)](ep-02/model-catalog-real.md) | H10 cerrada; catálogo real (lectura + alta) pendiente (Entrega 1 + ampliación) |
-| **EP-03** · Golden set y referencia humana | [`ep-03/`](ep-03/README.md) | LLM-S01-H05 · H06 · H07 (histórico, [reescritura en curso](ep-03/rewrite-h05-h06-h07-v2.md)) · LLM-S02-H01 · H02 (vigentes) | S1 histórico; S2 ya construida |
-| **EP-04** · Calibración y gobernanza del modelo | [`ep-04/`](ep-04/README.md) | LLM-S03-H01 | Esqueleto construido, 1 tarea bloqueante |
+| **EP-01** · Plataforma, contratos e integración | [`ep-01/`](ep-01/README.md) | LLM-EP01-H01 a H06 *(H01–H04, H08, H09 originales)* | Planificadas (S1) |
+| **EP-02** · AI Gateway, modelos y resiliencia | [`ep-02/`](ep-02/README.md) | LLM-EP02-H01 *(ex-H10)* · [catálogo de adaptadores real (sin HU)](ep-02/model-catalog-real.md) | H01 cerrada; catálogo real (lectura + alta) pendiente |
+| **EP-03** · Golden set y referencia humana | [`ep-03/`](ep-03/README.md) | LLM-EP03-H01–H03 (histórico S1) · LLM-EP03-H04–H05 (vigentes S2) | S1 histórico; S2 ya construida |
+| **EP-04** · Calibración y gobernanza del modelo | [`ep-04/`](ep-04/README.md) | LLM-EP04-H01 *(ex-S03-H01)* | Esqueleto construido, T7 cerrada |
 
 ## Horas — S1 (planificación original, vigente)
 
@@ -44,16 +44,16 @@
 
 | Historia | Archivo | Tareas | h |
 |---|---|---:|---:|
-| LLM-S01-H01 | [`ep-01/h01.md`](ep-01/h01.md) | 5 | 16 |
-| LLM-S01-H02 | [`ep-01/h02.md`](ep-01/h02.md) | 7 | 30 |
-| LLM-S01-H03 | [`ep-01/h03.md`](ep-01/h03.md) | 8 | 34 |
-| LLM-S01-H04 | [`ep-01/h04.md`](ep-01/h04.md) | 7 | 38 |
-| LLM-S01-H05 *(histórico)* | [`ep-03/h05.md`](ep-03/h05.md) | 6 | 24 |
-| LLM-S01-H06 *(histórico)* | [`ep-03/h06.md`](ep-03/h06.md) | 4 | 14 |
-| LLM-S01-H07 *(histórico)* | [`ep-03/h07.md`](ep-03/h07.md) | 6 | 24 |
-| LLM-S01-H08 | [`ep-01/h08.md`](ep-01/h08.md) | 4 | 10 |
-| LLM-S01-H09 | [`ep-01/h09.md`](ep-01/h09.md) | 6 | 18 |
-| LLM-S01-H10 | [`ep-02/h10.md`](ep-02/h10.md) | 6 | 32 |
+| LLM-EP01-H01 *(LLM-S01-H01)* | [`ep-01/h01.md`](ep-01/h01.md) | 5 | 16 |
+| LLM-EP01-H02 *(LLM-S01-H02)* | [`ep-01/h02.md`](ep-01/h02.md) | 7 | 30 |
+| LLM-EP01-H03 *(LLM-S01-H03)* | [`ep-01/h03.md`](ep-01/h03.md) | 8 | 34 |
+| LLM-EP01-H04 *(LLM-S01-H04)* | [`ep-01/h04.md`](ep-01/h04.md) | 7 | 38 |
+| LLM-EP03-H01 *(histórico, ex-H05)* | [`ep-03/h01.md`](ep-03/h01.md) | 6 | 24 |
+| LLM-EP03-H02 *(canónica, ex-H06)* | [`ep-03/h02.md`](ep-03/h02.md) | 4 | 14 |
+| LLM-EP03-H03 *(histórico, ex-H07)* | [`ep-03/h03.md`](ep-03/h03.md) | 6 | 24 |
+| LLM-EP01-H05 *(ex-H08)* | [`ep-01/h05.md`](ep-01/h05.md) | 4 | 10 |
+| LLM-EP01-H06 *(ex-H09)* | [`ep-01/h06.md`](ep-01/h06.md) | 6 | 18 |
+| LLM-EP02-H01 *(ex-H10)* | [`ep-02/h01.md`](ep-02/h01.md) | 6 | 32 |
 | **Total** | | **59** | **240** |
 
 ## Horas — S2/S3 (escritas a posteriori, código ya construido)
@@ -64,21 +64,21 @@ compromiso de sprint.
 
 | Historia | Archivo | Tareas | Estado |
 |---|---|---:|---|
-| LLM-S02-H01 | [`ep-03/s02-h01.md`](ep-03/s02-h01.md) | 6 | 5 hechas, 1 pendiente de decisión |
-| LLM-S02-H02 | [`ep-03/s02-h02.md`](ep-03/s02-h02.md) | 7 | 6 hechas, 1 pendiente de código |
-| LLM-S03-H01 | [`ep-04/s03-h01.md`](ep-04/s03-h01.md) | 7 | 6 hechas, T7 **firmada en 14 h** — bloqueante de Entrega 1 |
+| LLM-EP03-H04 *(LLM-S02-H01)* | [`ep-03/h04.md`](ep-03/h04.md) | 6 | 5 hechas, 1 pendiente de decisión |
+| LLM-EP03-H05 *(LLM-S02-H02)* | [`ep-03/h05.md`](ep-03/h05.md) | 7 | 6 hechas, 1 pendiente de código |
+| LLM-EP04-H01 *(LLM-S03-H01)* | [`ep-04/h01.md`](ep-04/h01.md) | 7 | 6 hechas, T7 **firmada en 14 h** — bloqueante de Entrega 1 |
 
 ## Horas — deuda de cierre de S1 y Entrega 1 (2026-09-12)
 
 Tareas nuevas o reestimadas contra [`checklist-cierre-s1.md`](../entregas/checklist-cierre-s1.md)
 y [`entrega-1.md`](../entregas/entrega-1.md). El Sprint Backlog que las agrupa y les pone
-responsable/orden vive en [`sprints/s1-cierre.md`](../sprints/s1-cierre.md); la priorización en
+responsable/orden vive en [`sprints/s1-cierre.md`](../sprints/sprint-1/s1-cierre.md); la priorización en
 dos vistas (valor de demo vs. dependencia técnica), en
 [`entregas/backlog-priorizado-cierre-s1.md`](../entregas/backlog-priorizado-cierre-s1.md).
 
 | Origen | Archivo | Qué agrega | h nuevas/firmadas |
 |---|---|---|---:|
-| Entrega 1 (bloqueante) | [`ep-04/s03-h01.md`](ep-04/s03-h01.md) T7 | Conectar calibración con el puerto de H10 — **ya no depende del catálogo** (resuelto leyendo código, 2026-09-12: usa `function_model_config`, no `model_deployments`) | 14 |
+| Entrega 1 (bloqueante) | [`ep-04/h01.md`](ep-04/h01.md) T7 | Conectar calibración con el puerto de H10 — **ya no depende del catálogo** (resuelto leyendo código, 2026-09-12: usa `function_model_config`, no `model_deployments`) | 14 |
 | Entrega 1 | [`ep-02/model-catalog-real.md`](ep-02/model-catalog-real.md) T1+T3 | Catálogo de adaptadores real, lectura (nueva, sin ficha de HU) — T2 se descartó el 2026-09-12 (no aplica, ver el archivo) | 8 |
 | Checklist §1.4 | [`ep-01/h03.md`](ep-01/h03.md) T9 | `404` real en vez de `409`/`403` para "no existe" | 3 |
 | **Subtotal bloqueante/deuda** | | | **25** |
@@ -93,10 +93,10 @@ escritas.
 
 **Quedaron explícitamente para el siguiente ciclo** (no entraron en esta ampliación, ver
 [`backlog-priorizado-cierre-s1.md`](../entregas/backlog-priorizado-cierre-s1.md)): formalizar T3
-(contrato WireMock) y T5 (evidencia BDD) de [`ep-01/h09.md`](ep-01/h09.md), y unificar
+(contrato WireMock) y T5 (evidencia BDD) de [`ep-01/h06.md`](ep-01/h06.md) (ex-H09), y unificar
 "cohorte"/"curso" en el resto de la documentación ([checklist §3.2](../entregas/checklist-cierre-s1.md)).
 
 ## Cómo se generan
 
-Con el skill [`generar-tareas`](../../.agents/skills/generar-tareas/SKILL.md): toma una
+Con el skill [`generar-tareas`](../../../.agents/skills/generar-tareas/SKILL.md): toma una
 HU con sus CA y su BDD y produce sus tareas SMART en el orden de construcción del equipo.

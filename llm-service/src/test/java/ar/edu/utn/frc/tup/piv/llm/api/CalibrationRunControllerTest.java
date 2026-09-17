@@ -1,7 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.api;
 
 import ar.edu.utn.frc.tup.piv.llm.application.CalibrationRunService;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationRunRepository;
+import ar.edu.utn.frc.tup.piv.llm.domain.calibration.CalibrationRun;
 import ar.edu.utn.frc.tup.piv.llm.security.CallerIdentity;
 import ar.edu.utn.frc.tup.piv.llm.security.CourseAuthorization;
 import ar.edu.utn.frc.tup.piv.llm.security.GoldenSetAuthorization;
@@ -29,7 +29,7 @@ class CalibrationRunControllerTest {
     when(auth.require(headers)).thenReturn(actor);
 
     UUID runId = UUID.randomUUID();
-    when(service.list(courseId)).thenReturn(List.of(new CalibrationRunRepository.Run(runId, "PASSED", 100)));
+    when(service.list(courseId)).thenReturn(List.of(new CalibrationRun(runId, "PASSED", 100)));
 
     var result = controller.list(courseId, headers);
 
@@ -57,7 +57,7 @@ class CalibrationRunControllerTest {
 
     UUID runId = UUID.randomUUID();
     when(service.enqueue(courseId, rubricId, goldenId, modelId, key, actor))
-        .thenReturn(new CalibrationRunRepository.Run(runId, "QUEUED", 0));
+        .thenReturn(new CalibrationRun(runId, "QUEUED", 0));
 
     var response = controller.create(courseId, new CalibrationRunController.Request(rubricId, goldenId, modelId), key, headers);
 

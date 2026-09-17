@@ -1,7 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.api;
 
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.ModelDeploymentRepository;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.ModelDeploymentRepository.ModelDeploymentSummary;
+import ar.edu.utn.frc.tup.piv.llm.application.ModelDeploymentService;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelDeploymentSummary;
 import ar.edu.utn.frc.tup.piv.llm.security.CourseAuthorization;
 import ar.edu.utn.frc.tup.piv.llm.security.GoldenSetAuthorization;
 import java.util.List;
@@ -14,13 +14,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class ModelDeploymentController {
-  private final ModelDeploymentRepository repository;
+  private final ModelDeploymentService service;
   private final GoldenSetAuthorization authorization;
   private final CourseAuthorization courseAuthorization;
 
-  public ModelDeploymentController(ModelDeploymentRepository repository,
+  public ModelDeploymentController(ModelDeploymentService service,
       GoldenSetAuthorization authorization, CourseAuthorization courseAuthorization) {
-    this.repository = repository;
+    this.service = service;
     this.authorization = authorization;
     this.courseAuthorization = courseAuthorization;
   }
@@ -29,13 +29,13 @@ public class ModelDeploymentController {
   public ModelDeploymentPage listForCourse(@PathVariable UUID courseId, @RequestHeader HttpHeaders headers) {
     var actor = authorization.require(headers);
     courseAuthorization.requireTeacher(courseId, actor, headers);
-    return new ModelDeploymentPage(repository.listEnabledDeployments());
+    return new ModelDeploymentPage(service.listEnabledDeployments());
   }
 
   @GetMapping("/api/llm/admin/model-adapters")
   public ModelAdapterPage listAdapters(@RequestHeader HttpHeaders headers) {
     authorization.require(headers);
-    var deployments = repository.listEnabledDeployments();
+    var deployments = service.listEnabledDeployments();
     return new ModelAdapterPage(List.of(
         new ModelAdapterSummary(UUID.randomUUID(), "openai", deployments.stream().filter(d -> "openai".equals(d.provider())).toList()),
         new ModelAdapterSummary(UUID.randomUUID(), "anthropic", deployments.stream().filter(d -> "anthropic".equals(d.provider())).toList())

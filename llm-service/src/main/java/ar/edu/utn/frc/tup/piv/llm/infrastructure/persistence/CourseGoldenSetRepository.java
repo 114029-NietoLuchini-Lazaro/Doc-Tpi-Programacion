@@ -1,5 +1,10 @@
 package ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence;
 
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.CourseGoldenSetVersion;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.CourseGoldenSetView;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetCaseInput;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetCaseSummary;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetDetail;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,7 +18,9 @@ import org.springframework.stereotype.Repository;
 public class CourseGoldenSetRepository {
   private static final ObjectMapper JSON = new ObjectMapper();
   private final JdbcTemplate jdbc;
-  public CourseGoldenSetRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+  private final ObjectMapper mapper;
+  public CourseGoldenSetRepository(JdbcTemplate jdbc, ObjectMapper mapper) { this.jdbc = jdbc; this.mapper = mapper; }
+  public CourseGoldenSetRepository(JdbcTemplate jdbc) { this(jdbc, JSON); }
 
   public Optional<CourseGoldenSetVersion> copyPublishedPlatformVersion(UUID courseId, UUID baseVersionId, UUID actorId) {
     var source = jdbc.query("""
@@ -95,13 +102,15 @@ public class CourseGoldenSetRepository {
         caseDetails(rs.getObject("id", UUID.class))), versionId, courseId).stream().findFirst();
   }
 
-  private List<GoldenSetCaseDetail> caseDetails(UUID versionId) {
+  private List<GoldenSetDetail.CaseItem> caseDetails(UUID versionId) {
     return jdbc.query("select id, case_order, transcript, reference_scores from llm.golden_set_cases where golden_set_version_id = ? order by case_order",
-        (rs, row) -> new GoldenSetCaseDetail(rs.getObject("id", UUID.class), rs.getInt("case_order"), jsonNode(rs.getString("transcript")), jsonNode(rs.getString("reference_scores"))), versionId);
+        (rs, row) -> new GoldenSetDetail.CaseItem(rs.getObject("id", UUID.class), rs.getInt("case_order"), jsonNode(rs.getString("transcript")), jsonNode(rs.getString("reference_scores"))), versionId);
   }
 
   public Optional<GoldenSetCaseSummary> addDraftCase(UUID courseId, UUID versionId, GoldenSetCaseInput input) {
     UUID id = UUID.randomUUID();
+    String metadataJson = input.metadata() != null ? input.metadata().toString() : "{}";
+    String justificationsJson = input.scoreJustifications() != null ? input.scoreJustifications().toString() : "{}";
     int inserted = jdbc.update("""
         insert into llm.golden_set_cases (id, golden_set_version_id, case_order, transcript, challenge_context, safe_metadata, author, reference_scores, score_justifications)
         select ?, v.id, coalesce((select max(case_order) + 1 from llm.golden_set_cases where golden_set_version_id = v.id), 0), cast(? as jsonb), cast(? as jsonb), cast(? as jsonb), ?, cast(? as jsonb), cast(? as jsonb)
@@ -178,14 +187,21 @@ public class CourseGoldenSetRepository {
         """, actorId, versionId, courseId) == 1;
   }
 
-  public record CourseGoldenSetVersion(UUID id, UUID familyId, int version, String state, UUID basedOnVersionId) {}
-  public record CourseGoldenSetView(UUID id, UUID familyId, String name, int version, String state, UUID basedOnVersionId,
-      List<GoldenSetCaseSummary> cases) {}
-  public record GoldenSetDetail(UUID id, UUID familyId, String name, int version, String state, UUID basedOnVersionId,
-      List<GoldenSetCaseDetail> cases) {}
-  public record GoldenSetCaseDetail(UUID id, int order, JsonNode transcript, JsonNode referenceScores) {}
-  public record GoldenSetCaseSummary(UUID id, int order, String author, String reviewState) {}
-  public record GoldenSetCaseInput(JsonNode transcript, JsonNode challengeContext, JsonNode metadata, String author,
-      JsonNode referenceScores, JsonNode scoreJustifications) {}
+  /** Los casos de una versión (publicada o no) para correr una calibración —
+   * `transcript`/`challengeContext`/`referenceScores` tal cual quedaron persistidos. */
+  public List<ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetCaseDetail> casesOf(UUID goldenSetVersionId) {
+    return jdbc.query("""
+        select id, transcript, challenge_context, reference_scores from llm.golden_set_cases
+        where golden_set_version_id = ? order by case_order
+        """, (rs, row) -> new ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetCaseDetail(rs.getObject("id", UUID.class),
+        readTree(rs.getString("transcript")), readTree(rs.getString("challenge_context")),
+        readTree(rs.getString("reference_scores"))), goldenSetVersionId);
+  }
+
+  private JsonNode readTree(String json) {
+    try { return mapper.readTree(json); }
+    catch (Exception exception) { throw new IllegalStateException("No se pudo leer un caso del golden set", exception); }
+  }
+
   private record Source(UUID id, String name) {}
 }

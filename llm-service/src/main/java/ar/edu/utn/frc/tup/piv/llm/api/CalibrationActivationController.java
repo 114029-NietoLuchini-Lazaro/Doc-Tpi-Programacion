@@ -3,7 +3,8 @@ package ar.edu.utn.frc.tup.piv.llm.api;
 import ar.edu.utn.frc.tup.piv.llm.application.CalibrationActivationPreviewService;
 import ar.edu.utn.frc.tup.piv.llm.application.CalibrationActivationService;
 import ar.edu.utn.frc.tup.piv.llm.application.CalibrationMigrationConfirmation;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CourseEvaluationStatusRepository;
+import ar.edu.utn.frc.tup.piv.llm.application.CourseEvaluationStatusService;
+import ar.edu.utn.frc.tup.piv.llm.domain.evaluation.ActiveCalibration;
 import ar.edu.utn.frc.tup.piv.llm.security.CallerIdentity;
 import ar.edu.utn.frc.tup.piv.llm.security.CourseAuthorization;
 import ar.edu.utn.frc.tup.piv.llm.security.GoldenSetAuthorization;
@@ -26,15 +27,19 @@ public class CalibrationActivationController {
   private final CalibrationActivationPreviewService previews;
   private final CalibrationMigrationConfirmation confirmations;
   private final CalibrationActivationService activation;
-  private final CourseEvaluationStatusRepository status;
+  private final CourseEvaluationStatusService status;
   private final GoldenSetAuthorization identity;
   private final CourseAuthorization courses;
 
   public CalibrationActivationController(CalibrationActivationPreviewService previews,
       CalibrationMigrationConfirmation confirmations, CalibrationActivationService activation,
-      CourseEvaluationStatusRepository status, GoldenSetAuthorization identity, CourseAuthorization courses) {
-    this.previews = previews; this.confirmations = confirmations; this.activation = activation;
-    this.status = status; this.identity = identity; this.courses = courses;
+      CourseEvaluationStatusService status, GoldenSetAuthorization identity, CourseAuthorization courses) {
+    this.previews = previews;
+    this.confirmations = confirmations;
+    this.activation = activation;
+    this.status = status;
+    this.identity = identity;
+    this.courses = courses;
   }
 
   @PostMapping("/activate-preview")
@@ -47,7 +52,7 @@ public class CalibrationActivationController {
   }
 
   @PostMapping("/activate")
-  public ResponseEntity<CourseEvaluationStatusRepository.ActiveCalibration> activate(
+  public ResponseEntity<ActiveCalibration> activate(
       @PathVariable UUID courseId, @PathVariable UUID runId, @RequestBody ActivationInput input,
       @RequestHeader HttpHeaders headers) {
     CallerIdentity actor = authorize(courseId, headers);
@@ -57,8 +62,11 @@ public class CalibrationActivationController {
   }
 
   private CallerIdentity authorize(UUID courseId, HttpHeaders headers) {
-    var actor = identity.require(headers); courses.requireTeacher(courseId, actor, headers); return actor;
+    var actor = identity.require(headers);
+    courses.requireTeacher(courseId, actor, headers);
+    return actor;
   }
+
   public record ActivationPreview(String previewToken, List<UUID> migrableChallengeIds, List<UUID> lockedChallengeIds) {}
   public record ActivationInput(String previewToken, Set<UUID> challengeIds) {}
 }

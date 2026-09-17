@@ -1,7 +1,7 @@
 # Tema 05 — Desafíos Prácticos — pendientes
 
-> Fuente completa: [17 §7.3](../../17-mapa-de-integracion.md#73-quién-nos-bloquea-y-a-quién-bloqueamos)
-> (N1, N3), [18 §4.3](../../18-contratos-inter-equipos.md#43-tema-05--desafíos-prácticos),
+> Este documento es la fuente completa de lo pendiente con Tema 05. Antecedentes:
+> [17 §7.3](../../17-mapa-de-integracion.md#73-quién-nos-bloquea-y-a-quién-bloqueamos) (N1, N3),
 > [08 B-1](../../08-decisiones-y-pendientes.md), [20-backlog-y-sprints.md](../../20-backlog-y-sprints.md) E12-02.
 
 ## 🔴 Cruzado — la solución esperada del desafío
@@ -41,6 +41,16 @@ Alimenta el 30% del score (dimensión autonomía). Si no se pide ahora, no va a 
 **Sin decidir:** si la fuente es Tema 05 (IDE) o Tema 06 (sandbox de ejecución) —
 `11-glosario-y-metadata.md` deja explícito que puede ser cualquiera de los dos y no está
 resuelto.
+
+## 🟡 Nuevo — cómo le reenvían ustedes el resultado a Tema 03
+
+Nosotros les entregamos el score por evento Kafka (`score_de_ia_calculado`, ver
+[`contratos.md`](contratos.md)) — pero qué usan para que Tema 03 aplique el modificador de XP
+(evento propio suyo, llamada HTTP, lo que sea) es una definición entre ustedes y Tema 03, no algo
+que nosotros necesitemos cerrar. Se anota acá porque es la pieza que le faltaba a
+[I-04](../../17-mapa-de-integracion.md#-i-04--el-resultado-sale-por-cuatro-caminos-distintos) para
+cerrarse del todo: de nuestro lado ya no hay cuatro caminos, hay uno (a ustedes); el salto de
+ustedes a Tema 03 queda fuera de nuestro contrato.
 
 ## 🟡 Interno, en desarrollo — streaming SSE del tutor
 

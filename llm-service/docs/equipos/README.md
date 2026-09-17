@@ -4,30 +4,29 @@
 > `llm-service` (Tema 07) se integra, con dos archivos cortos por equipo:
 >
 > - **`contratos.md`** — lo que ya sabemos o acordamos con ese equipo: qué nos da, qué le
->   damos, con el endpoint/evento/JSON concreto cuando ya existe.
+>   damos, con el endpoint/evento/JSON concreto y los diagramas de secuencia que le corresponden.
 > - **`pendientes.md`** — lo que falta definir para ese equipo, sea trabajo **interno** nuestro
 >   (ej. algo que todavía no implementamos) o un acuerdo **cruzado** que depende de conversar
 >   con ellos.
 >
-> **Qué NO es.** No reemplaza a los documentos completos — sigue siendo necesario ir a ellos
-> para el detalle largo (diagramas de secuencia, JSON completos, el registro de decisiones).
-> Esta carpeta es la vista corta por destinatario: para no tener que rastrear ocho documentos
-> antes de hablar con un equipo puntual. Todo el contenido de acá **viene de**:
+> **Qué es esto ahora.** Desde el reparto del 2026-09-13, cada `contratos.md`/`pendientes.md`
+> es **la fuente completa y autosuficiente** para ese equipo — no un resumen que reenvía a otro
+> lado. Los documentos generales de arriba quedaron como:
 >
-> | Fuente | Qué aporta |
+> | Documento | Qué le queda |
 > |---|---|
-> | [18 — Contratos inter-equipos](../18-contratos-inter-equipos.md) | El resumen por equipo (§4.1–4.8), los JSON de request/response y de eventos |
-> | [17 — Mapa de integración](../17-mapa-de-integracion.md) | Diagramas de secuencia y la tabla de pendientes I-01 a I-16 |
-> | [08 — Decisiones y pendientes](../08-decisiones-y-pendientes.md) | ADR relevantes y las preguntas abiertas al Product Owner (Parte B) |
-> | [04 — Funciones de IA](../04-funciones-de-ia.md) | Qué construimos/no construimos nosotros por función, decisiones de producto pendientes |
-> | [06 — Operación e ingeniería](../06-operacion-e-ingenieria.md) | Runbooks donde aparece la dependencia de otro equipo |
-> | [11 — Glosario y metadata](../11-glosario-y-metadata.md) | Colisiones de vocabulario entre equipos |
-> | [docs/entregas/](../entregas/) | Cartas y agendas ya escritas dirigidas a un equipo puntual |
-> | [docs/contracts/](../contracts/) | Los YAML ejecutables (OpenAPI/AsyncAPI) — la fuente de verdad técnica |
+> | [18 — Contratos inter-equipos](../18-contratos-inter-equipos.md) | §0 (cómo leemos los contratos, reglas de todos), el anexo histórico y un índice corto hacia cada carpeta — el detalle por equipo (§4.1-4.8 viejas) ya se movió acá |
+> | [17 — Mapa de integración](../17-mapa-de-integracion.md) | Los 3 diagramas de secuencia siguen también acá (vista cruzada para comparar los tres presupuestos de latencia a la vez) — copiados además en `tema-05` y `tema-11`. La tabla I-01 a I-16: las filas "decide: Nosotros" quedan internas, las de Product Owner y las transversales ya están repartidas |
+> | [08 — Decisiones y pendientes](../08-decisiones-y-pendientes.md) | Los 18 ADR (registro de decisión) y las preguntas/decisiones ya resueltas (✅). Lo abierto de la Parte B/C ya está repartido en los `pendientes.md` de equipo |
+> | [04 — Funciones de IA](../04-funciones-de-ia.md) | Qué construimos/no construimos nosotros por función — diseño interno, no contrato de equipo |
+> | [06 — Operación e ingeniería](../06-operacion-e-ingenieria.md) | La ingeniería propia (colas, caché, despliegue); el contrato de UI (§6/§7) también se copió a `frontend-angular/contratos.md` |
+> | [11 — Glosario y metadata](../11-glosario-y-metadata.md) | Colisiones de vocabulario — se queda transversal, ver más abajo |
+> | [docs/contracts/](../contracts/) | Los YAML ejecutables (OpenAPI/AsyncAPI) — la fuente de verdad técnica, nunca se copia, siempre se linkea |
 >
 > **Cómo se actualiza.** Cuando algo se acuerde (por ejemplo en la sesión de integración), se
-> mueve de `pendientes.md` a `contratos.md` de ese equipo, y se actualiza también el documento
-> de origen (18, 17, o el YAML correspondiente) — la sección "Checklist de cierre" de
+> mueve de `pendientes.md` a `contratos.md` de ese equipo directamente — ya no hace falta
+> además actualizar `17`/`18`, salvo que el ítem sea transversal a varios equipos a la vez (ver
+> "Transversales" abajo). La sección "Checklist de cierre" de
 > [`docs/entregas/sesion-integracion-agenda.md`](../entregas/sesion-integracion-agenda.md) ya
 > cubre ese paso para los ítems que se deciden en sesión.
 
@@ -35,16 +34,31 @@
 
 ## Equipos
 
-| Equipo | Carpeta | Fuente principal |
+| Equipo | Carpeta | Antecedente (ya migrado a la carpeta) |
 |---|---|---|
-| Tema 02 — Cursos y Matrícula | [`tema-02-cursos-y-matricula/`](tema-02-cursos-y-matricula/) | 18 §4.1 |
-| Tema 03 — Motor de Desafíos | [`tema-03-motor-de-desafios/`](tema-03-motor-de-desafios/) | 18 §4.2 |
-| Tema 05 — Desafíos Prácticos | [`tema-05-desafios-practicos/`](tema-05-desafios-practicos/) | 18 §4.3, `docs/entregas/alcance-y-contrato-para-desafios-practicos.md` |
-| Tema 11 — Chat | [`tema-11-chat/`](tema-11-chat/) | 18 §4.4 |
-| Tema 12 — Backoffice / ADMIN | [`tema-12-backoffice-admin/`](tema-12-backoffice-admin/) | 18 §4.5 |
-| Backend de negocio | [`backend-de-negocio/`](backend-de-negocio/) | 18 §4.6 |
-| Front End — Angular | [`frontend-angular/`](frontend-angular/) | 18 §4.7 |
-| Product Owner | [`product-owner/`](product-owner/) | 18 §4.8, 08 Parte B |
+| Tema 02 — Cursos y Matrícula | [`tema-02-cursos-y-matricula/`](tema-02-cursos-y-matricula/) | 18 §4.1 (antiguo) |
+| Tema 03 — Motor de Desafíos | [`tema-03-motor-de-desafios/`](tema-03-motor-de-desafios/) | 18 §4.2 (antiguo, retirado) |
+| Tema 04 — Desafío Teórico ("corregir") | [`tema-04-desafios-teoricos/`](tema-04-desafios-teoricos/) | Sin contrato técnico — `docs/entregas/recomendacion-correccion-respuestas-cortas.md` |
+| Tema 05 — Desafíos Prácticos | [`tema-05-desafios-practicos/`](tema-05-desafios-practicos/) | 18 §4.3 (antiguo), 17 §3/§5, `docs/entregas/alcance-y-contrato-para-desafios-practicos.md` |
+| Tema 11 — Chat | [`tema-11-chat/`](tema-11-chat/) | 18 §4.4 (antiguo), 17 §4 |
+| Tema 12 — Backoffice / ADMIN | [`tema-12-backoffice-admin/`](tema-12-backoffice-admin/) | 18 §4.5 (antiguo) |
+| Backend de negocio | [`backend-de-negocio/`](backend-de-negocio/) | 18 §4.6 (antiguo), 01 §3.1 |
+| Front End — Angular | [`frontend-angular/`](frontend-angular/) | 18 §4.7 (antiguo), 01 §3.2, 06 §6/§7 |
+| Product Owner | [`product-owner/`](product-owner/) | 18 §4.8 (antiguo), 08 Parte B/C, 01 §3.3 |
+
+> **Tema 03 pasa a ser integración indirecta.** Desde la decisión de diseño del 2026-09-13,
+> `llm-service` no vuelve a hablar directo con el Motor de Desafíos: el intercambio del
+> evaluador (cierre de intento → score) queda intermediado por Tema 05 (`practice-service`).
+> El contrato vigente vive en
+> [`tema-05-desafios-practicos/contratos.md`](tema-05-desafios-practicos/contratos.md); la
+> carpeta de Tema 03 conserva el contrato directo anterior marcado como retirado, para que quede
+> registro de qué cambió.
+
+> **Tema 04 no es un socio de integración técnica, todavía.** No hay endpoint, evento ni scope M2M
+> entre `llm-service` y Tema 04 — solo una recomendación de código (normalización + distancia de
+> edición) para que la implementen en su propio motor. Se le abrió carpeta igual porque es donde
+> vive "qué falta hablar con cada equipo", y con Tema 04 sí hay algo pendiente (ver su
+> `pendientes.md`), aunque hoy no sea un contrato.
 
 ---
 

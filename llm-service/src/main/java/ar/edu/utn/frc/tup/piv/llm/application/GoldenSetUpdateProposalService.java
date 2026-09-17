@@ -1,7 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.application;
 
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetUpdateProposal;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.GoldenSetUpdateProposalRepository;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.GoldenSetUpdateProposalRepository.GoldenSetUpdateProposal;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;

@@ -1,8 +1,9 @@
 # Product Owner — pendientes
 
-> Fuente completa: [18 §4.8](../../18-contratos-inter-equipos.md#48-product-owner),
-> [08 Parte B](../../08-decisiones-y-pendientes.md) (P-04, P-05, P-09, P-10, P-11, C-1, C-2),
-> [17 §7.3](../../17-mapa-de-integracion.md#73-quién-nos-bloquea-y-a-quién-bloqueamos) (N6).
+> Este documento es la fuente completa de lo pendiente con Product Owner. Antecedentes:
+> [08 Parte B/C](../../08-decisiones-y-pendientes.md) (P-04, P-05, P-06, P-09, P-10, P-11, P-12, C-1, C-2),
+> [17 §7.3](../../17-mapa-de-integracion.md#73-quién-nos-bloquea-y-a-quién-bloqueamos) (N6),
+> [01 §3](../../01-problema-y-alcance.md#3-lo-que-necesitás-pedirle-a-los-otros-equipos).
 
 ## 🔴 Crítico — responsable y fecha del golden set (P-04 / C-1)
 

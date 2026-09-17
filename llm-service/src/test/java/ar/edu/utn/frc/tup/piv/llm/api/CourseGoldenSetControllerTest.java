@@ -1,7 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.api;
 
 import ar.edu.utn.frc.tup.piv.llm.application.CourseGoldenSetService;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CourseGoldenSetRepository.CourseGoldenSetVersion;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.CourseGoldenSetVersion;
 import ar.edu.utn.frc.tup.piv.llm.security.CallerIdentity;
 import ar.edu.utn.frc.tup.piv.llm.security.CourseAuthorization;
 import ar.edu.utn.frc.tup.piv.llm.security.GoldenSetAuthorization;
@@ -12,7 +12,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
-import static org.assertj.core.api.Assertions.assertThat;
 
 class CourseGoldenSetControllerTest {
   @Test void authorizesTheCourseBeforeCopyingTheBase() {

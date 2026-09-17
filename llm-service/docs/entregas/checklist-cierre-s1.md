@@ -2,7 +2,7 @@
 
 > **Qué es este documento.** Lista accionable, con casilleros, de lo que falta para poder decir
 > "S1 está cerrado" según la definición original de
-> [`sprints/s1-historias.md`](../sprints/s1-historias.md) — no según lo que terminó construido.
+> [`sprints/s1-historias.md`](../sprints/sprint-1/s1-historias.md) — no según lo que terminó construido.
 > Nace del cruce entre esa ficha y el tablero de estado real en
 > [`estado-implementacion/`](../estado-implementacion/README.md) (auditado 2026-09-12).
 >
@@ -31,7 +31,7 @@ probé a mano".
 - [ ] La guía usa las rutas **reales** del flujo v2 (`/api/llm/courses/{courseId}/golden-sets/...`),
       no las de H05/H06/H07 (que ya no existen — ver [§3.1](#31--reescribir-h05h06h07-contra-el-código-v2-real)).
 - [ ] Se probó siguiendo la guía al pie de la letra, en el ambiente integrado (no en una máquina
-      aislada) — así lo exige [`sprints/s1-historias.md` · Demo de S1](../sprints/s1-historias.md).
+      aislada) — así lo exige [`sprints/s1-historias.md` · Demo de S1](../sprints/sprint-1/s1-historias.md).
 
 **Evidencia del hueco:** [`estado-implementacion/ep-01/h09.md`](../estado-implementacion/ep-01/h09.md) —
 "No se encontró guía de demo".
@@ -140,7 +140,7 @@ resultados para "mock" en `docs/contracts/`, `pom.xml` ni el README.
       `LegacyGoldenSetRouteAbsentTest`); fusionarlo no tiene sentido cuando una versión reemplazó
       por completo a la otra (mismo argumento que [`decision-605f381.md`](decision-605f381.md)
       ya usó para el código). Falta solo la ejecución: marcar el archivo y actualizar
-      [`ep-01/h08.md` T1](../tareas/ep-01/h08.md).
+      [`ep-01/h05.md` T1 (ex-H08)](../tareas/ep-01/h05.md).
 - [ ] Una vez decidido, sincronizar el contrato v2 con los endpoints reales: agregar los tres que
       faltan (`next-version`, `GET /api/llm/courses`, `.../model-deployments`) y resolver los dos
       que están en el contrato pero no implementados (`/admin/base-golden-sets`,
@@ -238,7 +238,7 @@ Para no perder tiempo revisando de nuevo en la reunión:
 - [ ] Recién ahí, dar S1 por cerrado en la Wiki de Taiga.
 
 *Este documento no inventa criterios nuevos — cada ítem viene de una CA ya escrita en
-[`sprints/s1-historias.md`](../sprints/s1-historias.md) o de un hallazgo ya auditado en
+[`sprints/s1-historias.md`](../sprints/sprint-1/s1-historias.md) o de un hallazgo ya auditado en
 [`estado-implementacion/`](../estado-implementacion/README.md). Cuando se resuelva un ítem, el
 lugar para registrarlo es la ficha de esa historia en `estado-implementacion/`, no este checklist
 (este es de un solo uso, para la reunión de cierre).*

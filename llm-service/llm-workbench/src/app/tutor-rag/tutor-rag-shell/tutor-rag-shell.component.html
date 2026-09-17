@@ -1,0 +1,47 @@
+<header class="page-header">
+  <p class="eyebrow">TUP-LLM-SERVICE · TUTOR + RAG (PRUEBA)</p>
+  <h1>Tutor con material de cátedra</h1>
+  <p>
+    Banco de pruebas de EP-05 (tutor) y EP-09 (RAG): subí un PDF, marcalo como fuente y preguntale
+    al tutor — responde citando documento y página, con datos simulados (sin proveedor de IA real
+    conectado todavía).
+  </p>
+</header>
+
+<nav class="tabs" aria-label="Secciones del tutor + RAG">
+  <button type="button" [class.active]="activeTab() === 'fuentes'" (click)="setTab('fuentes')">
+    Fuentes @if (sources.value().length) { <span class="count">{{ sources.value().length }}</span> }
+  </button>
+  <button type="button" [class.active]="activeTab() === 'chat'" (click)="setTab('chat')">Chat</button>
+  <button type="button" [class.active]="activeTab() === 'diagramas'" (click)="setTab('diagramas')">Diagramas</button>
+</nav>
+
+<section class="tab-content">
+  @switch (activeTab()) {
+    @case ('fuentes') {
+      <app-sources-panel
+        [sources]="sources.value()"
+        [selectedIds]="selectedSourceIds()"
+        [loading]="sources.isLoading()"
+        [uploading]="uploading()"
+        [uploadError]="uploadError()"
+        (toggle)="toggleSource($event)"
+        (upload)="uploadDocument($event)"
+        (uploadSample)="uploadSample()"
+        (remove)="removeDocument($event)"
+      />
+    }
+    @case ('chat') {
+      <app-chat-panel
+        [entries]="entries()"
+        [thinking]="thinking()"
+        [disabled]="!hasSelection()"
+        [disabledReason]="chatDisabledReason()"
+        (send)="askQuestion($event)"
+      />
+    }
+    @case ('diagramas') {
+      <app-diagrams-panel [sources]="sources.value()" />
+    }
+  }
+</section>

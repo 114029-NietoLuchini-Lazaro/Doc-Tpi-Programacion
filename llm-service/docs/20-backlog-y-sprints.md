@@ -1,10 +1,12 @@
 # 20 — Backlog general y plan de sprints
 
-> **Planificación anterior, conservada como antecedente.** Para calendario, capacidad,
-> responsables y ceremonias usar [23 · Plan de construcción del producto LLM](23-plan-construccion-producto-llm.md)
-> y su [plantilla de sprint](plantillas/sprint-llm.md): 12 integrantes, tres fases y 19 sprints.
-> Con la disponibilidad real declarada, cada sprint presupone 816 h nominales, 102 h de reuniones
-> y 143 h de reserva: **~571 h de capacidad** (trabajo estimado de las recetas: ~208 h/sprint).
+> **Planificación anterior, conservada como antecedente.** Para calendario usar
+> [38 — Plan de 5 sprints](38-plan-de-5-sprints.md) (retira el horizonte de 19 sprints que
+> planteaba [23](23-plan-construccion-producto-llm.md)). Para capacidad, responsables y
+> ceremonias siguen valiendo [23](23-plan-construccion-producto-llm.md) y su
+> [plantilla de sprint](plantillas/sprint-llm.md): 12 integrantes, cada sprint presupone
+> 816 h nominales, 102 h de reuniones y 143 h de reserva: **~571 h de capacidad** (trabajo
+> estimado de las recetas: ~208 h/sprint).
 > Los IDs de historias de este documento se conservan; no se heredan automáticamente sus
 > estimaciones, fechas o alcance. La restricción F2/F3 indicada abajo corresponde al antiguo
 > recorte de MVP, no excluye esas fases del nuevo plan de producto completo.
@@ -170,7 +172,7 @@ arranca el día 1 junto con E02.
 | E01-06 | Cola Redis: productor y worker | Misma imagen, distinto comando. Un trabajo encolado sobrevive al reinicio del servicio y lo drena el worker | 8 | E01-03 | 🔴 |
 | E01-07 | `GET /ai/jobs/{job_id}` | Devuelve `en_proceso`, `completado` con resultado, o `fallido` con causa. Un job inexistente da `404`, no `500` | 3 | E01-06 | 🔴 |
 | E01-08 | Publicación de eventos al bus | Los cuatro eventos de [18](18-contratos-inter-equipos.md) §2 salen con el schema acordado. Sin bus disponible se publican contra un stub local y quedan en la tabla de salida | 5 | E01-03 | 🔴 |
-| E01-09 | Consumo de `intento_cerrado` | El evento del Tema 03 encola una evaluación. Reprocesar el mismo evento **no** genera dos evaluaciones: idempotencia por `intento_id` | 5 | E01-06 · E12-03 | 🔴 |
+| E01-09 | Consumo de `intento_cerrado` | El evento de Tema 05 (desde el 2026-09-13; antes lo publicaba Tema 03) encola una evaluación. Reprocesar el mismo evento **no** genera dos evaluaciones: idempotencia por `intento_id` | 5 | E01-06 · E12-03 | 🔴 |
 | E01-10 | Sondas de salud sin el proveedor LLM | La sonda de readiness no consulta al proveedor (ADR-014). Con el proveedor caído el servicio sigue *ready*, y la degradación la maneja E02-08 | 2 | E01-01 | 🟡 |
 
 ---
@@ -188,7 +190,7 @@ dependencia de las otras cinco células: E02-01 tiene que estar en el primer spr
 | E02-04 | Segundo adapter de proveedor | La misma función corre contra otro proveedor cambiando la fila de E02-02, sin tocar el llamador | 3 | E02-02 | 🟡 |
 | E02-05 | Validación de la salida contra JSON schema | Una respuesta que no valida **no llega al llamador**: se reintenta y, si vuelve a fallar, se devuelve error tipado (RF-IA-13/16) | 5 | E02-01 | 🔴 |
 | E02-06 | Log de cada llamada | Modelo, versión, tokens de entrada y salida, costo, latencia e incidentes, por llamada y consultable (RF-IA-02/25/33) | 5 | E01-03 | 🔴 |
-| E02-07 | Cuotas por usuario, por desafío y por día | Al agotarse, `429` con `cuota_agotada` (RF-IA-22). Los umbrales van en tabla porque P-05 sigue abierta | 5 | E02-06 | 🔴 |
+| E02-07 | Cuotas por usuario, por desafío y por día — más, si el back office (Tema 12) lo necesita, un techo por alumno (cantidad de usos y tokens/día, ver [08 P-12](08-decisiones-y-pendientes.md)) | Al agotarse, `429` con `cuota_agotada` (RF-IA-22). Los umbrales van en tabla porque P-05 sigue abierta | 5 | E02-06 | 🔴 |
 | E02-08 | Reintentos, timeouts y escalera de degradación | Con el proveedor caído, la entrega del alumno **se acepta igual** y la evaluación queda pendiente (RF-IA-27). Se demuestra apagando el proveedor a mano | 8 | E02-03 · E01-06 | 🔴 |
 | E02-09 | Caché de respuestas y métrica de aciertos | Dos llamadas idénticas en la misma ventana consumen tokens una sola vez, y el porcentaje de aciertos es visible | 3 | E02-06 | 🟢 |
 | E02-10 | Observabilidad de costo y latencia por función | Un endpoint responde cuánto costó y cuánto tardó cada función en un rango de fechas. Es el insumo del Tema 12 | 5 | E02-06 | 🟡 |
@@ -548,7 +550,7 @@ nombrado y una fecha, porque una decisión sin dueño no se toma.
 
 **Criterio de cierre del sprint:**
 
-- El evento `intento_cerrado` del Tema 03 dispara una evaluación, y reprocesarlo no la duplica.
+- El evento `intento_cerrado` de Tema 05 (antes de Tema 03, cambió el 2026-09-13) dispara una evaluación, y reprocesarlo no la duplica.
 - El generador arma un parcial que cubre el temario en vez de repetir el mismo tema.
 - La validación académica permanece fuera de `llm-service`; no existe una historia de corrector LLM.
 - La deriva se detecta y dispara recalibración.

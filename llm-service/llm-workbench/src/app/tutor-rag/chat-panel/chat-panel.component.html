@@ -1,0 +1,45 @@
+<section class="chat-panel" aria-label="Chat con el tutor">
+  <header>
+    <p class="eyebrow">TUTOR + RAG</p>
+    <h2>Chat sobre las fuentes seleccionadas</h2>
+  </header>
+
+  <div class="messages" aria-live="polite">
+    @if (!entries().length) {
+      <p class="empty">Marcá una o más fuentes y hacé tu primera pregunta.</p>
+    }
+    @for (entry of entries(); track $index) {
+      <article class="message" [class.tutor]="entry.rol === 'tutor'" [class.alumno]="entry.rol === 'alumno'">
+        <p class="role">{{ entry.rol === 'tutor' ? 'Tutor' : 'Vos' }}</p>
+        <p class="content">{{ entry.contenido }}</p>
+        @if (entry.fuentes; as fuentes) {
+          @if (fuentes.length) {
+            <details class="citations">
+              <summary>{{ fuentes.length }} cita(s) de fuente</summary>
+              <ul>
+                @for (fuente of fuentes; track $index) {
+                  <li>
+                    <strong>{{ fuente.documentName }}</strong> · pág. {{ fuente.pageNumber }} · {{ (fuente.score * 100).toFixed(0) }}%
+                    <p>{{ fuente.textoExtracto }}</p>
+                  </li>
+                }
+              </ul>
+            </details>
+          }
+        }
+      </article>
+    }
+    @if (thinking()) {
+      <p class="thinking" role="status">El tutor está pensando…</p>
+    }
+  </div>
+
+  @if (disabled() && disabledReason()) {
+    <p class="disabled-hint">{{ disabledReason() }}</p>
+  }
+
+  <form class="composer" (submit)="$event.preventDefault(); submit()">
+    <textarea [formControl]="control" rows="2" placeholder="Escribí tu pregunta sobre las fuentes seleccionadas…"></textarea>
+    <button type="submit" [disabled]="control.invalid || thinking() || disabled()">{{ thinking() ? 'Enviando…' : 'Preguntar' }}</button>
+  </form>
+</section>

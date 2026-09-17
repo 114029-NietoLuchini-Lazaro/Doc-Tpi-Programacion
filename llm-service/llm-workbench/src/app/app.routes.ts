@@ -31,6 +31,14 @@ const emptyCourseGuard: CanActivateFn = () => {
     : true));
 };
 
+const firstAuthorizedCourseTutor: CanActivateFn = () => {
+  const context = inject(CourseContextService);
+  const router = inject(Router);
+  return context.courses().pipe(map((courses) => router.createUrlTree(courses.length
+    ? ['/docente', 'cursos', courses[0].id, 'tutor-rag']
+    : ['/docente', 'sin-cursos'])));
+};
+
 export const routes: Routes = [
   { path: 'docente/cursos/:courseId/evaluador', canActivate: [authorizedCourseGuard], loadComponent: () => import('./teacher/evaluator-shell/evaluator-shell').then((m) => m.EvaluatorShell), children: [
     { path: '', pathMatch: 'full', redirectTo: 'resumen' },
@@ -46,6 +54,10 @@ export const routes: Routes = [
     { path: 'asignaciones', loadComponent: () => import('./teacher/assignments-page/assignments-page').then((m) => m.AssignmentsPage) },
     { path: 'como-usar', loadComponent: () => import('./teacher/how-to-use-page/how-to-use-page').then((m) => m.HowToUsePage) },
   ] },
+  { path: 'docente/cursos/:courseId/tutor-rag', canActivate: [authorizedCourseGuard], loadComponent: () => import('./tutor-rag/tutor-rag-shell/tutor-rag-shell').then((m) => m.TutorRagShell) },
+  { path: 'tutor-rag', canActivate: [firstAuthorizedCourseTutor], component: CourseEmptyComponent },
+  { path: 'tutor', canActivate: [firstAuthorizedCourseTutor], component: CourseEmptyComponent },
+  { path: 'chat', canActivate: [firstAuthorizedCourseTutor], component: CourseEmptyComponent },
   { path: 'docente/sin-cursos', canActivate: [emptyCourseGuard], component: CourseEmptyComponent },
   { path: 'docente', canActivate: [firstAuthorizedCourse], component: CourseEmptyComponent },
   { path: 'golden-sets/new', canActivate: [firstAuthorizedCourse], component: CourseEmptyComponent },

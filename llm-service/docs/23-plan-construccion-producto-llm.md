@@ -1,8 +1,15 @@
 # 23 — Plan de construcción del producto LLM
 
+> ⚠️ **Horizonte de calendario retirado el 2026-09-13.** El plan vigente de sprints es
+> [38 — Plan vigente: máximo 5 sprints](38-plan-de-5-sprints.md); los "19 sprints" de este
+> documento **ya no son un compromiso**, quedan como antecedente de diseño técnico (modelo de
+> capacidad, DoR/DoD, reparto en parejas — eso sigue vigente, ver la tabla de 38 · encabezado).
+> No citar "19 sprints" de acá como plan de entrega.
+
 > **Planificación vigente acordada el 2026-09-04** (capacidad recalculada el 2026-09-05 con la
 > disponibilidad real declarada). Equipo de **12 integrantes**, tres fases y **19 sprints de dos
-> semanas**. Cada sprint termina con un incremento funcional. Las reuniones consumen capacidad.
+> semanas** — **cifra histórica, superada por [38](38-plan-de-5-sprints.md)**. Cada sprint
+> termina con un incremento funcional. Las reuniones consumen capacidad.
 
 Esta guía permite al equipo organizar el desarrollo de `llm-service` desde el estado actual
 hasta el producto completo del alcance acordado. Reemplaza el calendario y reparto anteriores
@@ -76,8 +83,10 @@ calcular la reserva.
 de cada sprint en **~208 h de paquetes** (una estimación gruesa anterior a los contratos, no un
 tope). La diferencia con las 571 h —**~363 h por sprint**— es **margen explícito** para
 re-estimar en Planning, absorber imprevistos y cubrir el overhead de coordinar 12 personas. El
-horizonte de **19 sprints (38 semanas)** procede del **alcance de producto** (tres fases, F1 en
-S1–S10), no de dividir un presupuesto.
+horizonte de **19 sprints (38 semanas)** procedía del **alcance de producto** (tres fases, F1 en
+S1–S10) que este documento llegó a plantear — **retirado, ver [38](38-plan-de-5-sprints.md)**;
+no era una división de presupuesto y ese razonamiento sigue valiendo para el techo de 5 sprints
+vigente.
 
 Es una normalización, **no una estimación de abajo hacia arriba de todas las historias** ni una
 promesa de fecha. No se convierten automáticamente los puntos del backlog histórico en horas. Al

@@ -1,4 +1,6 @@
 package ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.ImportBatch;
+import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.ImportRow;
 import com.fasterxml.jackson.databind.JsonNode; import java.util.*; import org.springframework.jdbc.core.JdbcTemplate; import org.springframework.stereotype.Repository;
 @Repository public class GoldenSetImportRepository {
  private final JdbcTemplate jdbc; public GoldenSetImportRepository(JdbcTemplate j){jdbc=j;}
@@ -12,5 +14,4 @@ import com.fasterxml.jackson.databind.JsonNode; import java.util.*; import org.s
  public Optional<UUID> claimReady(UUID c,UUID b){return jdbc.query("update llm.import_batches set state='VALIDATING' where id=? and course_id=? and state='READY' and not exists (select 1 from llm.import_rows r where r.batch_id=? and r.state<>'VALID') returning golden_set_version_id",(r,n)->r.getObject(1,UUID.class),b,c,b).stream().findFirst();}
  public void insertCases(UUID b,UUID v){jdbc.update("insert into llm.golden_set_cases (golden_set_version_id,case_order,review_state,transcript,challenge_context,safe_metadata,author,reference_scores,score_justifications) select ?,coalesce((select max(case_order)+1 from llm.golden_set_cases where golden_set_version_id=?),0)+r.row_number-1,'REVIEWED',r.payload->'transcript',r.payload->'challengeContext',coalesce(r.payload->'metadata','{}'::jsonb),r.payload->>'author',r.payload->'referenceScores',coalesce(r.payload->'scoreJustifications','{}'::jsonb) from llm.import_rows r where r.batch_id=? order by r.row_number",v,v,b);}
  public void complete(UUID b){jdbc.update("update llm.import_batches set state='COMMITTED',committed_at=now() where id=? and state='VALIDATING'",b);}
- public record ImportBatch(UUID id,UUID goldenSetVersionId,String format,String state,int rows){} public record ImportRow(int rowNumber,String payload){}
 }

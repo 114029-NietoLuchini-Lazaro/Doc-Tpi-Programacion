@@ -31,3 +31,18 @@ llm:
     trusted-service: practice-service
     required-scope: llm.tutor.interact
     invocation-timeout-ms: 8000
+  rag:
+    trusted-service: practice-service
+    required-scope: llm.rag.query
+    embedding-timeout-ms: 8000
+    max-upload-bytes: 26214400
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+    register-with-eureka: true
+    fetch-registry: false   # llm-service nunca resuelve otros servicios por Eureka (todo pasa por el Gateway)
+    healthcheck:
+      enabled: true         # Actuator reporta el estado real al servidor Eureka; evita que el Gateway rutee al servicio cuando la DB está caída
+  instance:
+    prefer-ip-address: true

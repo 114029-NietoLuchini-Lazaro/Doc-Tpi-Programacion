@@ -1,6 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.api;
 
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CourseEvaluationStatusRepository;
+import ar.edu.utn.frc.tup.piv.llm.application.CourseEvaluationStatusService;
+import ar.edu.utn.frc.tup.piv.llm.domain.evaluation.ActiveCalibration;
 import ar.edu.utn.frc.tup.piv.llm.security.CallerIdentity;
 import ar.edu.utn.frc.tup.piv.llm.security.CourseAuthorization;
 import ar.edu.utn.frc.tup.piv.llm.security.GoldenSetAuthorization;
@@ -16,9 +17,9 @@ import static org.mockito.Mockito.when;
 
 class CourseEvaluationStatusControllerTest {
   @Test void authorizesCourseBeforeReturningItsActiveCalibration() {
-    var status = mock(CourseEvaluationStatusRepository.class); var identity = mock(GoldenSetAuthorization.class); var courses = mock(CourseAuthorization.class);
+    var status = mock(CourseEvaluationStatusService.class); var identity = mock(GoldenSetAuthorization.class); var courses = mock(CourseAuthorization.class);
     var controller = new CourseEvaluationStatusController(status, identity, courses); UUID courseId = UUID.randomUUID(); HttpHeaders headers = new HttpHeaders(); CallerIdentity actor = new CallerIdentity("gateway", UUID.randomUUID(), "request", null);
-    var active = new CourseEvaluationStatusRepository.ActiveCalibration(courseId, UUID.randomUUID(), OffsetDateTime.now());
+    var active = new ActiveCalibration(courseId, UUID.randomUUID(), OffsetDateTime.now());
     when(identity.require(headers)).thenReturn(actor); when(status.activeCalibration(courseId)).thenReturn(Optional.of(active));
     var response = controller.activeCalibration(courseId, headers);
     assertThat(response.getStatusCode().value()).isEqualTo(200); assertThat(response.getBody()).isEqualTo(active);
