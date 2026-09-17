@@ -1,5 +1,21 @@
 package ar.edu.utn.frc.tup.piv.llm.application;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationRunRepository; import org.springframework.scheduling.annotation.Scheduled; import org.springframework.stereotype.Component; import org.springframework.transaction.annotation.Transactional;
-// LLM-S03-H01: tras start() (QUEUED->RUNNING), CalibrationEvaluationRunner corre el run en el mismo tick
-// (adaptador fake, en proceso) en vez de dejarlo colgado en RUNNING como pasaba antes de conectar H10.
-@Component public class CalibrationRunWorker {private final CalibrationRunRepository runs;private final CalibrationWorkflowService workflow;private final CalibrationEvaluationRunner evaluator;public CalibrationRunWorker(CalibrationRunRepository r,CalibrationWorkflowService w,CalibrationEvaluationRunner e){runs=r;workflow=w;evaluator=e;}@Scheduled(fixedDelayString="${llm.calibrations.dispatch-delay-ms:1000}")@Transactional public void dispatch(){runs.claimNextQueued().ifPresent(id->{workflow.start(id);evaluator.run(id);});}}
+
+import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationRunRepository;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CalibrationRunWorker {
+  private final CalibrationRunRepository runs;
+  private final RealCalibrationExecutor executor;
+
+  public CalibrationRunWorker(CalibrationRunRepository runs, RealCalibrationExecutor executor) {
+    this.runs = runs;
+    this.executor = executor;
+  }
+
+  @Scheduled(fixedDelayString = "${llm.calibrations.dispatch-delay-ms:1000}")
+  public void dispatch() {
+    runs.claimNextQueued().ifPresent(run -> executor.execute(run.id()));
+  }
+}

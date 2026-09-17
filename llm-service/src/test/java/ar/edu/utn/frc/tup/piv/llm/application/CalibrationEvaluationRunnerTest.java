@@ -122,6 +122,11 @@ class CalibrationEvaluationRunnerTest {
   }
 
   private RubricDraftService.DimensionInput dimension(Dimension key, int weight) {
-    return new RubricDraftService.DimensionInput(key, key.name(), "criterio de " + key, "{}", "prompt de " + key, BigDecimal.valueOf(weight));
+    return new RubricDraftService.DimensionInput(key, key.name(), "criterio de " + key,
+        new RubricDraftService.Anchors(
+            new RubricDraftService.Anchor("bajo", 25, "ejemplo bajo"),
+            new RubricDraftService.Anchor("medio", 60, "ejemplo medio"),
+            new RubricDraftService.Anchor("alto", 90, "ejemplo alto")),
+        BigDecimal.valueOf(weight));
   }
 }

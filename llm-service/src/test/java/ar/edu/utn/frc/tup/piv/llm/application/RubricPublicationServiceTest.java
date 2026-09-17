@@ -28,6 +28,7 @@ class RubricPublicationServiceTest {
     UUID courseId = UUID.randomUUID(); UUID versionId = UUID.randomUUID();
     CallerIdentity actor = new CallerIdentity("admin-service", UUID.randomUUID(), "request", null);
     when(rubrics.dimensionsOfDraft(courseId, versionId)).thenReturn(validDimensions());
+    when(rubrics.find(courseId, versionId)).thenReturn(java.util.Optional.of(validRubric(courseId, versionId)));
     when(rubrics.publishDraft(courseId, versionId)).thenReturn(true);
 
     new RubricPublicationService(rubrics, audit).publish(courseId, versionId, actor);
@@ -53,6 +54,7 @@ class RubricPublicationServiceTest {
   @Test void doesNotPublishWhenRubricIsNotDraftOrWasModifiedConcurrently() {
     UUID courseId = UUID.randomUUID(); UUID versionId = UUID.randomUUID();
     when(rubrics.dimensionsOfDraft(courseId, versionId)).thenReturn(validDimensions());
+    when(rubrics.find(courseId, versionId)).thenReturn(java.util.Optional.of(validRubric(courseId, versionId)));
     when(rubrics.publishDraft(courseId, versionId)).thenReturn(false);
 
     assertThatThrownBy(() -> new RubricPublicationService(rubrics, audit).publish(courseId, versionId,
@@ -60,6 +62,20 @@ class RubricPublicationServiceTest {
         .isInstanceOf(IllegalStateException.class).hasMessage("La rúbrica fue modificada mientras se publicaba");
 
     verify(audit, never()).record(anyString(), anyString(), eq(versionId), org.mockito.ArgumentMatchers.any(), anyString());
+  }
+
+  private RubricDraftService.RubricVersion validRubric(UUID courseId, UUID versionId) {
+    var anchors = new RubricDraftService.Anchors(
+        new RubricDraftService.Anchor("Bajo", 20, "Ejemplo bajo"),
+        new RubricDraftService.Anchor("Medio", 50, "Ejemplo medio"),
+        new RubricDraftService.Anchor("Alto", 90, "Ejemplo alto"));
+    var dimensions = List.of(
+        new RubricDraftService.DimensionInput(Dimension.AUTONOMY, "Autonomía", "Criterio", anchors, BigDecimal.valueOf(30)),
+        new RubricDraftService.DimensionInput(Dimension.CLARITY, "Claridad", "Criterio", anchors, BigDecimal.valueOf(25)),
+        new RubricDraftService.DimensionInput(Dimension.PROGRESSION, "Progresión", "Criterio", anchors, BigDecimal.valueOf(20)),
+        new RubricDraftService.DimensionInput(Dimension.COMPLIANCE, "Cumplimiento", "Criterio", anchors, BigDecimal.valueOf(15)),
+        new RubricDraftService.DimensionInput(Dimension.EFFICIENCY, "Eficiencia", "Criterio", anchors, BigDecimal.valueOf(10)));
+    return new RubricDraftService.RubricVersion(versionId, UUID.randomUUID(), 1, "Rúbrica", "DRAFT", 1, null, dimensions);
   }
 
   private List<DimensionDefinition> validDimensions() {

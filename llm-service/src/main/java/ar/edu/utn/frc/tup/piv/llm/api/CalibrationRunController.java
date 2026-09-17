@@ -4,6 +4,7 @@ import ar.edu.utn.frc.tup.piv.llm.application.CalibrationRunService;
 import ar.edu.utn.frc.tup.piv.llm.domain.calibration.CalibrationRun;
 import ar.edu.utn.frc.tup.piv.llm.security.*;
 import java.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +15,7 @@ public class CalibrationRunController {
   private final GoldenSetAuthorization a;
   private final CourseAuthorization c;
 
+  @Autowired
   public CalibrationRunController(CalibrationRunService s, GoldenSetAuthorization a, CourseAuthorization c) {
     this.s = s;
     this.a = a;

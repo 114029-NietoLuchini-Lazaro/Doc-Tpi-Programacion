@@ -102,8 +102,8 @@ public class CalibrationEvaluationRunner {
       weights.put(dimension.key(), dimension.weight().setScale(0, java.math.RoundingMode.HALF_UP).intValueExact());
       prompt.append("- ").append(dimension.key().name().toLowerCase(Locale.ROOT)).append(" (peso ")
           .append(dimension.weight()).append("): ").append(dimension.criterion());
-      if (dimension.evaluatorPrompt() != null && !dimension.evaluatorPrompt().isBlank()) {
-        prompt.append(" ").append(dimension.evaluatorPrompt());
+      if (dimension.anchors() != null) {
+        prompt.append(" Anclas: ").append(dimension.anchors());
       }
       prompt.append('\n');
     }
