@@ -1,10 +1,5 @@
 {
-  "/api/llm": {
-    "target": "http://localhost:8080",
-    "secure": false,
-    "changeOrigin": true
-  },
-  "/api/courses": {
+  "/api": {
     "target": "http://localhost:8080",
     "secure": false,
     "changeOrigin": true

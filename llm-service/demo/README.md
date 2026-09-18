@@ -1,11 +1,13 @@
-# Demo del Entorno con MockServer y API Gateway
+# Variante empaquetada del laboratorio de integración
 
-Este directorio contiene todo lo necesario para ejecutar la aplicación de forma local, simulando la infraestructura real de microservicios mediante MockServer y Nginx. Ahora todo el stack completo está dockerizado para iniciar con un solo comando.
+Este directorio conserva la variante empaquetada del laboratorio local: Nginx simula el borde del
+API Gateway y MockServer simula exclusivamente `courses-service`. No hay mocks de la lógica de
+Tema 07: `llm-service`, PostgreSQL y Flyway se ejecutan de verdad.
 
 ## Arquitectura Simulada
 
 - **Frontend (llm-workbench)**: Construido y servido en Docker en el puerto 4200.
-- **Nginx (API Gateway)**: Corre en el puerto `8080`. Recibe las peticiones del frontend, inyecta los headers de identidad obligatorios (`X-Service-Id`, `X-Delegated-User`) y rutea el tráfico.
+- **Nginx (Gateway mock)**: Corre en el puerto `8080`. Descarta identidad enviada por el navegador, agrega identidad delegada y correlación, y rutea el tráfico.
 - **Backend (Spring Boot)**: Es tu aplicación `llm-service`, levantada en Docker (puerto interno 8080).
 - **MockServer**: Simula a `courses-service` respondiendo en el puerto `1080` (interno).
 
@@ -21,7 +23,11 @@ Este directorio contiene todo lo necesario para ejecutar la aplicación de forma
 2. **Abrir la Aplicación:**
    Una vez que termine el build y los contenedores estén corriendo, ingresa a [http://localhost:4200](http://localhost:4200)
 
-## Escenarios de Prueba (UUIDs Mágicos)
+Para desarrollo diario se prefiere, desde `llm-service/`, el comando
+`docker compose -f compose.yaml -f compose.workbench.yaml up --build`: conserva hot reload de
+Angular y usa esta misma configuración de Gateway y Cursos.
+
+## Escenarios de Prueba (UUIDs controlados)
 
 Para probar cómo reacciona la interfaz y el backend a distintas respuestas del servicio de cursos (como fallas, permisos insuficientes, o demoras), utilizamos "UUIDs mágicos".
 
@@ -35,4 +41,6 @@ Podes forzar distintos escenarios simplemente navegando al curso correspondiente
 | `55555555-5555-5555-5555-555555555555` | *N/A* | Falla interna en el servicio de cursos | `500 Internal Server Error` |
 | `66666666-6666-6666-6666-666666666666` | *N/A* | Latencia extrema (demora 5 segundos) | `503 Service Unavailable / Timeout` |
 
-> **Nota:** Para cambiar de usuario (si necesitás simular la identidad de otro profesor), podes editar `demo/gateway/nginx.conf` y cambiar el valor estático del header `X-Delegated-User`.
+> **Nota:** la identidad de desarrollo vive en el Gateway mock, no en el workbench ni en
+> `llm-service`. Cambiarla debe hacerse como un escenario explícito de gateway, nunca enviando
+> headers desde el navegador.

@@ -65,8 +65,9 @@ docker compose -f llm-service/compose.yaml logs -f llm-service
   - Todas las rutas privadas atienden bajo `/api/llm/**`.
   - La única puerta de entrada es el **API Gateway** corporativo (regla no negociable de plataforma). Ningún puerto de servicio se expone directamente a internet.
   - No hay comunicación directa HTTP entre microservicios; todo flujo síncrono pasa por el API Gateway.
-- **Backend:** Java 21 LTS, Spring Boot 3.x, Spring Data JPA, Flyway, Resilience4j, `langchain4j`.
-- **Persistencia:** PostgreSQL 16 con extensión `pgvector` en **base de datos propia y exclusiva**.
+- **Backend:** Java 21 LTS, Spring Boot 3.x, Spring JDBC, Flyway y los módulos `provider-*`.
+- **Persistencia:** PostgreSQL 16 en **base de datos propia y exclusiva**. No asumir `pgvector`:
+  sólo se incorpora cuando una migración y el módulo RAG real lo requieran.
 - **Mensajería Asíncrona:** Apache Kafka (bus de eventos de plataforma proveído por Tema 11) + cola interna con PostgreSQL (`SKIP LOCKED`) para workers diferidos.
 - **Frontend:** Monolito compartido Angular 21 (Septiembre 2026), TypeScript estricto, servido por Nginx en el borde.
 - **AI Gateway Interno (Módulo M1):** Componente Java interno que envuelve toda interacción con modelos de lenguaje. **Ningún controller, worker o servicio frontend llama a un proveedor LLM de forma directa.**
@@ -241,7 +242,7 @@ export class BadEditorComponent {
 5. **Arquitectura Hexagonal / Puertos y Adaptadores:**
    - `domain`: Reglas de negocio puras; **prohibido importar Spring, JPA o Kafka**.
    - `application`: Casos de uso y orquestación.
-   - `infrastructure`: Adaptadores Web (`@RestController`), Persistencia (JPA/Flyway), Mensajería (Kafka) y AI Gateway (`langchain4j`).
+   - `adapter`: Entradas Web/mensajería y salidas HTTP, persistencia JDBC, mensajería y proveedores.
 
 #### Ejemplo Backend (Java 21):
 

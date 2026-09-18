@@ -10,21 +10,19 @@ presets completos de rúbricas y calibraciones. `/golden-sets` conserva la integ
 Para ejecutar el workbench contra el backend real en local:
 
 ```bash
-cd llm-workbench
-npm ci
-npm run gateway:simulator
-# en otra terminal
-npm run start:local -- --port 4201 --prebundle=false
+cd ../llm-service
+docker compose -f compose.yaml -f compose.workbench.yaml up --build
 ```
 
-Abrir `http://localhost:4201/docente`. La opción `--prebundle=false` evita reutilizar
-la caché de Vite que puede haber sido creada por root en Docker.
+Abrir `http://localhost:4200/docente`. El backend, PostgreSQL y Flyway son reales. El navegador
+usa sólo `/api/**` y el proxy de desarrollo lo envía al Gateway mock, nunca directamente a
+`llm-service`.
 
-El simulador local representa exclusivamente al Gateway y a `courses-service`: entrega las
-cohortes y responde la consulta de pertenencia. No contiene rutas ni respuestas de `llm-service`;
-`/api/llm/**` se reenvía al backend real y el proxy de desarrollo agrega los headers M2M/delegados
-que en producción agrega el Gateway. Antes de arrancar el backend, usar el perfil `workbench` para
-que su cliente de Courses apunte al simulador (`http://localhost:4300`).
+El Gateway mock representa exclusivamente la frontera de plataforma: entrega la identidad
+delegada de desarrollo, borra headers de identidad falsificados y propaga correlación. Cursos es
+un MockServer externo; no contiene rutas ni respuestas de `llm-service`. Por lo tanto cada llamada
+`/api/llm/**` ejercita los controllers, autorización, casos de uso, persistencia y migraciones
+reales.
 
 ### Recorrido de prueba
 
@@ -97,8 +95,8 @@ cd ../llm-service
 docker compose -f compose.yaml -f compose.workbench.yaml up --build
 ```
 
-Abrir `http://localhost:4200`. El código fuente se monta en el contenedor y Angular recarga los cambios. El navegador llama siempre a `/api/llm/**`; `proxy.workbench.json` reenvía esas solicitudes al backend demo por la red de Docker.
+Abrir `http://localhost:4200`. El código fuente se monta en el contenedor y Angular recarga los cambios. El navegador llama siempre a `/api/**`; `proxy.workbench.json` reenvía esas solicitudes al Gateway mock por la red de Docker.
 
 ## Integración futura
 
-El monolito final conserva la misma ruta relativa `/api/llm/**`. Cuando API Gateway exista, el host del frontend debe enrutarla hacia el Gateway. `proxy.gateway.example.json` muestra la configuración equivalente para desarrollo. No se modifican componentes ni servicios Angular y el navegador no fabrica headers de identidad.
+El monolito final conserva las mismas rutas relativas `/api/llm/**` y `/api/courses/**`. Cuando API Gateway exista, el host del frontend debe enrutar ambas hacia el Gateway. `proxy.gateway.example.json` muestra la configuración equivalente para desarrollo. No se modifican componentes ni servicios Angular y el navegador no fabrica headers de identidad.

@@ -1,0 +1,143 @@
+asyncapi: 3.0.0
+info:
+  title: LLM Service MVP Events
+  version: 2.0.0-proposed
+  x-contract-status: PROPOSED
+  x-implementation-status: PARTIAL
+  description: |
+    Eventos Kafka publicados por Tema 07 para sus consumidores MVP.
+    Todos se publican mediante outbox y se entregan al menos una vez. Los consumidores deben
+    deduplicar por eventId. traceparent y X-Request-Id viajan en headers Kafka.
+servers:
+  platformKafka: { host: 'kafka:9092', protocol: kafka }
+channels:
+  score_de_ia_calculado.v1: { address: score_de_ia_calculado.v1, messages: { scoreCalculado: { $ref: '#/components/messages/ScoreCalculated' } } }
+  score_pendiente_diferido.v1: { address: score_pendiente_diferido.v1, messages: { scoreDiferido: { $ref: '#/components/messages/ScoreDeferred' } } }
+  calibracion_aprobada.v1: { address: calibracion_aprobada.v1, messages: { calibracionAprobada: { $ref: '#/components/messages/CalibrationApproved' } } }
+  calibracion_fuera_de_tolerancia.v1: { address: calibracion_fuera_de_tolerancia.v1, messages: { calibracionFallida: { $ref: '#/components/messages/CalibrationFailed' } } }
+  incidente_de_jailbreak.v1: { address: incidente_de_jailbreak.v1, messages: { incidente: { $ref: '#/components/messages/JailbreakIncident' } } }
+operations:
+  publishScoreCalculated: { action: send, channel: { $ref: '#/channels/score_de_ia_calculado.v1' }, summary: practice-service consume el resultado y lo reenvía a Challenges sin reinterpretar el score. }
+  publishScoreDeferred: { action: send, channel: { $ref: '#/channels/score_pendiente_diferido.v1' }, summary: practice-service registra el diferimiento; Courses mantiene el cierre bloqueado mientras el pendiente exista. }
+  publishCalibrationApproved: { action: send, channel: { $ref: '#/channels/calibracion_aprobada.v1' }, summary: courses-service y admin-service actualizan su vista de habilitación. }
+  publishCalibrationFailed: { action: send, channel: { $ref: '#/channels/calibracion_fuera_de_tolerancia.v1' }, summary: courses-service y admin-service conocen que la calibración no habilita la cohorte. }
+  publishJailbreakIncident: { action: send, channel: { $ref: '#/channels/incidente_de_jailbreak.v1' }, summary: admin-service y seguridad reciben el incidente sin solución esperada ni contenido sensible. }
+components:
+  messages:
+    ScoreCalculated: { headers: { $ref: '#/components/schemas/CorrelationHeaders' }, payload: { $ref: '#/components/schemas/ScoreCalculatedEnvelope' } }
+    ScoreDeferred: { headers: { $ref: '#/components/schemas/CorrelationHeaders' }, payload: { $ref: '#/components/schemas/ScoreDeferredEnvelope' } }
+    CalibrationApproved: { headers: { $ref: '#/components/schemas/CorrelationHeaders' }, payload: { $ref: '#/components/schemas/CalibrationApprovedEnvelope' } }
+    CalibrationFailed: { headers: { $ref: '#/components/schemas/CorrelationHeaders' }, payload: { $ref: '#/components/schemas/CalibrationFailedEnvelope' } }
+    JailbreakIncident: { headers: { $ref: '#/components/schemas/CorrelationHeaders' }, payload: { $ref: '#/components/schemas/JailbreakEnvelope' } }
+  schemas:
+    CorrelationHeaders:
+      type: object
+      required: [traceparent, X-Request-Id]
+      properties: { traceparent: { type: string }, X-Request-Id: { type: string } }
+    Envelope:
+      type: object
+      required: [eventId, version, occurredAt, producer, data]
+      properties:
+        eventId: { type: string, format: uuid }
+        version: { type: string, const: '1.0' }
+        occurredAt: { type: string, format: date-time }
+        producer: { type: string, const: llm-service }
+        data: { type: object }
+    ScoreCalculatedEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [evaluationId, attemptId, challengeId, courseCohortId, learnerId, state, aggregateScore, dimensionScores, rubricVersionId, calibrationRunId, evaluatedAt]
+              properties:
+                evaluationId: { type: string, format: uuid }
+                attemptId: { type: string, format: uuid }
+                challengeId: { type: string, format: uuid }
+                courseCohortId: { type: string, format: uuid }
+                learnerId: { type: string, format: uuid }
+                state: { type: string, const: COMPLETED }
+                aggregateScore: { type: number, minimum: 0, maximum: 100 }
+                dimensionScores: { $ref: '#/components/schemas/DimensionScores' }
+                rubricVersionId: { type: string, format: uuid }
+                calibrationRunId: { type: string, format: uuid }
+                evaluatedAt: { type: string, format: date-time }
+    ScoreDeferredEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [attemptId, challengeId, courseCohortId, learnerId, state, reason, deferredAt]
+              properties:
+                attemptId: { type: string, format: uuid }
+                challengeId: { type: string, format: uuid }
+                courseCohortId: { type: string, format: uuid }
+                learnerId: { type: string, format: uuid }
+                state: { type: string, const: PENDING }
+                reason: { type: string, enum: [CALIBRATION_UNAVAILABLE, PROVIDER_UNAVAILABLE, PROVIDER_RATE_LIMIT] }
+                deferredAt: { type: string, format: date-time }
+                nextRetryAt: { type: string, format: date-time }
+    CalibrationApprovedEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [courseCohortId, calibrationRunId, rubricVersionId, goldenSetVersionId, state, completedAt]
+              properties:
+                courseCohortId: { type: string, format: uuid }
+                calibrationRunId: { type: string, format: uuid }
+                rubricVersionId: { type: string, format: uuid }
+                goldenSetVersionId: { type: string, format: uuid }
+                state: { type: string, const: PASSED }
+                maeFinal: { type: number }
+                maxIndividualError: { type: number }
+                completedAt: { type: string, format: date-time }
+    CalibrationFailedEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [courseCohortId, calibrationRunId, rubricVersionId, goldenSetVersionId, state, failureCode, completedAt]
+              properties:
+                courseCohortId: { type: string, format: uuid }
+                calibrationRunId: { type: string, format: uuid }
+                rubricVersionId: { type: string, format: uuid }
+                goldenSetVersionId: { type: string, format: uuid }
+                state: { type: string, const: FAILED }
+                failureCode: { type: string, enum: [OUT_OF_TOLERANCE, PROVIDER_UNAVAILABLE, MALFORMED_MODEL_RESPONSE] }
+                maeFinal: { type: number }
+                maxIndividualError: { type: number }
+                completedAt: { type: string, format: date-time }
+    JailbreakEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [incidentId, attemptId, challengeId, courseCohortId, learnerId, function, severity, detectedAt]
+              properties:
+                incidentId: { type: string, format: uuid }
+                attemptId: { type: string, format: uuid }
+                challengeId: { type: string, format: uuid }
+                courseCohortId: { type: string, format: uuid }
+                learnerId: { type: string, format: uuid }
+                function: { type: string, enum: [TUTOR] }
+                severity: { type: string, enum: [LOW, MEDIUM, HIGH] }
+                detectedAt: { type: string, format: date-time }
+    DimensionScores:
+      type: object
+      required: [AUTONOMY, CLARITY, PROGRESSION, COMPLIANCE, EFFICIENCY]
+      properties:
+        AUTONOMY: { type: integer, minimum: 0, maximum: 100 }
+        CLARITY: { type: integer, minimum: 0, maximum: 100 }
+        PROGRESSION: { type: integer, minimum: 0, maximum: 100 }
+        COMPLIANCE: { type: integer, minimum: 0, maximum: 100 }
+        EFFICIENCY: { type: integer, minimum: 0, maximum: 100 }
