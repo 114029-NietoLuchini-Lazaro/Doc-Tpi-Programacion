@@ -31,7 +31,7 @@ public class CalibrationInferencePolicy {
             values.put("structuredJson", settings.structuredJson());
             values.put("maxOutputTokens", settings.maxOutputTokens());
             values.put("capabilities", capabilities);
-            return Map.copyOf(values);
+            return java.util.Collections.unmodifiableMap(values);
         }
     }
 }
