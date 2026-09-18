@@ -19,6 +19,12 @@ public class ApiExceptionHandler {
     return problem(HttpStatus.CONFLICT, exception.getMessage(), request);
   }
   private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
+  @ExceptionHandler(EvaluatorSkillsController.UnknownSkillKeyException.class)
+  ProblemDetail unknownSkillKey(EvaluatorSkillsController.UnknownSkillKeyException exception, HttpServletRequest request) {
+    ProblemDetail p = problem(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage(), request);
+    p.setProperty("code", "UNKNOWN_SKILL_KEY");
+    return p;
+  }
   @ExceptionHandler(IllegalArgumentException.class)
   ProblemDetail invalid(IllegalArgumentException exception, HttpServletRequest request) { return problem(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage(), request); }
   @ExceptionHandler(OptimisticLockException.class)
