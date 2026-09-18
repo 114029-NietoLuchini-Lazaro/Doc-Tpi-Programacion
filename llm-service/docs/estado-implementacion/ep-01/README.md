@@ -5,6 +5,26 @@
 > ítems 16–22 (primera vez que estos habilitadores se contrastan contra código; hasta el
 > 2026-09-12 ninguna ficha de EP-01 tenía marcador de estado).
 
+## Actualización 2026-09-18 (revisión contra el código actual)
+
+> Lo que sigue **reemplaza** el estado anterior de las fichas h01–h09 de esta carpeta, que quedó
+> desactualizado (decían "sin ArchUnit", "sin Eureka", "sin JaCoCo", "no existe `.env`"). Umbral de
+> cobertura vigente: **90 %**.
+
+| ID | Título | Estado | Nota en una línea |
+|---|---|---|---|
+| H01 | ADR y convenciones | 🟡 | ADR escrito en [`../../adr/ADR-001-...`](../../adr/ADR-001-arquitectura-y-convenciones-llm-service.md) (falta PR con revisión); ArchUnit (7 reglas) ya existe |
+| H02 | Entorno con un comando | 🟢 | Corregidos puertos de health (8087) en smoke, restart, README y Dockerfile; `.env.example` completo |
+| H03 | Esqueleto transversal | 🟡 | Eureka, 401/403 `problem+json` y `X-*` del Gateway OK; Bearer sin firma apagado por defecto (`app.security.trust-unsigned-bearer`). Pendiente: `ModerationCourseAuthorization` aún lee `sub` de un Bearer sin firma como fallback |
+| H04 | Esquema versionado | 🟢 | Triggers append-only e idempotencia en V1; `V13` duplicada renombrada a `V13_1` (commitear) |
+| H05 | Contrato y mock | 🟢 | `docs/contracts/` + `MOCK.md` (Prism) |
+| H06 | Tests y cobertura | 🟡 | 457 tests en verde; cobertura total ≈59 % vs 90 %. Gate JaCoCo con piso 55 % (ratchet) y CI en `.github/workflows/llm-service-ci.yml` |
+| H07 | Kafka + dedupe | 🔴 | No implementado (propuesta) |
+
+---
+
+*Detalle histórico previo:*
+
 ## Índice
 
 | ID | Título | Estado | Nota en una línea |

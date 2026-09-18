@@ -19,10 +19,41 @@ public class ApiExceptionHandler {
   ProblemDetail goldenSetSize(GoldenSetSizeException exception, HttpServletRequest request) {
     return problem(HttpStatus.CONFLICT, exception.getMessage(), request);
   }
+  @ExceptionHandler(ar.edu.utn.frc.tup.piv.llm.moderation.application.exception.AppealAlreadyExistsException.class)
+  ProblemDetail appealAlreadyExists(ar.edu.utn.frc.tup.piv.llm.moderation.application.exception.AppealAlreadyExistsException exception, HttpServletRequest request) {
+    ProblemDetail p = problem(HttpStatus.CONFLICT, "appeal_already_exists", request);
+    p.setProperty("error", "appeal_already_exists");
+    if (exception.getExistingAppealId() != null) {
+      p.setProperty("appeal_id", exception.getExistingAppealId().toString());
+    }
+    return p;
+  }
+  @ExceptionHandler(ar.edu.utn.frc.tup.piv.llm.application.agent.QuotaExceededException.class)
+  org.springframework.http.ResponseEntity<ProblemDetail> quotaExceeded(ar.edu.utn.frc.tup.piv.llm.application.agent.QuotaExceededException exception, HttpServletRequest request) {
+    ProblemDetail p = problem(HttpStatus.TOO_MANY_REQUESTS, exception.getReason(), request);
+    p.setProperty("error", "quota_exceeded");
+    p.setProperty("function", exception.getFunctionKey());
+    p.setProperty("retryAfter", exception.getRetryAfterSeconds());
+    return org.springframework.http.ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+        .header(org.springframework.http.HttpHeaders.RETRY_AFTER, String.valueOf(exception.getRetryAfterSeconds()))
+        .body(p);
+  }
   private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
   @ExceptionHandler(ResponseStatusException.class)
   ProblemDetail statusException(ResponseStatusException exception, HttpServletRequest request) {
-    return problem(HttpStatus.valueOf(exception.getStatusCode().value()), exception.getReason(), request);
+    ProblemDetail p = problem(HttpStatus.valueOf(exception.getStatusCode().value()), exception.getReason(), request);
+    if (exception.getStatusCode() == HttpStatus.FORBIDDEN) {
+      p.setProperty("error", "forbidden");
+    } else if (exception.getStatusCode() == HttpStatus.BAD_REQUEST) {
+      p.setProperty("error", "validation_error");
+    }
+    return p;
+  }
+  @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+  ProblemDetail validationException(org.springframework.web.bind.MethodArgumentNotValidException exception, HttpServletRequest request) {
+    ProblemDetail p = problem(HttpStatus.BAD_REQUEST, "Los datos enviados no son válidos o contienen campos obligatorios ausentes.", request);
+    p.setProperty("error", "validation_error");
+    return p;
   }
   @ExceptionHandler(IllegalArgumentException.class)
   ProblemDetail invalid(IllegalArgumentException exception, HttpServletRequest request) { return problem(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage(), request); }

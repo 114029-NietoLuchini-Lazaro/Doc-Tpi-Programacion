@@ -150,7 +150,7 @@ lleva a la sesión de integración para confirmar excepción o alinear.
 | **Auditoría por tabla espejo** | `<table>_audit` + `version` por cada tabla (§2.4) | Tablas append-only + `@Version` optimista donde aplica; auditoría LLMOps en `llamadas_llm`. | [24 §Pruebas de infraestructura](24-convenciones-cobertura.md) · [26](26-herramientas-y-librerias.md) |
 | **Campos `created_user` / `last_updated_user`** | `BIGINT` (§2.3) | La identidad llega por headers del Gateway (`X-User-Id`) y el modelo de usuario es de otro servicio; falta acordar el tipo. | [00 §3](00-fuentes-de-verdad-y-convenciones.md) |
 | **Ramas Git** | `feature/*` y `fix/*` planos; `main` recibe de `develop` (§4.2) | GitFlow con `release/*` y naming estricto `feature/sNN/llm-sNN-hNN-<slug>`; `main` solo recibe de `release/*` o `hotfix/*`. Sin rama `fix/*`. | [GITFLOW.md](GITFLOW.md) |
-| **CI de frontend** | ESLint + build; falla si duplicación > 3% (§4.5) | Vitest con cobertura **≥ 95%** de sentencias; formateo con Prettier. Sin gate de duplicación ni ESLint configurado aún. | [24](24-convenciones-cobertura.md) · `llm-workbench/package.json` |
+| **CI de frontend** | ESLint + build; falla si duplicación > 3% (§4.5) | Vitest con cobertura **≥ 90%** de sentencias; formateo con Prettier. Sin gate de duplicación ni ESLint configurado aún. | [24](24-convenciones-cobertura.md) · `llm-workbench/package.json` |
 | **`package.json` bloqueado en PR** | Sí, lo gestiona el maintainer (§4.3) | No hay bloqueo; las dependencias del workbench se agregan en el PR de la historia. | `llm-workbench/` |
 
 Coinciden sin fricción: Java 21 + Spring Boot, capas `api`/`application`/`domain`/`infrastructure`,

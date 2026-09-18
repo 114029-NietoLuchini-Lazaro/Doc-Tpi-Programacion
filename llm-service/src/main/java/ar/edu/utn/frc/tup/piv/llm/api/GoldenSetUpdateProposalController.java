@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/llm/courses/{courseId}/golden-set-update-proposals")
+@RequestMapping("${app.api.private-path}/courses/{courseId}/golden-set-update-proposals")
 public class GoldenSetUpdateProposalController {
   private final GoldenSetUpdateProposalService service;
   private final GoldenSetAuthorization authorization;

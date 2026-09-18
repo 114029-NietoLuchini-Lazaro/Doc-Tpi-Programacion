@@ -220,7 +220,7 @@ Para validar la seguridad e invariantes de negocio durante la demo:
 | Criterio de Aceptación | Cómo se valida en la demo | Estado |
 |---|---|---|
 | **CA1:** Suite completa en verde | `mvn test` ejecuta 218 tests sin fallos | ✅ Cumplido |
-| **CA2:** Cobertura de back y front ≥ 95% | `mvn test` genera `target/site/jacoco/index.html`; paquetes de dominio al 91–97% | ✅ Reporte activo y medible |
+| **CA2:** Cobertura de back y front ≥ 90% | `mvn test` genera `target/site/jacoco/index.html`; paquetes de dominio al 91–97% | ✅ Reporte activo y medible |
 | **CA3:** Prueba automática de reinicio de entorno | `scripts/test-compose-restart.sh` / `.ps1` | ✅ Automatizado |
 | **CA4:** Guía de demo paso a paso | Este documento ([`docs/guia-demo-s1.md`](guia-demo-s1.md)) | ✅ Documentado |
 | **CA5 (negativo):** Cobertura baja del umbral → CI rechaza el cambio | Gate `jacoco:check` configurado en `pom.xml` | ✅ Activo y verificado |

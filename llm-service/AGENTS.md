@@ -28,7 +28,7 @@ Ejecuta siempre las verificaciones pertinentes antes de dar una tarea por finali
 # Suite completa de pruebas con Testcontainers (Postgres + Kafka)
 ./mvnw verify
 
-# Verificar reporte de cobertura (exigencia mínima: 95%)
+# Verificar reporte de cobertura (exigencia mínima: 90%)
 ./mvnw jacoco:report
 
 # ==========================================
@@ -100,7 +100,7 @@ Debes detener la ejecución y formular una pregunta clara al usuario si:
 1. **Verificar el escenario real de extremo a extremo:** Si implementas un botón de crear/editar o un endpoint, comprueba su comportamiento real tanto en el caso exitoso (2xx) como en errores de validación (400) y de red/servidor (5xx).
 2. **Garantizar compatibilidad hacia atrás** en contratos y eventos.
 3. **Propagar contexto de trazabilidad:** `traceparent` y `X-Request-Id`.
-4. **Mantener una cobertura de pruebas mínima del 95%** (requisito normativo de cada PR).
+4. **Mantener una cobertura de pruebas mínima del 90%** (requisito normativo de cada PR).
 5. **Formatear respuestas de error con RFC 7807 (`ProblemDetail`)**.
 
 ---

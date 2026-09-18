@@ -60,10 +60,11 @@ public class PgVectorStoreAdapter implements VectorStorePort {
 
     PGvector pgQueryVector = new PGvector(queryVector);
     String inSql = String.join(",", Collections.nCopies(documentIds.size(), "?"));
+    // El operador <=> queda en el esquema `llm` (la extensión se crea allí), fuera del search_path por defecto.
     String sql = "select id, document_id, document_name, page_number, chunk_index, content, "
-        + "(1 - (embedding <=> ?)) as similarity from llm.rag_chunks "
+        + "(1 - (embedding OPERATOR(llm.<=>) ?)) as similarity from llm.rag_chunks "
         + "where document_id in (" + inSql + ") and embedding is not null "
-        + "order by embedding <=> ? limit ?";
+        + "order by embedding OPERATOR(llm.<=>) ? limit ?";
 
     List<Object> params = new ArrayList<>();
     params.add(pgQueryVector);

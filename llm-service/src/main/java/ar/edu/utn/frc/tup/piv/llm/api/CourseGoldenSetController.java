@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/llm/courses/{courseId}/golden-sets")
+@RequestMapping("${app.api.private-path}/courses/{courseId}/golden-sets")
 public class CourseGoldenSetController {
   private final CourseGoldenSetService service;
   private final GoldenSetAuthorization authorization;

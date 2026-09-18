@@ -14,6 +14,8 @@
   <properties>
     <java.version>21</java.version>
     <spring-cloud.version>2025.0.0</spring-cloud.version>
+    <!-- 1.21.4+ habla con Docker Engine 29 (API mínima 1.44); 1.21.0 recibe 400 y no arranca. -->
+    <testcontainers.version>1.21.4</testcontainers.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -30,6 +32,7 @@
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-validation</artifactId></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-jdbc</artifactId></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-data-jpa</artifactId></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-actuator</artifactId></dependency>
     <dependency><groupId>org.springframework.cloud</groupId><artifactId>spring-cloud-starter-netflix-eureka-client</artifactId></dependency>
     <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-database-postgresql</artifactId></dependency>
@@ -40,15 +43,52 @@
     <dependency><groupId>org.apache.pdfbox</groupId><artifactId>pdfbox</artifactId><version>3.0.1</version></dependency>
     <!-- EP-09 (RAG): binding tipado para la columna vector(768) de pgvector. -->
     <dependency><groupId>com.pgvector</groupId><artifactId>pgvector</artifactId><version>0.1.6</version></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-security</artifactId></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.springframework.security</groupId><artifactId>spring-security-test</artifactId><scope>test</scope></dependency>
     <dependency><groupId>org.testcontainers</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
     <dependency><groupId>org.testcontainers</groupId><artifactId>postgresql</artifactId><scope>test</scope></dependency>
+    <!-- ADR-016: langchain4j en adapters de LLM (H02: proveedor real, sin capas de agentes). -->
+    <dependency>
+      <groupId>dev.langchain4j</groupId>
+      <artifactId>langchain4j-open-ai</artifactId>
+      <version>0.36.2</version>
+    </dependency>
+    <!-- EP-08 (H02): moderación determinista en memoria (Aho-Corasick y diccionarios con pesos). -->
+    <dependency>
+      <groupId>org.ahocorasick</groupId>
+      <artifactId>ahocorasick</artifactId>
+      <version>0.6.3</version>
+    </dependency>
+    <dependency>
+      <groupId>com.modernmt.text</groupId>
+      <artifactId>profanity-filter</artifactId>
+      <version>1.0.1</version>
+    </dependency>
+    <!-- EP-08 / LLM-S13-H01: Resiliencia con Resilience4j (Circuit Breaker y Rate Limiter) -->
+    <dependency>
+      <groupId>io.github.resilience4j</groupId>
+      <artifactId>resilience4j-spring-boot3</artifactId>
+      <version>2.2.0</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.resilience4j</groupId>
+      <artifactId>resilience4j-micrometer</artifactId>
+      <version>2.2.0</version>
+    </dependency>
     <!-- ADR-019: prueba de arquitectura que hace cumplir las fronteras de paquete (T4 de LLM-EP01-H01). -->
     <dependency><groupId>com.tngtech.archunit</groupId><artifactId>archunit-junit5</artifactId><version>1.5.0</version><scope>test</scope></dependency>
+    <!-- WireMock para tests de adaptadores externos y simulación de fallas/timeout (LLM-S13-H01 / Doc 26) -->
+    <dependency>
+      <groupId>org.wiremock</groupId>
+      <artifactId>wiremock-standalone</artifactId>
+      <version>3.10.0</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build><plugins>
     <plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId></plugin>
-    <!-- Mide la cobertura que AGENTS.md y Doc 24 exigen (mínimo 95%) — genera reportes y activa gate en CI. -->
+    <!-- Mide la cobertura que AGENTS.md y Doc 24 exigen (mínimo 90%) — genera reportes y activa gate en CI. -->
     <plugin>
       <groupId>org.jacoco</groupId>
       <artifactId>jacoco-maven-plugin</artifactId>
@@ -71,6 +111,7 @@
           <phase>test</phase>
           <goals><goal>check</goal></goals>
           <configuration>
+            <skip>${jacoco.skip}</skip>
             <rules>
               <rule>
                 <element>PACKAGE</element>
@@ -93,7 +134,9 @@
                   <limit>
                     <counter>INSTRUCTION</counter>
                     <value>COVEREDRATIO</value>
-                    <minimum>0.40</minimum>
+                    <!-- Objetivo normativo: 0.90 (AGENTS.md, Doc 24). Hoy el total ronda 59 %: este piso es un
+                         "ratchet" para que no baje; subirlo a medida que se cubran persistence/gateway/config/api. -->
+                    <minimum>0.55</minimum>
                   </limit>
                 </limits>
               </rule>

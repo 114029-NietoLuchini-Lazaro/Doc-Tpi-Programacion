@@ -20,23 +20,34 @@ services:
 
   llm-service:
     build: .
+    container_name: tpi-llm
+    expose:
+      - "8086"
+      - "8087"
     environment:
+      SERVER_PORT: "8086"
+      MANAGEMENT_PORT: "8087"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/llm
       SPRING_DATASOURCE_USERNAME: llm
       SPRING_DATASOURCE_PASSWORD: llm
       LLM_CREDENTIALS_MASTER_KEY: ${LLM_CREDENTIALS_MASTER_KEY:?Set a base64-encoded 32-byte AES key before starting llm-service}
+      EUREKA_URL: ${EUREKA_URL:-http://eureka:8761/eureka/}
+      GATEWAY_URL: ${GATEWAY_URL:-http://api-gateway:8080}
+      APP_CLIENT_ID: llm-service
+      APP_CLIENT_SECRET: ${APP_CLIENT_SECRET:-}
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8087/actuator/health | grep -q UP"]
       interval: 5s
       timeout: 3s
       retries: 12
-    # Sin "ports": en la plataforma real solo el API Gateway expone puertos (ADR-015,
-    # docs/08 · docs/gateway-y-discovery/01). Para pegarle desde el host en debug local:
-    # ports:
-    #   - "8080:8080"
+    networks:
+      - default
+      - tpi-platform
+    # Sin "ports": en la plataforma real solo el API Gateway expone puertos (ADR-015).
+    # Para pegarle desde el host en debug local, usar el overlay compose.debug.yaml.
 
   # ---------------------------------------------------------------------------------
   # Todavía sin código que los use (sin dependencia en pom.xml, sin cliente instanciado).
@@ -93,3 +104,13 @@ volumes:
   llm-postgres-data:
   # llm-redis-data:   # descomentar junto con el servicio `redis` de más arriba
   # llm-minio-data:   # descomentar junto con el servicio `minio` de más arriba
+
+# Redes: llm-default para comunicación interna con PostgreSQL y tpi-platform para integración
+# con el stack de plataforma (Eureka, Gateway y otros microservicios del Topic 01).
+networks:
+  default:
+    name: llm-default
+  tpi-platform:
+    name: tpi-platform
+    external: true
+

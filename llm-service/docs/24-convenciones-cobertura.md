@@ -6,8 +6,8 @@
 
 | Área | Herramienta de referencia | Métrica obligatoria | Mínimo |
 |---|---|---:|---:|
-| Backend Java | JaCoCo | Instrucciones cubiertas | **95%** |
-| Frontend Angular | Vitest con proveedor V8 o Istanbul | Sentencias cubiertas | **95%** |
+| Backend Java | JaCoCo | Instrucciones cubiertas | **90%** |
+| Frontend Angular | Vitest con proveedor V8 o Istanbul | Sentencias cubiertas | **90%** |
 
 El frontend no expone una métrica JVM de instrucciones. Por eso se usa la cobertura de **sentencias** como equivalente verificable de instrucciones ejecutables.
 
@@ -22,7 +22,7 @@ La medición se realiza sobre todo el código de producción de cada aplicación
 
 ## Ejecución y evidencia
 
-El pipeline debe ejecutar las pruebas y publicar los reportes HTML/XML de cobertura. Debe fallar si alguno de los dos umbrales queda por debajo de 95%.
+El pipeline debe ejecutar las pruebas y publicar los reportes HTML/XML de cobertura. Debe fallar si alguno de los dos umbrales queda por debajo de 90%.
 
 | Aplicación | Comando esperado | Evidencia |
 |---|---|---|

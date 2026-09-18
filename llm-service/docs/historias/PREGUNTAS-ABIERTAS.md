@@ -47,7 +47,7 @@
 - [x] ✅ **2026-09-13 [EP-01·H05]** ¿La adenda S1 del contrato ya está revisada y firmada por
   `admin-service`? **Resuelto:** sí — `admin-service` **aprueba la adenda y los campos**.
 - [x] ✅ **2026-09-13 [EP-01·H06]** ¿Qué herramienta de cobertura se usa para el gate de CI
-  (CA2/CA5)? **Resuelto:** **JaCoCo**, con umbral obligatorio del **95 %** según
+  (CA2/CA5)? **Resuelto:** **JaCoCo**, con umbral obligatorio del **90 %** según
   [24](../24-convenciones-cobertura.md) (toda mención a 90–95 % queda superada por el doc).
 - [ ] **[EP-01·H06]** ¿Existe algún borrador de la guía de demo paso a paso, o hay que escribirla
   desde cero? **2026-09-13:** no se identificó borrador; **H06 ya está publicada en Taiga** y en

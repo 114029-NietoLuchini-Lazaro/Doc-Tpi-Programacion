@@ -5,7 +5,8 @@
 # ==============================================================================
 set -euo pipefail
 
-BASE_URL="${BASE_URL:-http://localhost:8080}"
+BASE_URL="${BASE_URL:-http://localhost:8086}"
+HEALTH_URL="${HEALTH_URL:-http://localhost:8087}"   # actuator en el puerto de management
 PROJECT_NAME="${PROJECT_NAME:-llm-s1-restart-test}"
 SKIP_COMPOSE_MANAGE="${SKIP_COMPOSE_MANAGE:-false}"
 
@@ -20,8 +21,8 @@ echo "=================================================================="
 wait_for_health() {
   local max_retries=30
   local count=0
-  echo -n "Esperando salud del servicio ($BASE_URL/actuator/health)... "
-  until curl -s -f "$BASE_URL/actuator/health" | grep -q '"status":"UP"'; do
+  echo -n "Esperando salud del servicio ($HEALTH_URL/actuator/health)... "
+  until curl -s -f "$HEALTH_URL/actuator/health" | grep -q '"status":"UP"'; do
     sleep 2
     count=$((count + 1))
     if [ "$count" -ge "$max_retries" ]; then

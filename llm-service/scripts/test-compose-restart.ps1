@@ -5,11 +5,13 @@
 #>
 param(
   [string]$BaseUrl = $env:BASE_URL,
+  [string]$HealthUrl = $env:HEALTH_URL,
   [string]$ProjectName = $env:PROJECT_NAME,
   [switch]$SkipComposeManage
 )
 
-if (-not $BaseUrl) { $BaseUrl = "http://localhost:8080" }
+if (-not $BaseUrl) { $BaseUrl = "http://localhost:8086" }
+if (-not $HealthUrl) { $HealthUrl = "http://localhost:8087" }
 if (-not $ProjectName) { $ProjectName = "llm-s1-restart-test" }
 
 $CourseId = "22222222-2222-2222-2222-222222222222"
@@ -60,7 +62,7 @@ try {
     docker compose -f compose.yaml -f compose.debug.yaml -p $ProjectName up -d --build --wait
   }
 
-  $healthy = Wait-ForHealth -Url $BaseUrl
+  $healthy = Wait-ForHealth -Url $HealthUrl
   if (-not $healthy) { exit 1 }
 
   Write-Host "2. Creando Golden Set de referencia para el curso $CourseId..."
@@ -115,7 +117,7 @@ try {
     Write-Host "5. Ejecutando reinicio de Compose (docker compose restart)..."
     docker compose -f compose.yaml -f compose.debug.yaml -p $ProjectName restart
     Write-Host "   Reinicio completado. Verificando recuperacion del servicio..."
-    $healthyAfter = Wait-ForHealth -Url $BaseUrl
+    $healthyAfter = Wait-ForHealth -Url $HealthUrl
     if (-not $healthyAfter) { exit 1 }
   } else {
     Write-Host "5. [Modo externo] Omitiendo restart de contenedores por parametro SkipComposeManage."

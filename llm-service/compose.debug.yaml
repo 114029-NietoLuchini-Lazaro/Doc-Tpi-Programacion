@@ -11,6 +11,7 @@ services:
       - "5432:5432"
 
   llm-service:
-    # Publica el puerto 8080 en el host para depuración local y ejecución de la suite de demo / test de reinicio.
+    # Publica los puertos 8086 (app) y 8087 (management) en el host para depuración local.
     ports:
-      - "8080:8080"
+      - "8086:8086"
+      - "8087:8087"

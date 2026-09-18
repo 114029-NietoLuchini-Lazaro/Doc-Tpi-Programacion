@@ -87,8 +87,15 @@ public class RagIngestionService {
     RagDocument document = new RagDocument(documentId, courseCohortId, fileName, bytes.length,
         extracted.totalPages(), chunks.size(), OffsetDateTime.now(), preview, true);
 
-    vectorStore.indexChunks(documentId, chunks, chunkEmbeddings);
-    return documents.save(document, bytes);
+    // El documento se guarda primero: rag_chunks.document_id tiene FK contra rag_documents.
+    RagDocument saved = documents.save(document, bytes);
+    try {
+      vectorStore.indexChunks(documentId, chunks, chunkEmbeddings);
+    } catch (RuntimeException failure) {
+      documents.deactivate(documentId); // no dejar un documento activo sin fragmentos
+      throw failure;
+    }
+    return saved;
   }
 
   /** `Loader.loadPDF` (dentro de {@link PdfTextExtractionPort}) lanza `InvalidPasswordException`

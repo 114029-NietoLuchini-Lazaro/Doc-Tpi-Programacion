@@ -2,6 +2,7 @@ package ar.edu.utn.frc.tup.piv.llm.security;
 
 import java.util.Arrays;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ public class GoldenSetAuthorization {
   private final boolean workbench;
   private final UUID workbenchUser;
 
+  @Autowired
   public GoldenSetAuthorization(@Value("${llm.gateway.trusted-service}") String trustedService,
       @Value("${llm.gateway.required-scope}") String requiredScope,
       @Value("${llm.gateway.template-required-scope}") String templateRequiredScope,

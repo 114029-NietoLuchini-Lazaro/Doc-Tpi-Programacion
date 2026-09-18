@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
  * `llm-service-v1-tutor-sse-adenda.md` ("hasta entonces el contrato ejecutable es solo el
  * endpoint síncrono"). */
 @RestController
-@RequestMapping("/api/llm/tutor")
+@RequestMapping("${app.api.private-path}/tutor")
 public class TutorInteractionController {
   private static final Set<String> RISK_LEVELS = Set.of("high", "medium", "low");
 

@@ -101,3 +101,30 @@ curl -s -X POST http://localhost:4010/api/llm/courses/${COURSE_ID}/golden-sets/$
 | **Idempotencia** | No verifica unicidad de `Idempotency-Key` | Valida clave y rechaza duplicados |
 | **Autorización** | Acepta cualquier Bearer token sintético | Valida JWT M2M con scopes y tenancy en Gateway |
 | **Calibración** | Retorna estado QUEUED/RUNNING de ejemplo | Ejecuta runner asíncrono con métricas PAR-14 |
+
+---
+
+## 5. Mock de Moderación de chat (EP-08)
+
+**Contrato:** [`llm-service-v1-moderacion.openapi.yaml`](llm-service-v1-moderacion.openapi.yaml) (v1.1.0). Para `chat-service` y `notification-service`: integran sin depender del `llm-service` real.
+
+```bash
+npx --yes @stoplight/prism-cli mock docs/contracts/llm-service-v1-moderacion.openapi.yaml --port 4011
+```
+
+Con Docker: `docker run --rm -p 4011:4010 -v "${PWD}/docs/contracts:/tmp/contracts" stoplight/prism:4 mock /tmp/contracts/llm-service-v1-moderacion.openapi.yaml --host 0.0.0.0`
+
+Se elige la respuesta con `Prefer: example=<nombre>` (o `Prefer: code=<status>`):
+
+```bash
+H=(-H 'X-Principal-Type: service' -H 'X-Service-Id: chat-service' -H 'X-Service-Scopes: moderation:decide' -H 'Content-Type: application/json')
+BODY='{"message_id":"m-1","course_id":"curso-42","sender_id":"alumno-1","sender_role":"student","text":"hola"}'
+
+curl -s -X POST localhost:4011/moderation/v1/decisions "${H[@]}" -H 'Prefer: example=allow' -d "$BODY"                  # ALLOW
+curl -s -X POST localhost:4011/moderation/v1/decisions "${H[@]}" -H 'Prefer: example=block' -d "$BODY"                  # BLOCK + incident_id
+curl -s -X POST localhost:4011/moderation/v1/decisions "${H[@]}" -H 'Prefer: example=pendingReviewDegradado' -d "$BODY" # PENDING_REVIEW (contextual caído)
+curl -s -X POST localhost:4011/moderation/v1/decisions "${H[@]}" -H 'Prefer: example=pendingTimeout' -d "$BODY"         # PENDING (timeout 800 ms)
+curl -s -X POST localhost:4011/moderation/v1/appeals -H 'X-Principal-Type: user' -H 'X-User-Id: alumno-1' -H 'Content-Type: application/json' -H 'Prefer: code=409' -d '{"incident_id":"eee5cf4d-2903-42dd-bcc8-fead34b06450","appeal_reason":"Era un mensaje legitimo con enlaces."}'
+```
+
+Diferencia con el real: el mock es stateless (no detecta spam ni crea incidentes; devuelve el ejemplo elegido) y **no valida identidad**. El servicio real se prueba con el runbook `docs/sprints/sprint-4/runbook-verificacion-moderacion.md`.

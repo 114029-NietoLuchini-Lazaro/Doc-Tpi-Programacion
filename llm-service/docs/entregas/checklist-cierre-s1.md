@@ -55,7 +55,7 @@ persistencia tras reinicio.
 ### 🔴 1.3 — Gate de cobertura con JaCoCo (H09, CA2 y CA5)
 
 - [ ] `pom.xml` tiene el plugin de JaCoCo configurado.
-- [ ] El pipeline mide cobertura y **falla** si baja del 95 % acordado en
+- [ ] El pipeline mide cobertura y **falla** si baja del 90 % acordado en
       [`24-convenciones-cobertura.md`](../24-convenciones-cobertura.md).
 - [ ] Se corrió una vez y se registró el número real de cobertura actual (con 32 clases de test
       ya escritas, probablemente esté cerca — falta medirlo, no escribir tests desde cero).

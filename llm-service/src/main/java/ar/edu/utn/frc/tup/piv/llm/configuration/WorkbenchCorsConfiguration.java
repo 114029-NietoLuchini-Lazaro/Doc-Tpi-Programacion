@@ -8,9 +8,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 @Profile("workbench")
 public class WorkbenchCorsConfiguration implements WebMvcConfigurer {
+  private final String privatePath;
+
+  public WorkbenchCorsConfiguration(@org.springframework.beans.factory.annotation.Value("${app.api.private-path}") String privatePath) {
+    this.privatePath = privatePath;
+  }
+
   @Override
   public void addCorsMappings(CorsRegistry registry) {
-    registry.addMapping("/api/llm/**")
+    registry.addMapping(privatePath + "/**")
         .allowedOrigins("http://localhost:4200", "http://192.168.0.250:4200", "http://100.68.49.115:4200")
         // Angular's proxy preserves Origin when the workbench is opened from a LAN device.
         // DELETE is required for the logical draft deletion endpoint.

@@ -35,7 +35,7 @@ docker compose up --build
 ```
 
 El servicio queda disponible sólo dentro de la red Docker. Su healthcheck es
-`http://llm-service:8080/actuator/health` desde otro contenedor. La composición base no expone
+`http://llm-service:8087/actuator/health` desde otro contenedor (la API escucha en `8086`). La composición base no expone
 puertos de negocio: en la plataforma, sólo API Gateway publica la API.
 
 ### Workbench demo (backend + frontend Angular)
@@ -54,7 +54,7 @@ real: ahí API Gateway valida la sesión y agrega los headers M2M que el servici
 ```bash
 docker compose down            # o con -f compose.workbench.yaml si se levantó con workbench
 docker compose ps              # healthcheck en columna STATUS
-curl http://localhost:8080/actuator/health   # sólo si se expuso el puerto para debug local
+curl http://localhost:8087/actuator/health   # sólo con el overlay: -f compose.yaml -f compose.debug.yaml
 ```
 
 ### Persistencia y debug local
@@ -153,7 +153,7 @@ la verificación de disponibilidad y calibración del modelo que se implemente.
 | 21 | [Matriz de trazabilidad LLM](docs/21-matriz-trazabilidad-llm.md) | Requisitos, fase, contratos, dependencias y pruebas para desarrollo. |
 | 22 | [Informe comparativo de alineación](docs/22-informe-comparativo-alineacion-llm.md) | Diferencias entre la documentación anterior y la vigente. |
 | 23 | [Plan de construcción del producto LLM](docs/23-plan-construccion-producto-llm.md) | Plan vigente desde cero hasta el producto completo: 3 fases, 19 sprints, capacidad con reuniones (§2), dependencias, entregables, DoR/DoD (§9.2) y aceptación. |
-| 24 | [Convención de cobertura](docs/24-convenciones-cobertura.md) | Cobertura mínima 95% back/front, alcance de la medición y pruebas de infraestructura por fase; requisito de cada PR y Review. |
+| 24 | [Convención de cobertura](docs/24-convenciones-cobertura.md) | Cobertura mínima 90% back/front, alcance de la medición y pruebas de infraestructura por fase; requisito de cada PR y Review. |
 | 25 | [Matriz de pruebas de infraestructura](docs/25-matriz-pruebas-infraestructura.md) | Suites que verifican integraciones reales (Postgres, Compose, Gateway, Eureka, Kafka), su estado en S1 y el comando/evidencia de cada una. |
 | 26 | [Herramientas y librerías](docs/26-herramientas-y-librerias.md) | Índice único del stack: qué es cada herramienta, de qué librería/binario/servicio viene, para qué, cómo y dónde se decidió. |
 | 27 | [Guía de la Wiki de Taiga](docs/27-guia-wiki-taiga.md) | Regla de la cátedra para documentar en la Wiki: nombrado `GXX - TEMA`, apartados obligatorios (a–h), **checklists de cada diagrama** y secuencia DER → BPMN → Clases → Estados → Secuencias → Microservicios, guías y templates oficiales. |

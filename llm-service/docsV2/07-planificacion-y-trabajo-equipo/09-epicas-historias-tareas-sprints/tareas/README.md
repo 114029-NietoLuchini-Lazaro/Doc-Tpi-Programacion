@@ -37,6 +37,12 @@
 | **EP-02** · AI Gateway, modelos y resiliencia | [`ep-02/`](ep-02/README.md) | LLM-EP02-H01 *(ex-H10)* · [catálogo de adaptadores real (sin HU)](ep-02/model-catalog-real.md) | H01 cerrada; catálogo real (lectura + alta) pendiente |
 | **EP-03** · Golden set y referencia humana | [`ep-03/`](ep-03/README.md) | LLM-EP03-H01–H03 (histórico S1) · LLM-EP03-H04–H05 (vigentes S2) | S1 histórico; S2 ya construida |
 | **EP-04** · Calibración y gobernanza del modelo | [`ep-04/`](ep-04/README.md) | LLM-EP04-H01 *(ex-S03-H01)* | Esqueleto construido, T7 cerrada |
+| **EP-05** · Tutor seguro y guardarraíles | [`ep-05/`](ep-05/README.md) | LLM-EP05-H01 a H03 | 25 tareas · 77 h |
+| **EP-06** · Evaluación y puntuación de entregas | [`ep-06/`](ep-06/README.md) | LLM-EP06-H01 a H06 | Tareas desglosadas |
+| **EP-07** · Operación, cuotas y observabilidad | [`ep-07/`](ep-07/README.md) | LLM-S09-H01 a H03, LLM-S10-H01 a H03 | Tareas desglosadas |
+| **EP-08** · Moderación integrada (F2) | [`ep-08/`](ep-08/README.md) | LLM-S11-H01/H02, LLM-S12-H01/H02, LLM-S13-H01/H02 | 31 tareas · 160 h (planificadas) |
+| **EP-09** · RAG y consulta de material | [`ep-09/`](ep-09/README.md) | LLM-EP09-H01 a H02 | Tareas desglosadas |
+| **EP-10** · Personalización y agente (F3) | [`ep-10/`](ep-10/README.md) | LLM-S17-H01/H02, LLM-S18-H01/H02 | 23 tareas · 116 h (planificadas S5) |
 
 ## Horas — S1 (planificación original, vigente)
 

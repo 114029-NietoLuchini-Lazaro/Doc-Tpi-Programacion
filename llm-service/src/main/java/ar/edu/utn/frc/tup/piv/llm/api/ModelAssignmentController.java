@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
  * {@link GoldenSetAuthorization} (mismo `trusted-service` administrativo que el resto del
  * servicio) en vez de crear una tercera clase de autorización. */
 @RestController
-@RequestMapping("/api/llm/model-assignments")
+@RequestMapping("${app.api.private-path}/model-assignments")
 public class ModelAssignmentController {
   private final ModelAssignmentService service;
   private final GoldenSetAuthorization authorization;

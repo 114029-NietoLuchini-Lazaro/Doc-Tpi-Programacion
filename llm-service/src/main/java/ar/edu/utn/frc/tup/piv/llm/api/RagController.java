@@ -29,7 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
  * {@link RagGatewayAuthorization}: scope M2M propio, distinto del tutor (EP-05). Portado de
  * `demoLLMSpringAi/.../controller/RagController.java`. */
 @RestController
-@RequestMapping("/api/llm/rag")
+@RequestMapping("${app.api.private-path}/rag")
 public class RagController {
   private final RagIngestionService ingestion;
   private final RagChatService chat;
