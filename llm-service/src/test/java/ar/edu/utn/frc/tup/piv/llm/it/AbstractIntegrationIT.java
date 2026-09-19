@@ -20,7 +20,9 @@ import org.testcontainers.utility.DockerImageName;
     // spring.task.scheduling.enabled no apaga @Scheduled: espaciamos los workers para que no le
     // roben corridas/evaluaciones en cola a los tests que las manejan a mano.
     "llm.calibrations.dispatch-delay-ms=3600000",
-    "llm.evaluations.resume-delay-ms=3600000"
+    "llm.evaluations.resume-delay-ms=3600000",
+    // El shadow (E-31) también lo maneja a mano su IT.
+    "llm.shadow.dispatch-delay-ms=3600000"
 })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")

@@ -222,7 +222,7 @@ hay un canary, la respuesta no puede ser que no se nos ocurrió.
 | 7 | Escribir el `Dockerfile` multietapa y el `docker-compose.yml` con healthchecks | Con el código del servicio |
 | 8 | Construir la mitad derecha del pipeline: imagen, registro, deploy | Después del `Dockerfile` |
 | 9 | **E-30** · Definir **quién** provee el gestor de secretos en producción. [06](../06-operacion-calidad-y-pruebas/01-operacion-e-ingenieria.md) dice *"secretos del orquestador"* sin decir cuál | Sesión de integración |
-| 10 | **E-31** · Diseñar el modo shadow del evaluador (A-2): dónde se activa, dónde va la salida descartada, cómo se compara | Con el módulo de calibración |
+| 10 | ✅ **E-31** · Modo shadow del evaluador (A-2): **Fase 1 hecha** (replay), Fase 2 sobre tráfico real pendiente del pipeline de evaluación. Diseño en [04](../03-capacidades-de-ia/golden-set-y-calibracion/04-shadow-del-evaluador.md) | Hecho (Fase 1) |
 
 ### Cómo conviven los dos sets
 

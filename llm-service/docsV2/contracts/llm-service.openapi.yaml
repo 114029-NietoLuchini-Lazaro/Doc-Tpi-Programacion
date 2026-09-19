@@ -172,6 +172,59 @@ paths:
       security: [{ serviceJwt: [llm.golden-set.manage] }]
       parameters: [ { $ref: '#/components/parameters/CourseCohortId' }, { $ref: '#/components/parameters/GoldenSetVersionId' }, { $ref: '#/components/parameters/IdempotencyKey' }, { $ref: '#/components/parameters/Traceparent' }, { $ref: '#/components/parameters/RequestId' } ]
       responses: { '200': { description: Golden Set publicado, content: { application/json: { schema: { $ref: '#/components/schemas/GoldenSetVersion' } } } }, '409': { $ref: '#/components/responses/Problem' }, '422': { $ref: '#/components/responses/Problem' } }
+  /course-cohorts/{courseCohortId}/shadow-runs:
+    get:
+      tags: [Administration]
+      summary: Lista las corridas de shadow del evaluador de un curso
+      description: En el código vive en `/api/llm/courses/{courseId}/shadow-runs`, igual que las calibraciones.
+      operationId: listShadowRuns
+      security: [{ serviceJwt: [llm.calibration.manage] }]
+      parameters:
+        - $ref: '#/components/parameters/CourseCohortId'
+        - $ref: '#/components/parameters/Traceparent'
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200': { description: Corridas del curso, más recientes primero (máx. 100), content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: '#/components/schemas/ShadowRun' } } } } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Administration]
+      summary: Pide un shadow del evaluador (E-31)
+      description: |
+        Evalúa una rúbrica candidata y la activa del curso (baseline) sobre las mismas transcripciones ya
+        guardadas y compara los puntajes. **La salida se descarta**: solo se guarda la comparación en tablas
+        propias; no emite scores, eventos ni toca la calibración ni las evaluaciones reales. Es informativo:
+        no activa nada. Exige una calibración activa en el curso (esa rúbrica es la baseline). Asíncrono:
+        consultar el recurso hasta COMPLETED o FAILED. Las transcripciones se anonimizan antes de salir al proveedor.
+      operationId: createShadowRun
+      security: [{ serviceJwt: [llm.calibration.manage] }]
+      parameters:
+        - $ref: '#/components/parameters/CourseCohortId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Traceparent'
+        - $ref: '#/components/parameters/RequestId'
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateShadowRunRequest' } } }
+      responses:
+        '202': { description: Corrida aceptada, content: { application/json: { schema: { $ref: '#/components/schemas/ShadowRun' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /course-cohorts/{courseCohortId}/shadow-runs/{shadowRunId}:
+    get:
+      tags: [Administration]
+      summary: Consulta el progreso y la comparación de un shadow
+      operationId: getShadowRun
+      security: [{ serviceJwt: [llm.calibration.manage] }]
+      parameters:
+        - $ref: '#/components/parameters/CourseCohortId'
+        - $ref: '#/components/parameters/ShadowRunId'
+        - $ref: '#/components/parameters/Traceparent'
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200': { description: Estado actual, content: { application/json: { schema: { $ref: '#/components/schemas/ShadowRun' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
   /admin/provider-credentials:
     get:
       tags: [Administration]
@@ -248,6 +301,7 @@ components:
     RequestId: { name: X-Request-Id, in: header, required: true, schema: { type: string, maxLength: 128 } }
     CourseCohortId: { name: courseCohortId, in: path, required: true, schema: { type: string, format: uuid } }
     CalibrationRunId: { name: calibrationRunId, in: path, required: true, schema: { type: string, format: uuid } }
+    ShadowRunId: { name: shadowRunId, in: path, required: true, schema: { type: string, format: uuid } }
     RubricVersionId: { name: rubricVersionId, in: path, required: true, schema: { type: string, format: uuid } }
     GoldenSetVersionId: { name: goldenSetVersionId, in: path, required: true, schema: { type: string, format: uuid } }
     CredentialId: { name: credentialId, in: path, required: true, schema: { type: string, format: uuid } }
@@ -463,3 +517,53 @@ components:
         detail: { type: string }
         codigo: { type: string }
         requestId: { type: string }
+    CreateShadowRunRequest:
+      type: object
+      required: [candidateRubricVersionId, source]
+      properties:
+        candidateRubricVersionId: { type: string, format: uuid, description: Rúbrica a validar (puede ser un borrador del curso). Debe ser distinta de la activa. }
+        source: { type: string, enum: [GOLDEN_SET, TUTOR_CONVERSATIONS], description: GOLDEN_SET reproduce una versión del golden set (con nota humana); TUTOR_CONVERSATIONS reproduce conversaciones reales del tutor del curso. }
+        goldenSetVersionId: { type: string, format: uuid, description: Obligatorio con GOLDEN_SET y prohibido con la otra fuente. }
+        sampleSize: { type: integer, minimum: 1, maximum: 100, description: Tope configurable (llm.shadow.max-sample-size). Por defecto, el tope. }
+        divergenceThreshold: { type: number, exclusiveMinimum: 0, description: Puntos de diferencia final a partir de los cuales un caso cuenta como divergente. Por defecto 10. }
+    ShadowRun:
+      type: object
+      required: [id, courseId, baselineRubricVersionId, candidateRubricVersionId, source, state, progress, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        courseId: { type: string, format: uuid }
+        baselineRubricVersionId: { type: string, format: uuid }
+        candidateRubricVersionId: { type: string, format: uuid }
+        source: { type: string, enum: [GOLDEN_SET, TUTOR_CONVERSATIONS] }
+        goldenSetVersionId: { type: string, format: uuid, nullable: true }
+        sampleSize: { type: integer }
+        divergenceThreshold: { type: number }
+        state: { type: string, enum: [QUEUED, RUNNING, COMPLETED, FAILED] }
+        progress: { type: integer, minimum: 0, maximum: 100 }
+        summary: { allOf: [{ $ref: '#/components/schemas/ShadowSummary' }], nullable: true, description: Solo cuando state es COMPLETED. }
+        failureCode: { type: string, nullable: true, enum: [NO_SAMPLES, INVALID_RUBRIC, SHADOW_EXECUTION_FAILED] }
+        createdByUserId: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+        startedAt: { type: string, format: date-time, nullable: true }
+        finishedAt: { type: string, format: date-time, nullable: true }
+    ShadowSummary:
+      type: object
+      description: |
+        Comparación candidata vs. baseline. Cada versión se pondera con los pesos de su propia rúbrica.
+        divergencia = candidata − baseline; sesgo > 0 significa que la candidata puntúa más alto.
+        Los casos fallidos se cuentan pero quedan fuera de las estadísticas.
+      properties:
+        totalCases: { type: integer }
+        comparedCases: { type: integer }
+        failedCases: { type: integer }
+        mae: { type: number, description: Promedio de la divergencia absoluta. }
+        bias: { type: number, description: Promedio de la divergencia con signo. }
+        maxDivergence: { type: number }
+        shareOverThreshold: { type: number, minimum: 0, maximum: 1 }
+        baselineMaeVsHuman: { type: number, nullable: true, description: Solo con fuente GOLDEN_SET. }
+        candidateMaeVsHuman: { type: number, nullable: true, description: Solo con fuente GOLDEN_SET. }
+        mostDivergent:
+          type: array
+          maxItems: 5
+          items: { type: object, properties: { sourceRef: { type: string }, baselineFinal: { type: number }, candidateFinal: { type: number }, delta: { type: number } } }
+        recommendation: { type: string, enum: [PROCEED_TO_CALIBRATION, REVIEW, INSUFFICIENT_DATA], description: Consejo para el docente, no una decisión automática. PROCEED_TO_CALIBRATION habilita lanzar la calibración PAR-14 formal. }
