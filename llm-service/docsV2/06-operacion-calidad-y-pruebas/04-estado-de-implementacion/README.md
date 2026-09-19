@@ -52,7 +52,7 @@
 | Épica | Carpeta | Estado global | Última auditoría |
 |---|---|---|---|
 | **EP-01** · Plataforma, contratos e integración | [`ep-01/`](ep-01/README.md) | 🟡 desigual — H04 🟢, resto con huecos concretos (ver carpeta) | 2026-09-12 |
-| **EP-02** · AI Gateway, modelos y resiliencia | [`ep-02/`](ep-02/README.md) | 🟢 H10 construida (puerto + fake); 🔴 catálogo de modelos por curso sigue hardcodeado | 2026-09-12 |
+| **EP-02** · AI Gateway, modelos y resiliencia | [`ep-02/`](ep-02/README.md) | 🟡 flujo principal completo (puerto, fake, Groq, catálogo en base, cambio sin redeploy); H03 (reintentos, breaker, presupuesto, uso) construida con presupuesto y bitácora **mock en memoria**; siguen sin pasar por el gateway los embeddings y el chat de prueba admin; alertas solo por log — ver [`ep-02/`](ep-02/README.md) | 2026-09-19 |
 | **EP-03** · Golden set y referencia humana | [`ep-03/`](ep-03/README.md) | 🟢 golden set y rúbrica por curso sólidos; 🔴 dos placeholders sin LLM real | 2026-09-12 |
 | **EP-04** · Calibración y gobernanza del modelo | [`ep-04/`](ep-04/README.md) | 🟢 conectada con H10 — un run ya termina `PASSED`/`FAILED` | 2026-09-13 |
 | **EP-05** · Tutor seguro y guardarraíles | [`ep-05/`](ep-05/README.md) | 🟡 interacción síncrona con guardarraíles e histórico multi-turno construidos; sin historia formal ni streaming | 2026-09-13 |
