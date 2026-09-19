@@ -86,3 +86,40 @@ la pantalla 1.
 del guardarraíl anti-fuga; para Tema 05 es el umbral de originalidad entre entregas de
 alumnos. Ver [transversales del README](../README.md#glosario-de-colisiones-de-vocabulario) y
 [`11-glosario-y-metadata.md`](../../../00-gobierno-y-evolucion/03-glosario-y-metadata.md).
+
+## 🔴 Kafka — contrato de `practice-events` a cerrar (2026-09-19)
+
+Al revisar [`llm-service.asyncapi.yaml`](../../../contracts/llm-service.asyncapi.yaml) v2.0.0 contra el código
+(`PracticeAttemptClosedListener`) quedan estas preguntas para Tema 05. Es la lista de arranque:
+se agregan acá todos los temas nuevos que salgan de la charla.
+
+- [ ] **Message Key de `practice-events`:** la define el productor y hoy figura "Pendiente" en el
+  AsyncAPI. Confirmar qué usan (¿`attemptId`? ¿`courseCohortId`?) y el orden que garantiza.
+- [ ] **`AttemptClosed` — campos y versión:** confirmar `attemptId`, `courseCohortId`, `learnerId`,
+  `transcript` (forma de cada mensaje del transcript, tamaño máximo) y `eventVersion` de partida.
+- [ ] **Topic y `eventType` de nuestros eventos de score:** hoy publicamos en `evaluation-events`
+  (`SCORE-CALCULATED` / `SCORE-DEFERRED`). Confirmar que consumen ese topic y que el nombre les sirve
+  (sigue pendiente lo de "tópico/nombre de versión" de la sección de contrato).
+- [ ] **Payload de `ScoreCalculated` / `ScoreDeferred`:** ya está en el AsyncAPI como **provisorio**
+  (`score`, `dimensions`, `evaluator`, `rubricVersionId`; `reason` y `retryFrom` en el diferido).
+  Falta que Tema 05 lo valide como consumidor.
+- [ ] **Fuente del evento de ediciones/tests del IDE:** ¿Tema 05 o Tema 06 (sandbox)? Ya listado arriba;
+  si es Tema 06 hay que sumarlos a la conversación.
+- [ ] **Reintentos y DLQ:** qué esperan que hagamos ante un `AttemptClosed` inválido o duplicado
+  (hoy: idempotencia por `eventId` + `DeadLetterPublisher`) y quién monitorea la DLQ.
+- [x] **Scope del tutor:** alineado a `llm.tutor.interact` (el registrado en el Gateway y el que exige el
+  código). Se corrigieron los documentos que decían `llm.tutor.invoke`; hay que avisarle a Tema 05.
+- [x] **Evaluador por Kafka (nuestro lado):** `PracticeAttemptClosedListener` ya dispara la evaluación
+  contra el fake y publica `SCORE-CALCULATED`/`SCORE-DEFERRED` en `evaluation-events`
+  (`AttemptEvaluationService`, con IT sobre Kafka embebido). Queda que Tema 05 valide el payload.
+- [ ] **Cohorte → curso → rúbrica:** el evento trae `courseCohortId` y no hay mapa a curso, así que se
+  evalúa siempre con la plantilla institucional. Definir de dónde sale la rúbrica activa del curso.
+- [ ] _(agregar acá lo que surja)_
+
+## 🟢 Integración en modo test — disponible hoy
+
+Tema 05 puede integrar el tutor (HTTP) y el evaluador (Kafka) contra el `fake` (sin modelo real) sin
+cambios de contrato.
+Alcance y límites en la sección "Modo de prueba" de
+[`tema-05-desafios-practicos.md`](../../../contracts/equipos/tema-05-desafios-practicos.md#modo-de-prueba--integrar-contra-el-tutor-sin-modelo-real-2026-09-19).
+Falta que ellos confirmen que les sirve arrancar así.

@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 public class FakeModelAdapter implements ModelInvocationPort {
   private static final String PROVIDER = "fake";
   private static final String MODEL = "fake-socratic-v1";
+  private static final String EVALUATOR_MODEL = "fake-evaluator-v1";
 
   private final Duration artificialDelay;
   private final boolean forceInvalidResponse;
@@ -42,10 +43,11 @@ public class FakeModelAdapter implements ModelInvocationPort {
         throw new IllegalStateException("Adaptador fake interrumpido", exception);
       }
     }
+    String model = request.function() == ModelFunction.EVALUATOR ? EVALUATOR_MODEL : MODEL;
     if (forceInvalidResponse) {
-      return new ModelInvocationResult("", PROVIDER, MODEL);
+      return new ModelInvocationResult("", PROVIDER, model);
     }
-    return new ModelInvocationResult(respond(request), PROVIDER, MODEL);
+    return new ModelInvocationResult(respond(request), PROVIDER, model);
   }
 
   private String respond(ModelInvocationRequest request) {

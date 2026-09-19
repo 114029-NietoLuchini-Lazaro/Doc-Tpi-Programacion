@@ -1,5 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.messaging.kafka.consumer;
 
+import ar.edu.utn.frc.tup.piv.llm.application.AttemptEvaluationService;
+import ar.edu.utn.frc.tup.piv.llm.application.AttemptEvaluationService.ClosedAttempt;
 import ar.edu.utn.frc.tup.piv.llm.messaging.kafka.KafkaTopics;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,17 +13,21 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Ejemplo concreto del esqueleto de consumidor idempotente (LLM-EP01-H07), sobre el topic
- * {@code practice-events} / eventType {@code ATTEMPT-CLOSED} que hoy consume desde practice-service
- * (Tema 05).
+ * Consumidor idempotente (LLM-EP01-H07) de {@code practice-events} / eventType
+ * {@code ATTEMPT-CLOSED}, que hoy publica practice-service (Tema 05). Valida el envelope común,
+ * aplica CA2-CA4 (deduplicación + dead-letter) y por cada intento cerrado dispara la evaluación
+ * ({@link AttemptEvaluationService}), que publica el score en {@code evaluation-events}.
+ *
+ * <p>Corre en una sola transacción: la reserva del {@code eventId} y el evento de score encolado en
+ * el outbox se confirman juntos, así un fallo entre ambos no pierde el intento (el evento se
+ * reintenta). Un evento mal formado no falla: va a dead-letter y la reserva se conserva.
  *
  * <p><b># fixture provisorio</b> — el contrato real de "intento cerrado" todavía converge con Tema
- * 05 (ver {@code docs/historias/ep-01/h07.md} §"Estrategia de autonomía"); este listener valida el
- * envelope común y aplica CA2-CA4 (deduplicación + dead-letter), pero el payload se trata como
- * opaco. Reemplazar la validación del payload cuando el schema real esté congelado — no inventar
- * campos mientras tanto.
+ * 05 (ver {@code docs/historias/ep-01/h07.md} §"Estrategia de autonomía"). Se leen solo los campos
+ * del AsyncAPI ({@code attemptId, courseCohortId, learnerId, transcript}); no se inventan otros.
  */
 @Component
 @ConditionalOnProperty(prefix = "llm.kafka", name = "enabled", havingValue = "true")
@@ -29,19 +35,23 @@ public class PracticeAttemptClosedListener {
 
   private static final Logger log = LoggerFactory.getLogger(PracticeAttemptClosedListener.class);
   private static final String CONSUMER_GROUP = "llm-service";
+  static final String ATTEMPT_CLOSED = "ATTEMPT-CLOSED";
 
   private final KafkaConsumedEventsRepository consumedEvents;
   private final DeadLetterPublisher deadLetterPublisher;
+  private final AttemptEvaluationService evaluation;
   private final ObjectMapper mapper;
 
   public PracticeAttemptClosedListener(KafkaConsumedEventsRepository consumedEvents,
-      DeadLetterPublisher deadLetterPublisher, ObjectMapper mapper) {
+      DeadLetterPublisher deadLetterPublisher, AttemptEvaluationService evaluation, ObjectMapper mapper) {
     this.consumedEvents = consumedEvents;
     this.deadLetterPublisher = deadLetterPublisher;
+    this.evaluation = evaluation;
     this.mapper = mapper;
   }
 
   @KafkaListener(topics = KafkaTopics.PRACTICE_EVENTS, groupId = CONSUMER_GROUP)
+  @Transactional
   public void onMessage(@Payload String rawValue, @Header(value = "kafka_receivedMessageKey", required = false) String key) {
     JsonNode envelope;
     try {
@@ -72,8 +82,35 @@ public class PracticeAttemptClosedListener {
       return;
     }
 
-    // El efecto de negocio real (registrar el cierre de intento) se agrega cuando el contrato de
-    // Tema 05 esté congelado; por ahora el esqueleto solo garantiza dedup + no bloqueo de partición.
-    log.info("Evento procesado [eventId={}, eventType={}]", eventId, eventType);
+    if (!ATTEMPT_CLOSED.equals(eventType)) {
+      log.info("Evento ignorado [eventId={}, eventType={}]", eventId, eventType);
+      return;
+    }
+    ClosedAttempt attempt = closedAttempt(envelope.path("payload"));
+    if (attempt == null) {
+      deadLetterPublisher.send(KafkaTopics.PRACTICE_EVENTS, key, rawValue,
+          "ATTEMPT-CLOSED sin attemptId, courseCohortId, learnerId o transcript válidos");
+      return;
+    }
+    evaluation.evaluate(attempt);
+    log.info("Evento procesado [eventId={}, eventType={}, attemptId={}]", eventId, eventType, attempt.attemptId());
+  }
+
+  /** @return el intento cerrado, o null si el payload no trae los cuatro campos del contrato. */
+  private static ClosedAttempt closedAttempt(JsonNode payload) {
+    try {
+      JsonNode transcript = payload.path("transcript");
+      if (!transcript.isArray()) {
+        return null;
+      }
+      return new ClosedAttempt(uuid(payload, "attemptId"), uuid(payload, "courseCohortId"), uuid(payload, "learnerId"),
+          transcript);
+    } catch (IllegalArgumentException notUuid) {
+      return null;
+    }
+  }
+
+  private static UUID uuid(JsonNode payload, String field) {
+    return UUID.fromString(payload.path(field).asText(""));
   }
 }

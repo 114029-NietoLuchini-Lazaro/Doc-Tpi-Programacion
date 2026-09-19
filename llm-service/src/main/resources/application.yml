@@ -70,6 +70,12 @@ llm:
       api-key: ${GROQ_API_KEY:}
       base-url: ${GROQ_BASE_URL:https://api.groq.com/openai/v1}
       model: ${GROQ_MODEL:openai/gpt-oss-20b}
+  evaluation:
+    # Evaluación de intentos cerrados (ATTEMPT-CLOSED de practice-events → SCORE-* en evaluation-events).
+    # Sin mapa cohorte→curso, la rúbrica sale de acá: por defecto la plantilla institucional sembrada (V14).
+    rubric-version-id: ${LLM_EVALUATION_RUBRIC_VERSION_ID:10000000-0000-0000-0000-000000000002}
+    timeout-ms: ${LLM_EVALUATION_TIMEOUT_MS:8000}
+    retry-after-minutes: ${LLM_EVALUATION_RETRY_AFTER_MINUTES:30}
   tutor:
     trusted-service: practice-service
     required-scope: llm.tutor.interact

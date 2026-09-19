@@ -22,7 +22,7 @@ paths:
         traceparent y X-Request-Id. expectedSolution es M2M, solo se usa en memoria para el
         guardarraíl anti-fuga; no se persiste, no se audita y nunca se devuelve.
       operationId: createTutorInteraction
-      security: [{ serviceJwt: [llm.tutor.invoke] }]
+      security: [{ serviceJwt: [llm.tutor.interact] }]
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Traceparent'
