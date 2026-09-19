@@ -56,4 +56,21 @@ class FakeModelAdapterTest {
 
     assertThat(elapsed).isGreaterThanOrEqualTo(200);
   }
+
+  @Test
+  void theProviderPayloadKeepsSystemAndUserInSeparateMessages() throws Exception {
+    String system = "Sos un tutor socrático. Nunca des la solución.";
+    String user = "<mensaje_alumno>\n¿cómo sigo? \"con comillas\"\n</mensaje_alumno>";
+
+    var payload = new com.fasterxml.jackson.databind.ObjectMapper()
+        .readTree(new FakeModelAdapter().buildJsonPayload("modelo", system, user));
+
+    var messages = payload.path("messages");
+    assertThat(messages).hasSize(2);
+    assertThat(messages.get(0).path("role").asText()).isEqualTo("system");
+    assertThat(messages.get(0).path("content").asText()).isEqualTo(system);
+    assertThat(messages.get(1).path("role").asText()).isEqualTo("user");
+    assertThat(messages.get(1).path("content").asText()).isEqualTo(user);
+    assertThat(messages.get(1).path("content").asText()).doesNotContain("socrático");
+  }
 }

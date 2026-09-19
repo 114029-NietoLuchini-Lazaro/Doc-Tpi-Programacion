@@ -109,7 +109,7 @@ public class FakeModelAdapter implements ModelInvocationPort {
     return null;
   }
 
-  private String buildJsonPayload(String model, String systemPrompt, String userPrompt) {
+  String buildJsonPayload(String model, String systemPrompt, String userPrompt) {
     StringBuilder sb = new StringBuilder();
     sb.append("{\"model\":\"").append(escapeJson(model)).append("\",\"messages\":[");
     boolean hasSystem = systemPrompt != null && !systemPrompt.isBlank();

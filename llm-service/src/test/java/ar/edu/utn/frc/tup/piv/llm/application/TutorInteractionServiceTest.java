@@ -223,4 +223,10 @@ class TutorInteractionServiceTest {
     assertThat(response.message()).isEqualTo(ar.edu.utn.frc.tup.piv.llm.domain.ai.InputGuard.SAFE_REDIRECT);
     verify(models, never()).invoke(any(), anyString(), anyString(), any());
   }
+
+  @Test
+  void theFallbackSystemPromptKeepsTheDataNotInstructionsRule() {
+    assertThat(TutorInteractionService.DEFAULT_SYSTEM_PROMPT)
+        .contains("<mensaje_alumno>").contains("<historial>").contains("<turno>").contains("DATO");
+  }
 }
