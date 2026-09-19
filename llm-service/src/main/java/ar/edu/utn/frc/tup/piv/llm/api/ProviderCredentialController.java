@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-@RestController @RequestMapping("/api/llm/admin")
+@RestController @RequestMapping("${app.api.private-path}/admin")
 public class ProviderCredentialController {
   private final ProviderCredentialRepository repository; private final EncryptedSecretService crypto; private final ProviderLlmGateway gateway; private final GoldenSetAuthorization authorization; private final EvaluatorModelEvents events;
   public ProviderCredentialController(ProviderCredentialRepository repository, EncryptedSecretService crypto, ProviderLlmGateway gateway, GoldenSetAuthorization authorization, EvaluatorModelEvents events) { this.repository=repository; this.crypto=crypto; this.gateway=gateway; this.authorization=authorization; this.events=events; }

@@ -1,5 +1,9 @@
 openapi: 3.0.3
 
+# OBSOLETO (2026-09-18): EP-08 ya esta implementada y su contrato vigente es
+# llm-service-v1-moderacion.openapi.yaml (endpoints /moderation/v1/*). Este borrador describe
+# /ai/moderador, que NO existe. Se conserva solo como referencia historica.
+
 # BORRADOR — sin implementar. Portado tal cual de codigo-ejemplo/ms-evaluacion-llm (eliminada el
 # 2026-09-12 al consolidarse en llm-service, ver docs/estado-implementacion/codigo-ejemplo/) para
 # no perder este insumo de diseño. EP-08 (moderación) todavía no empezó — ningún controller de

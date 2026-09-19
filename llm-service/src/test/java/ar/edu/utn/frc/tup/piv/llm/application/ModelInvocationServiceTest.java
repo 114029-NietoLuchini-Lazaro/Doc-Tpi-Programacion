@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.InvalidModelResponseException;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelFunction;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationPort;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationRequest;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationResult;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelTimeoutException;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.FunctionModelConfigRepository;
@@ -67,6 +68,54 @@ class ModelInvocationServiceTest {
     long elapsed = System.currentTimeMillis() - start;
 
     assertThat(elapsed).isLessThan(300);
+  }
+
+  @Test
+  void routesToConfiguredProviderDynamicallyWithoutRedeployment() {
+    Adapter fakeAdapter = request -> new ModelInvocationResult("respuesta del fake", "fake", "fake-socratic-v1");
+    ModelInvocationPort groqAdapter = new ModelInvocationPort() {
+      @Override
+      public ModelInvocationResult invoke(ModelInvocationRequest request) {
+        return new ModelInvocationResult("respuesta real de groq", "groq", "llama-3.3-70b-versatile");
+      }
+      @Override
+      public String provider() { return "groq"; }
+      @Override
+      public String model() { return "llama-3.3-70b-versatile"; }
+    };
+
+    var configs = mock(FunctionModelConfigRepository.class);
+    // Primero configurado en groq:
+    when(configs.find(ModelFunction.TUTOR))
+        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("groq", "llama-3.3-70b-versatile", "1", true)));
+
+    var service = new ModelInvocationService(configs, java.util.List.of(fakeAdapter, groqAdapter));
+
+    var groqResult = service.invoke(ModelFunction.TUTOR, "system", "¿cómo ordeno?", Duration.ofSeconds(1));
+    assertThat(groqResult.text()).isEqualTo("respuesta real de groq");
+    assertThat(groqResult.provider()).isEqualTo("groq");
+
+    // Luego cambia en la base a fake (sin redesplegar):
+    when(configs.find(ModelFunction.TUTOR))
+        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("fake", "fake-socratic-v1", "1", true)));
+
+    var fakeResult = service.invoke(ModelFunction.TUTOR, "system", "¿cómo ordeno?", Duration.ofSeconds(1));
+    assertThat(fakeResult.text()).isEqualTo("respuesta del fake");
+    assertThat(fakeResult.provider()).isEqualTo("fake");
+  }
+
+  @Test
+  void throwsExceptionWhenProviderIsNotRegistered() {
+    Adapter fakeAdapter = request -> new ModelInvocationResult("pista", "fake", "fake-socratic-v1");
+    var configs = mock(FunctionModelConfigRepository.class);
+    when(configs.find(ModelFunction.TUTOR))
+        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("unsupported-provider", "m1", "1", true)));
+
+    var service = new ModelInvocationService(configs, java.util.List.of(fakeAdapter));
+
+    assertThatThrownBy(() -> service.invoke(ModelFunction.TUTOR, "system", "pregunta", Duration.ofSeconds(1)))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("No hay adaptador registrado para el proveedor 'unsupported-provider'");
   }
 
   private ModelInvocationService serviceWithAdapter(Adapter adapter) {

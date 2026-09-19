@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Administrative institutional evidence. Course APIs remain unchanged. */
 @RestController
-@RequestMapping("/api/llm/admin/institutional-calibration")
+@RequestMapping("${app.api.private-path}/admin/institutional-calibration")
 public class InstitutionalCalibrationController {
   private final CalibrationRunRepository runs; private final ProviderCredentialRepository deployments; private final GoldenSetAuthorization authorization;
   public InstitutionalCalibrationController(CalibrationRunRepository runs, ProviderCredentialRepository deployments, GoldenSetAuthorization authorization) {this.runs=runs;this.deployments=deployments;this.authorization=authorization;}

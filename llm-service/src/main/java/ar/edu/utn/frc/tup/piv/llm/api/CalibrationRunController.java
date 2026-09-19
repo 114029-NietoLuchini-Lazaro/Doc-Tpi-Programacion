@@ -9,7 +9,7 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/llm/courses/{courseId}/calibrations")
+@RequestMapping("${app.api.private-path}/courses/{courseId}/calibrations")
 public class CalibrationRunController {
   private final CalibrationRunService s;
   private final GoldenSetAuthorization a;

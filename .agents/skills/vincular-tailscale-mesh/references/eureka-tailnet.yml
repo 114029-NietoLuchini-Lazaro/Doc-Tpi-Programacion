@@ -1,0 +1,42 @@
+# Spring Cloud Eureka: que el micro detecte SOLO la IP del tailnet.
+#
+# Por que no se pasa la IP por entorno: compose valida el archivo entero antes
+# de crear nada, asi que un `${TS_PING_IP:?}` sin valor impide levantar hasta
+# el sidecar que la daria (chicken-and-egg). Y una IP efimera hardcodeada queda
+# vieja al recrear la identidad del nodo.
+#
+# OJO CON preferred-networks: Spring NO entiende CIDR.
+# Verificado en spring-cloud-commons 5.0.3 (InetUtils): por cada valor prueba
+#   ip.matches(valor)     -> regex contra la IP completa
+#   ip.startsWith(valor)  -> prefijo de texto
+# "100.64.0.0/10" no cumple ninguna de las dos contra "100.94.20.6": no
+# encuentra IP preferida y cae en la eleccion por defecto (la 172.x). Usar
+# "100." o la regex exacta (con comillas simples YAML, que conservan `\`).
+
+spring:
+  cloud:
+    inetutils:
+      preferred-networks:
+        - "100."        # prefijo simple; alcanza en la practica
+        # Rango exacto 100.64.0.0/10:
+        # - '100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\..*'
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://tpi-plataforma.tail767776.ts.net:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: false        # SOLO el gateway lleva true
+    healthcheck:
+      enabled: true              # Eureka publica el readiness de Actuator
+  instance:
+    prefer-ip-address: true      # hostName = IP elegida (la 100.x del tailnet)
+    # instance-id UNICO POR INSTANCIA (no "unico por servicio"): dos instancias
+    # con el MISMO instance-id se pisan en Eureka (la ultima sobreescribe a la
+    # otra aunque tengan IP distinta).
+    #   - Una sola instancia:             app:puerto
+    #   - Replicas (sidecar por replica): definir APP_INSTANCE_ID por servicio
+    instance-id: ${spring.application.name}:${APP_INSTANCE_ID:${server.port}}
+    # Fallback explicito, solo si preferred-networks no aplica en tu setup.
+    # La IP es efimera: hay que actualizarla tras cada recreacion del nodo.
+    # ip-address: ${EUREKA_INSTANCE_IP_ADDRESS:}

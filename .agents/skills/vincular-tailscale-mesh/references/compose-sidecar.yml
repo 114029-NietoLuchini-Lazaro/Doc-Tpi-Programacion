@@ -1,0 +1,72 @@
+# Sidecar Tailscale + micro compartiendo su namespace de red.
+# Reemplazar <SERVICE_ID>, <SEG>, <APP_PORT>, <APP_PORT+1>.
+# Requiere en .env: TS_AUTHKEY (con tag) y TS_SERVER_HOST.
+# NO agregar a <SERVICE_ID>: ports:, networks:, dns:, extra_hosts:.
+# NO usar TS_USERSPACE=true: sin tailscale0 no hay conectividad.
+
+services:
+  mesh-client:
+    # Fijar la version probada (docker exec <sidecar> tailscale version).
+    # No usar `latest` en un entorno compartido.
+    image: tailscale/tailscale:v1.102.3
+    container_name: mesh-<SEG>
+    hostname: <SERVICE_ID>
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}      # tagged y efimera; por entorno, NUNCA al repo
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_HOSTNAME=<SERVICE_ID>      # nombre en MagicDNS (unico en la tailnet)
+      - TS_USERSPACE=false            # kernel: crea tailscale0 real
+      # Solo si la auth key NO se creo con el tag:
+      # - TS_EXTRA_ARGS=--advertise-tags=tag:micros
+    volumes:
+      - mesh_state:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    restart: unless-stopped
+    healthcheck:
+      # Ordena el arranque del micro. Con `service_started`, el micro puede
+      # salir antes de que tailscale0 este lista.
+      # La tuberia exige CMD-SHELL (no CMD). Si en algun lado se define
+      # TS_SOCKET, agregar --socket=<path> explicito.
+      test: ["CMD-SHELL", "tailscale status --json | grep -q Running"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 20s
+
+  <SERVICE_ID>:
+    build: { context: ., dockerfile: Dockerfile }
+    container_name: tpi-<SEG>
+    # SIN ports:, SIN networks:, SIN dns:, SIN extra_hosts:.
+    network_mode: "service:mesh-client"
+    restart: unless-stopped
+    depends_on:
+      mesh-client: { condition: service_healthy }
+    environment:
+      SERVER_PORT: "<APP_PORT>"
+      MANAGEMENT_PORT: "<APP_PORT+1>"
+      # Infra por nombre MagicDNS (estable ante IPs efimeras).
+      # NO usar los nombres docker del stack de plataforma.
+      EUREKA_URL: "http://${TS_SERVER_HOST:-tpi-plataforma.tail767776.ts.net}:8761/eureka/"
+      GATEWAY_URL: "http://${TS_SERVER_HOST:-tpi-plataforma.tail767776.ts.net}:8080"
+      # JWKS POR EL GATEWAY. Prohibido apuntarlo a :8082 (users-service):
+      #   confirmar la ruta -> curl http://<TS_SERVER_HOST>:8080/.well-known/jwks.json
+      #   si no existe: pedirla a plataforma o desactivar el job JWKS.
+      JWKS_URL: "http://${TS_SERVER_HOST:-tpi-plataforma.tail767776.ts.net}:8080/.well-known/jwks.json"
+      # Registro: la IP del tailnet la detecta Spring (preferred-networks).
+      # NO hace falta IP por entorno.
+    volumes:
+      # MagicDNS adentro del micro (no se puede usar `dns:`).
+      # Caso B (servicios propios por nombre): ver references/resolv.conf.
+      - ./resolv.conf:/etc/resolv.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:<APP_PORT+1>/actuator/health/readiness | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+volumes:
+  mesh_state:

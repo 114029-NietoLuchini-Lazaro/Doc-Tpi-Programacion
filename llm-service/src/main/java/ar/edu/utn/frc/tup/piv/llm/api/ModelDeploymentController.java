@@ -25,14 +25,14 @@ public class ModelDeploymentController {
     this.courseAuthorization = courseAuthorization;
   }
 
-  @GetMapping("/api/llm/courses/{courseId}/model-deployments")
+  @GetMapping("${app.api.private-path}/courses/{courseId}/model-deployments")
   public ModelDeploymentPage listForCourse(@PathVariable UUID courseId, @RequestHeader HttpHeaders headers) {
     var actor = authorization.require(headers);
     courseAuthorization.requireTeacher(courseId, actor, headers);
     return new ModelDeploymentPage(service.listEnabledDeployments());
   }
 
-  @GetMapping("/api/llm/admin/model-adapters")
+  @GetMapping("${app.api.private-path}/admin/model-adapters")
   public ModelAdapterPage listAdapters(@RequestHeader HttpHeaders headers) {
     authorization.require(headers);
     var deployments = service.listEnabledDeployments();

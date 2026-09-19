@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/llm/courses/{courseId}/rubrics")
+@RequestMapping("${app.api.private-path}/courses/{courseId}/rubrics")
 public class RubricController {
   private final RubricPublicationService publicationService;
   private final RubricDraftService draftService;

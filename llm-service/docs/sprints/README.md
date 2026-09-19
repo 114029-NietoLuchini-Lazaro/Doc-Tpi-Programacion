@@ -28,7 +28,7 @@
 | **0** | [`sprint-0/`](sprint-0/README.md) | Por ejecutar | Ninguna | Acuerdos, capacidad de S1 y ambiente. Sin incremento de software. |
 | **1** | [`sprint-1/`](sprint-1/README.md) | ✅ Listo para Planning | 30 HU/Tareas (7 hilos en paralelo, ~660–681 h + 9 a estimar) | Golden set, proveedor real, tutor, calibración plataforma, cola de evaluación, **+ arranque de EP-07 y de la extensión de EP-09**. |
 | **2** | [`sprint-2/`](sprint-2/README.md) | Por planificar | 12 HU/Tareas (~348–368 h + variable) | Cerrar EP-06 completa (apelación, override, bloqueo de cierre) **+ cerrar EP-07 y la extensión de EP-09** que S1 dejó a mitad. |
-| **3** | [`sprint-3/`](sprint-3/README.md) | Por planificar | Regresión + cobertura (~40–65 h) | Hardening, cobertura ≥ 95%, colchón `courses-service`. Vuelve a ser colchón — EP-07 y la extensión de EP-09 se adelantaron a S1/S2. |
+| **3** | [`sprint-3/`](sprint-3/README.md) | Por planificar | Regresión + cobertura (~40–65 h) | Hardening, cobertura ≥ 90%, colchón `courses-service`. Vuelve a ser colchón — EP-07 y la extensión de EP-09 se adelantaron a S1/S2. |
 | **4** | [`sprint-4/`](sprint-4/README.md) | Por planificar | Integración E2E + **EP-08 completa** (~205–230 h) | Ambiente compartido real, corrección de errores de integración, moderación integrada de punta a punta. |
 | **5** | [`sprint-5/`](sprint-5/README.md) | Por planificar | Demo + defensa + **EP-10 completa** + streaming (~201–221 h) | Demo grabada, deck de defensa, desafío personalizado y agente por mención. |
 

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Global academic configuration. Authorization is intentionally separate from teacher endpoints. */
 @RestController
-@RequestMapping("/api/llm/admin/rubric-templates")
+@RequestMapping("${app.api.private-path}/admin/rubric-templates")
 public class RubricTemplateController {
   private final RubricTemplateService templates;
   private final GoldenSetAuthorization authorization;

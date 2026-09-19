@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Explicit two-step activation prevents unreviewed migration of course challenges. */
 @RestController
-@RequestMapping("/api/llm/courses/{courseId}/calibrations/{runId}")
+@RequestMapping("${app.api.private-path}/courses/{courseId}/calibrations/{runId}")
 public class CalibrationActivationController {
   private final CalibrationActivationPreviewService previews;
   private final CalibrationMigrationConfirmation confirmations;

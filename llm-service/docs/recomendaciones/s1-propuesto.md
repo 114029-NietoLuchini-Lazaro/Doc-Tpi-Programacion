@@ -88,7 +88,7 @@ Planning contra la canónica `LLM-S01-H06`.
 | `LLM-S01-H06` *(canónica)* | **docente autorizado** consulta su golden set aunque el servicio se reinicie | RF-IA-30 a 36; adenda golden set | Devuelve lo cargado tras `docker compose restart`; paginado y ordenado por fecha desc. **Neg:** cohorte ajena no aparece; `goldenSetId` inexistente → `404` (no `500`); `size=500` → `400` | **P5** | H04 | 14 | **estimar primero** | Pendiente |
 | `LLM-S01-H07` | **docente** usa una pantalla mínima para alta, carga y consulta | RF-IA-30 a 36 | Formulario/listado real por Gateway, estados de carga/error, autorización visible, WCAG AA. **Neg:** backend caído → aviso claro y navegable; transcripción no-JSON no se envía; `403` → «no autorizado» | **P5** | H05, H06 | 24 | *(Planning)* | Pendiente |
 | `LLM-S01-H08` | *(equipo de integración)* contrato OpenAPI y mock del golden set publicados | contratos v1; RF-NFR-01 | OpenAPI con **solo** operaciones existentes; mock con una línea documentada; adenda revisada con `admin-service`. **Neg:** PR con operación no implementada o campo no acordado → bloqueado | **P1** | H03 | 10 | *(Planning)* | Pendiente |
-| `LLM-S01-H09` | *(equipo)* suite de pruebas y guía de demo de S1 | [24](../24-convenciones-cobertura.md); [25](../25-matriz-pruebas-infraestructura.md) | Unitarias + Testcontainers/Flyway + WireMock del Gateway + prueba de reinicio de Compose; cobertura ≥ 95 %; guía de demo reproducible. **Neg:** cobertura bajo umbral → CI falla; pérdida de datos en reinicio → falla y bloquea la Review | **P1** (una persona por pareja) | H04–H07 | 18 | *(Planning)* | Pendiente |
+| `LLM-S01-H09` | *(equipo)* suite de pruebas y guía de demo de S1 | [24](../24-convenciones-cobertura.md); [25](../25-matriz-pruebas-infraestructura.md) | Unitarias + Testcontainers/Flyway + WireMock del Gateway + prueba de reinicio de Compose; cobertura ≥ 90 %; guía de demo reproducible. **Neg:** cobertura bajo umbral → CI falla; pérdida de datos en reinicio → falla y bloquea la Review | **P1** (una persona por pareja) | H04–H07 | 18 | *(Planning)* | Pendiente |
 | `LLM-S01-H10` *(adelantada de S3)* | *(equipo)* puerto de invocación de modelos con adaptador fake, sin SDK de proveedor en `domain` | RF-IA-11; RF-IA-25/26 | Puerto sin import de SDK en `domain`; fake por WireMock cumple schema estricto; tabla función→proveedor+modelo editable sin redeploy. **Neg:** respuesta fuera de schema → error controlado; timeout → error controlado, no cuelgue | **P2** | H01 | 32 | *(Planning)* | Pendiente |
 | | | | | | **Total** | **240** | | |
 
@@ -148,7 +148,7 @@ controles académicos para cumplir fecha.
 - [ ] Interfaz y persistencia reales; recorrido completo.
 - [ ] `admin-service` (consumidor del contrato) al tanto de la adenda S1.
 - [ ] Contratos y migración coinciden con lo desplegado.
-- [ ] Pruebas aplicables pasan; cobertura ≥ 95 %.
+- [ ] Pruebas aplicables pasan; cobertura ≥ 90 %.
 - [ ] Guía de recuperación (reinicio) documentada.
 
 ---

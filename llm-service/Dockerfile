@@ -11,5 +11,5 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /build/target/llm-service-0.0.1-SNAPSHOT.jar app.jar
-EXPOSE 8080
+EXPOSE 8086 8087
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

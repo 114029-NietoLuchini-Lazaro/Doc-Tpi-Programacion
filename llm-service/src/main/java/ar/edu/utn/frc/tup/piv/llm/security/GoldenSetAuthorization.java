@@ -18,6 +18,7 @@ public class GoldenSetAuthorization {
   private final boolean workbench;
   private final UUID workbenchUser;
 
+  @Autowired
   public GoldenSetAuthorization(@Value("${llm.gateway.trusted-service}") String trustedService,
       @Value("${llm.gateway.required-scope}") String requiredScope,
       @Value("${llm.gateway.template-required-scope}") String templateRequiredScope,

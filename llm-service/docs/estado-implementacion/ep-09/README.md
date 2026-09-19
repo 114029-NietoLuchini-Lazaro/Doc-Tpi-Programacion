@@ -67,7 +67,7 @@ y `PdfDiagramDetectionAdapterTest` (PDFs construidos en memoria con PDFBox, sin 
 `RagGatewayAuthorizationTest`, `RagControllerTest`. **179 tests corriendo, 0 fallos.**
 
 Cobertura de instrucciones de todo el código nuevo/tocado por este trabajo (EP-05 + EP-09):
-**76.2%** (líneas: 77.5%) — por debajo del 95% que exige `AGENTS.md`. El hueco no está repartido
+**76.2%** (líneas: 77.5%) — por debajo del 90% que exige `AGENTS.md`. El hueco no está repartido
 parejo:
 
 | Clase | Cobertura | Por qué |

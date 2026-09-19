@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Status for AI-usage evaluations only; this controller never exposes academic grading. */
 @RestController
-@RequestMapping("/api/llm/courses/{courseId}")
+@RequestMapping("${app.api.private-path}/courses/{courseId}")
 public class CourseEvaluationStatusController {
   private final CourseEvaluationStatusService status;
   private final GoldenSetAuthorization identity;

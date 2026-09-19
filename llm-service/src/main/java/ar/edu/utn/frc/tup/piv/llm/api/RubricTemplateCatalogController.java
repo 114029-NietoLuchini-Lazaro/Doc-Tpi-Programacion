@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Read-only catalogue teachers use when starting a course rubric. */
 @RestController
-@RequestMapping("/api/llm/rubric-templates")
+@RequestMapping("${app.api.private-path}/rubric-templates")
 public class RubricTemplateCatalogController {
   private final RubricTemplateService templates; private final GoldenSetAuthorization authorization;
   public RubricTemplateCatalogController(RubricTemplateService templates, GoldenSetAuthorization authorization) { this.templates = templates; this.authorization = authorization; }

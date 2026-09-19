@@ -1,4 +1,4 @@
-﻿# Sprint 5 — EP-10 completa, streaming del tutor, demo grabada y defensa
+# Sprint 5 — EP-10 completa, streaming del tutor, demo grabada y defensa
 
 > **Estado:** Por planificar — el registro se crea en la Planning de S5.
 > **Referencia:** [`38`](../../38-plan-de-5-sprints.md) · Parte 3 · Sprint 5
@@ -23,12 +23,13 @@ Demo grabada, deck de defensa ante la cátedra, margen final de calendario, **y 
 > Épica y fichas ya escritas — [`historias/ep-10/`](../../historias/ep-10/README.md). Receta histórica de referencia: [`35` · S17–S18](../../35-backlog-ejecutable.md) (~416 h) — la ficha real de cada historia suma 116 h.
 > **Prerequisito real, no de horas:** EP-09 con datos reales (✅ ya cubierto), EP-08 con moderación disponible (Sprint 4), y contrato acordado con `challenges-service` y `chat-service` ([`epicas/ep-10.md`](../../epicas/ep-10.md) · Suposiciones). Si Sprint 4 no cerró EP-08, EP-10 se recorta en la Planning de S5 — no se adelanta igual.
 
-| ID | Título | Tipo | Pareja | h (real) | Ficha |
-|---|---|---|---|---:|---|
-| LLM-S17-H01 | Solicitar un desafío personalizado generado a partir del material de mi curso | HU de valor | P5+P4 | 38 | [h01.md](../../historias/ep-10/h01.md) |
-| LLM-S17-H02 | Que la generación del desafío sea durable y la entrega al motor no se duplique | Tarea (habilitador) | P4 | 32 | [h02.md](../../historias/ep-10/h02.md) |
-| LLM-S18-H01 | Mencionar a @agente en el chat y recibir una respuesta citada y moderada | HU de valor | P3+P5 | 30 | [h03.md](../../historias/ep-10/h03.md) |
-| LLM-S18-H02 | Que el agente solo responda a menciones válidas de personas reales y nunca a otros bots | Tarea (habilitador) | P3 | 16 | [h04.md](../../historias/ep-10/h04.md) |
+| ID | Título | Tipo | Pareja | h (real) | Ficha HU | Tareas SMART |
+|---|---|---|---|---:|---|---|
+| LLM-S17-H01 | Solicitar un desafío personalizado generado a partir del material de mi curso | HU de valor | P5+P4 | 38 | [h01.md](../../historias/ep-10/h01.md) | [7 tareas (38 h)](../../tareas/ep-10/h01.md) |
+| LLM-S17-H02 | Que la generación del desafío sea durable y la entrega al motor no se duplique | Tarea (habilitador) | P4 | 32 | [h02.md](../../historias/ep-10/h02.md) | [6 tareas (32 h)](../../tareas/ep-10/h02.md) |
+| LLM-S18-H01 | Mencionar a @agente en el chat y recibir una respuesta citada y moderada | HU de valor | P3+P5 | 30 | [h03.md](../../historias/ep-10/h03.md) | [6 tareas (30 h)](../../tareas/ep-10/h03.md) |
+| LLM-S18-H02 | Que el agente solo responda a menciones válidas de personas reales y nunca a otros bots | Tarea (habilitador) | P3 | 16 | [h04.md](../../historias/ep-10/h04.md) | [4 tareas (16 h)](../../tareas/ep-10/h04.md) |
+
 
 ### Streaming/SSE del tutor (P2) · ~50 h
 
