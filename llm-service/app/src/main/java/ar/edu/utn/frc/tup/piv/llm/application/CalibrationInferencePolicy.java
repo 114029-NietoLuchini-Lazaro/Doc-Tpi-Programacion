@@ -16,7 +16,7 @@ public class CalibrationInferencePolicy {
     public EffectiveSettings resolve(ProviderCapabilities capabilities, long seed) {
         var settings = new InferenceSettings("v2", capabilities.temperature() ? 0d : null,
                 capabilities.topP() ? 1d : null, null, capabilities.seed() ? seed : null,
-                capabilities.structuredJson(), 128);
+                false, 1024);
         return new EffectiveSettings(settings, capabilities);
     }
 
@@ -31,7 +31,7 @@ public class CalibrationInferencePolicy {
             values.put("structuredJson", settings.structuredJson());
             values.put("maxOutputTokens", settings.maxOutputTokens());
             values.put("capabilities", capabilities);
-            return Map.copyOf(values);
+            return java.util.Collections.unmodifiableMap(values);
         }
     }
 }

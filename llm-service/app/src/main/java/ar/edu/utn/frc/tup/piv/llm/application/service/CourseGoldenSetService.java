@@ -21,30 +21,34 @@ import org.springframework.transaction.annotation.Transactional;
 public class CourseGoldenSetService {
   private final CourseGoldenSetRepository goldenSets;
   private final AuditRepository audit;
+  private final CalibrationExpirationService expirations;
 
   @Autowired
-  public CourseGoldenSetService(CourseGoldenSetRepository goldenSets, AuditRepository audit) {
+  public CourseGoldenSetService(CourseGoldenSetRepository goldenSets, AuditRepository audit, CalibrationExpirationService expirations) {
     this.goldenSets = goldenSets;
     this.audit = audit;
+    this.expirations = expirations;
   }
 
   public CourseGoldenSetService(CourseGoldenSetRepository goldenSets) {
-    this(goldenSets, null);
+    this(goldenSets, null, null);
   }
+
+  @Transactional(readOnly = true)
+  public List<CourseGoldenSetView> list(UUID courseId) { return goldenSets.list(courseId); }
+
+
 
   /** The copied family belongs exclusively to the course; subsequent edits cannot affect the platform base. */
   @Transactional
   public CourseGoldenSetVersion copyFromPublishedBase(UUID courseId, UUID baseVersionId, CallerIdentity actor) {
     try {
       return goldenSets.copyPublishedPlatformVersion(courseId, baseVersionId, actor.delegatedUserId())
-          .orElseThrow(() -> new IllegalStateException("El Golden Set base publicado no existe"));
-    } catch (DuplicateKeyException exception) {
-      throw new IllegalStateException("El curso ya tiene una copia de esta familia Golden Set", exception);
+          .orElseThrow(() -> new IllegalStateException("La versión base no existe o no está publicada"));
+    } catch (DuplicateKeyException e) {
+      throw new IllegalStateException("El curso ya posee un Golden Set", e);
     }
   }
-
-  @Transactional(readOnly = true)
-  public List<CourseGoldenSetView> list(UUID courseId) { return goldenSets.list(courseId); }
 
   @Transactional
   public CourseGoldenSetVersion createDraft(UUID courseId, String name, CallerIdentity actor) {
@@ -79,8 +83,13 @@ public class CourseGoldenSetService {
     if (cases < 3 || cases > 5) {
       throw new GoldenSetSizeException("Para publicar el Golden Set necesitás entre tres y cinco casos");
     }
+    var version = goldenSets.findDetail(courseId, versionId)
+        .orElseThrow(() -> new IllegalStateException("El Golden Set no existe"));
     if (!goldenSets.publishDraft(courseId, versionId)) {
       throw new IllegalStateException("El Golden Set no existe en el curso o ya no es un borrador");
+    }
+    if (expirations != null) {
+      expirations.expireByGoldenSet(version.familyId());
     }
     if (audit != null) {
       audit.record("golden_set.published", "golden-set-version", versionId, actor,

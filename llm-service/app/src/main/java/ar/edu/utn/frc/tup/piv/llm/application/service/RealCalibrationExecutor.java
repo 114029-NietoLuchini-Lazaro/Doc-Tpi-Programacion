@@ -37,16 +37,32 @@ public class RealCalibrationExecutor {
         all.add(new CalibrationMetrics.CaseScores(item.humanScores(),model)); runs.progress(runId,++completed*100/total);
       }
       var metrics=CalibrationMetrics.assess(all,execution.weights()); runs.recordInference(runId, json.writeValueAsString(settings.auditView()), fingerprint); runs.finish(runId,metrics.passed(),metrics.maeFinal(),metrics.maxIndividualError()); runs.refreshStability(runId);
-    } catch (Exception failure) { var diagnostic=diagnostic(failure); runs.fail(runId,diagnostic.code(),diagnostic.detail()); runs.refreshStability(runId); }
+    } catch (Exception failure) { 
+        System.out.println("CALIBRATION FAILED EXCEPTION:");
+        failure.printStackTrace();
+        var diagnostic=diagnostic(failure); 
+        runs.fail(runId,diagnostic.code(),diagnostic.detail()); 
+        runs.refreshStability(runId); 
+      }
   }
   private String prompt(String rubric, CalibrationRunRepository.Case item) {
     return "Actuás como evaluador pedagógico. Evaluá la conversación y el contexto con esta rúbrica:\n%s\nConversación: %s\nContexto: %s\nRespondé exclusivamente JSON, sin Markdown, con las cinco claves AUTONOMY, CLARITY, PROGRESSION, COMPLIANCE y EFFICIENCY. Cada valor debe ser un entero de 0 a 100.".formatted(rubric,item.transcript(),item.challengeContext());
   }
   private Map<Dimension,Integer> parseScores(String value) {
+    System.out.println("LLM RESPONSE WAS: " + value);
     try {
-      JsonNode root=json.readTree(value); Map<Dimension,Integer> scores=new EnumMap<>(Dimension.class);
-      for(var dimension:Dimension.values()) { JsonNode score=root.get(dimension.name()); if(score==null||!score.isIntegralNumber()||score.intValue()<0||score.intValue()>100) throw new IllegalArgumentException("Puntaje de proveedor inválido"); scores.put(dimension,score.intValue()); }
-      if(root.size()!=Dimension.values().length) throw new IllegalArgumentException("Respuesta estructurada inválida"); return Map.copyOf(scores);
+      String clean = value;
+      int start = clean.indexOf("{");
+      int end = clean.lastIndexOf("}");
+      if (start != -1 && end != -1 && end >= start) clean = clean.substring(start, end + 1);
+      JsonNode root=json.readTree(clean); Map<Dimension,Integer> scores=new EnumMap<>(Dimension.class);
+      for(var dimension:Dimension.values()) { 
+          JsonNode score=root.get(dimension.name()); 
+          if (score == null) score = root.get(dimension.name().toLowerCase());
+          if(score==null||!score.isIntegralNumber()||score.intValue()<0||score.intValue()>100) throw new IllegalArgumentException("Puntaje de proveedor inválido"); 
+          scores.put(dimension,score.intValue()); 
+      }
+      return Map.copyOf(scores);
     } catch (Exception error) { throw new IllegalArgumentException("La respuesta del proveedor no tiene el formato de evaluación requerido",error); }
   }
   private Diagnostic diagnostic(Exception failure) {

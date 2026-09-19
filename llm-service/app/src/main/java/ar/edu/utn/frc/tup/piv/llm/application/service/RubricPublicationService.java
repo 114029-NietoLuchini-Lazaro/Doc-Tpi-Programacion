@@ -13,10 +13,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class RubricPublicationService {
   private final RubricVersionRepository rubrics;
   private final AuditRepository audit;
+  private final CalibrationExpirationService expirations;
 
-  public RubricPublicationService(RubricVersionRepository rubrics, AuditRepository audit) {
+  public RubricPublicationService(RubricVersionRepository rubrics, AuditRepository audit, CalibrationExpirationService expirations) {
     this.rubrics = rubrics;
     this.audit = audit;
+    this.expirations = expirations;
   }
 
   /** Publishes only a complete valid draft. Published versions are immutable in the database. */
@@ -27,11 +29,13 @@ public class RubricPublicationService {
       throw new IllegalStateException("La rúbrica no existe en el curso o ya no es un borrador");
     }
     RubricValidator.validateForPublication(dimensions);
-    validateAnchors(rubrics.find(courseId, versionId)
-        .orElseThrow(() -> new IllegalStateException("La rúbrica no existe en el curso")).dimensions());
+    var version = rubrics.find(courseId, versionId)
+        .orElseThrow(() -> new IllegalStateException("La rúbrica no existe en el curso"));
+    validateAnchors(version.dimensions());
     if (!rubrics.publishDraft(courseId, versionId)) {
       throw new IllegalStateException("La rúbrica fue modificada mientras se publicaba");
     }
+    expirations.expireByRubric(version.familyId());
     audit.record("rubric.published", "rubric-version", versionId, actor,
         "{\"courseId\":\"" + courseId + "\"}");
   }
