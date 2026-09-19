@@ -99,7 +99,6 @@ services:
       LLM_KAFKA_ENABLED: "false"
       SPRING_KAFKA_CONSUMER_GROUP_ID: "llm-service-shadow"
       NOTIFICATIONS_ENABLED: "false"
-      MODERATION_RETENTION_ENABLED: "false"
       TRUST_UNSIGNED_BEARER: "false"
       # Proveedores LLM: vacíos por defecto para no consumir cuota real.
       # Para comparar respuestas de IA reales, definir claves de prueba en .env.
