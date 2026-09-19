@@ -116,4 +116,52 @@ class ModelInvocationGatewayPolicyTest {
     };
     return new ModelInvocationService(configs, List.of(port), policy, budget, usage);
   }
+
+  @Test
+  void usesTheTokensReportedByTheProviderInsteadOfEstimating() {
+    var service = service(FAST, req -> new ModelInvocationResult("ok", "fake", "m", 1000, 500));
+
+    service.invoke(ModelFunction.TUTOR, "s", "p", Duration.ofSeconds(1));
+
+    var rec = usage.recent(1).get(0);
+    assertThat(rec.inputTokens()).isEqualTo(1000);
+    assertThat(rec.outputTokens()).isEqualTo(500);
+  }
+
+  @Test
+  void embeddingsGoThroughTheSamePolicy() {
+    var calls = new AtomicInteger();
+    var configs = mock(FunctionModelConfigRepository.class);
+    when(configs.find(ModelFunction.EMBEDDING))
+        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("fake", "emb", "1", true)));
+    ar.edu.utn.frc.tup.piv.llm.domain.ai.EmbeddingPort port = new ar.edu.utn.frc.tup.piv.llm.domain.ai.EmbeddingPort() {
+      public ar.edu.utn.frc.tup.piv.llm.domain.ai.EmbeddingResult embed(String text) {
+        if (calls.incrementAndGet() < 2) throw new IllegalStateException("503");
+        return new ar.edu.utn.frc.tup.piv.llm.domain.ai.EmbeddingResult(new float[768], "fake", "emb");
+      }
+      public List<ar.edu.utn.frc.tup.piv.llm.domain.ai.EmbeddingResult> embedBatch(List<String> texts) { return List.of(); }
+      public String provider() { return "fake"; }
+      public String model() { return "emb"; }
+    };
+    var service = new EmbeddingInvocationService(configs, port,
+        new ar.edu.utn.frc.tup.piv.llm.application.gateway.GatewayExecutor(FAST, budget, usage));
+
+    service.embed("hola", Duration.ofSeconds(1));
+
+    assertThat(calls).hasValue(2);
+    var rec = usage.recent(1).get(0);
+    assertThat(rec.function()).isEqualTo(ModelFunction.EMBEDDING);
+    assertThat(rec.outcome()).isEqualTo(Outcome.OK);
+    assertThat(rec.attempts()).isEqualTo(2);
+  }
+
+  @Test
+  void pricingComesFromConfiguration() {
+    var props = new ar.edu.utn.frc.tup.piv.llm.application.gateway.GatewayProperties();
+    props.getPricing().setUsdPer1kTokens(java.util.Map.of("acme", 1.0));
+    var log = new GatewayUsageLog(null, props);
+
+    assertThat(log.costOf("acme", 500, 500)).isEqualTo(1.0);
+    assertThat(log.costOf("desconocido", 500, 500)).isZero();
+  }
 }

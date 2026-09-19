@@ -5,6 +5,10 @@
 por proveedor → chequea presupuesto → chequea circuit breaker del proveedor → llama con timeout y
 hasta 3 intentos → valida el formato → registra latencia/costo/resultado.
 
+La política es configurable sin tocar código: `llm.gateway.resilience.*` (`max-attempts`, `backoff-ms`,
+`breaker-min-calls`, `breaker-failure-rate`, `breaker-open-wait-s`, o las variables `LLM_GATEWAY_*`) y
+`llm.gateway.pricing.usd-per-1k-tokens.<proveedor>`. Embeddings y el chat de prueba admin pasan por el mismo camino.
+
 ## Catálogo de modelos
 - Proveedores con adaptador: `fake` (pruebas) y `groq` (real, requiere `GROQ_API_KEY`).
 - Ver/cambiar el modelo de una función: `GET`/`PUT {private-path}/model-assignments/{function}`

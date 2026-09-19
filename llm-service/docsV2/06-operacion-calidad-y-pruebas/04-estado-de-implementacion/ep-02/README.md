@@ -28,13 +28,14 @@ Estado contra los criterios de aceptación de [`epicas/ep-02.md`](../../../07-pl
 | Criterio | Estado |
 |---|---|
 | Flujo completo (límites → proveedor → validación → resultado/error controlado; admin cambia modelo sin redeploy) | 🟢 `ModelInvocationService` + `ModelAssignmentController` |
-| 100 % de llamadas pasan por la capa | 🟡 no: `ProviderCredentialController` (chat de prueba admin) llama a `ProviderLlmGateway` directo y los embeddings usan `EmbeddingInvocationService` sin las políticas de H03 |
+| 100 % de llamadas pasan por la capa | 🟢 `GatewayExecutor` es el único punto de ejecución: lo usan `ModelInvocationService`, `EmbeddingInvocationService` y el chat de prueba admin (`ProviderCredentialController`, sin reintentos). Cubierto por test; no verifiqué que ningún otro camino llame a un proveedor por fuera |
 | Rechazo de respuestas fuera de formato | 🟡 solo `TUTOR` y `EVALUATOR`; `MODERATOR`/`GENERATOR` sin schema |
-| Registro de costo/latencia/errores por llamada | 🟡 mock en memoria (`GatewayUsageLog`, últimas 500, tokens estimados chars/4, precios hardcodeados); `llm_usage_records` (V17) sigue solo para `ADMIN_TEST`/`EVALUATION` |
+| Registro de costo/latencia/errores por llamada | 🟡 mock en memoria (`GatewayUsageLog`, últimas 500); tokens reales del proveedor cuando los informa (Groq) y estimados chars/4 si no; precios en `llm.gateway.pricing` (yml); `llm_usage_records` (V17) sigue solo para `ADMIN_TEST`/`EVALUATION` |
 | Presupuesto y cuotas por función y período | 🟡 mock: `GatewayBudget` con límites diarios hardcodeados en memoria; `QuotaRegistry` (por alumno) sigue aparte y sin conectar al gateway |
 | Observabilidad y alertas | 🟡 endpoints `GET /admin/gateway/usage` y `/calls`, métricas Micrometer `llm.gateway.*`; alertas solo por **log** (`ALERTA ...`), sin canal real |
 | Documentación operativa | 🟢 [`runbook-ai-gateway.md`](runbook-ai-gateway.md) |
 
-**Sigue mockeado/hardcodeado (a reemplazar):** política de reintentos (`GatewayPolicy.defaults()`), límites de
-presupuesto, precios por 1k tokens, contadores y bitácora en memoria (se pierden al reiniciar, no
-escalan a más de una réplica), estimación de tokens.
+**Sigue mockeado/hardcodeado (a reemplazar):** límites de presupuesto (hardcodeados en `GatewayBudget`),
+contadores y bitácora en memoria (se pierden al reiniciar, no escalan a más de una réplica), tokens
+estimados cuando el proveedor no los informa (el adaptador `fake` y los de admin sin uso). Política de
+reintentos/breaker y precios ya son configurables por `llm.gateway.*`.

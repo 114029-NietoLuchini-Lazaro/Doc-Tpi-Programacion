@@ -29,20 +29,22 @@ public class GatewayUsageLog {
   public record Summary(ModelFunction function, long calls, long errors, int inputTokens, int outputTokens,
       double costUsd, double avgLatencyMs) {}
 
-  private static final Map<String, Double> USD_PER_1K_TOKENS = Map.of("groq", 0.0002, "fake", 0.0);
-
   private final Deque<CallRecord> records = new ArrayDeque<>();
   private final MeterRegistry meters;
+  private final Map<String, Double> usdPer1kTokens;
 
-  public GatewayUsageLog() { this(null); }
+  public GatewayUsageLog() { this(null, new GatewayProperties()); }
 
   @Autowired
-  public GatewayUsageLog(@Autowired(required = false) MeterRegistry meters) { this.meters = meters; }
+  public GatewayUsageLog(@Autowired(required = false) MeterRegistry meters, GatewayProperties properties) {
+    this.meters = meters;
+    this.usdPer1kTokens = properties.getPricing().getUsdPer1kTokens();
+  }
 
   public static int estimateTokens(String text) { return text == null ? 0 : (text.length() + 3) / 4; }
 
-  public static double costOf(String provider, int inputTokens, int outputTokens) {
-    double price = USD_PER_1K_TOKENS.getOrDefault(provider == null ? "" : provider.toLowerCase(), 0.0);
+  public double costOf(String provider, int inputTokens, int outputTokens) {
+    double price = usdPer1kTokens.getOrDefault(provider == null ? "" : provider.toLowerCase(), 0.0);
     return (inputTokens + outputTokens) / 1000.0 * price;
   }
 

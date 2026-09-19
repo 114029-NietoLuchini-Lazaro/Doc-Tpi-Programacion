@@ -53,6 +53,18 @@ llm:
     trusted-service: admin-service
     required-scope: llm.golden-set.manage
     template-required-scope: llm.rubric-template.manage
+    # EP-02·H03: política del AI Gateway (reintentos + circuit breaker por proveedor) y precios
+    # por 1k tokens (input + output) usados para estimar el costo. Sin estas claves rigen los defaults.
+    resilience:
+      max-attempts: ${LLM_GATEWAY_MAX_ATTEMPTS:3}
+      backoff-ms: ${LLM_GATEWAY_BACKOFF_MS:200}
+      breaker-min-calls: ${LLM_GATEWAY_BREAKER_MIN_CALLS:5}
+      breaker-failure-rate: ${LLM_GATEWAY_BREAKER_FAILURE_RATE:50}
+      breaker-open-wait-s: ${LLM_GATEWAY_BREAKER_OPEN_WAIT_S:30}
+    pricing:
+      usd-per-1k-tokens:
+        groq: 0.0002
+        fake: 0.0
   provider:
     groq:
       api-key: ${GROQ_API_KEY:}

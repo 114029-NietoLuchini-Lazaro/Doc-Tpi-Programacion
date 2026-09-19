@@ -67,7 +67,9 @@ public class GroqModelAdapter implements ModelInvocationPort {
     try {
       Response<AiMessage> response = chatModel.generate(messages);
       String responseText = response != null && response.content() != null ? response.content().text() : "";
-      return new ModelInvocationResult(responseText, PROVIDER, modelName);
+      var usage = response != null ? response.tokenUsage() : null;
+      return new ModelInvocationResult(responseText, PROVIDER, modelName,
+          usage != null ? usage.inputTokenCount() : null, usage != null ? usage.outputTokenCount() : null);
     } catch (Exception exception) {
       throw new IllegalStateException(
           "Fallo en la comunicación con el proveedor '" + PROVIDER + "': " + exception.getMessage(), exception);
