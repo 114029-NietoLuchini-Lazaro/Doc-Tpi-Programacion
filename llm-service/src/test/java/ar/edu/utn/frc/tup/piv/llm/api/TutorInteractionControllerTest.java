@@ -12,6 +12,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 class TutorInteractionControllerTest {
 
@@ -34,6 +36,39 @@ class TutorInteractionControllerTest {
     var order = Mockito.inOrder(authorization, service);
     order.verify(authorization).require(headers);
     order.verify(service).respond(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(actor));
+  }
+
+  @Test
+  void rejectsInvalidAuthenticationBeforeReachingTheService() {
+    var service = mock(TutorInteractionService.class);
+    var authorization = new TutorGatewayAuthorization("practice-service", "llm.tutor.interact", false, UUID.randomUUID());
+    var controller = new TutorInteractionController(service, authorization);
+    var body = new TutorInteractionController.Request(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "hola", "low", null);
+    var headers = new HttpHeaders();
+    headers.add("X-Service-Id", "intruso");
+    headers.add("X-Service-Scopes", "llm.tutor.interact");
+    headers.add("X-Delegated-User", UUID.randomUUID().toString());
+
+    assertThatThrownBy(() -> controller.create(body, UUID.randomUUID(), headers))
+        .isInstanceOfSatisfying(ResponseStatusException.class,
+            e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+    Mockito.verifyNoInteractions(service);
+  }
+
+  @Test
+  void rejectsMissingDelegatedUserBeforeReachingTheService() {
+    var service = mock(TutorInteractionService.class);
+    var authorization = new TutorGatewayAuthorization("practice-service", "llm.tutor.interact", false, UUID.randomUUID());
+    var controller = new TutorInteractionController(service, authorization);
+    var body = new TutorInteractionController.Request(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "hola", "low", null);
+    var headers = new HttpHeaders();
+    headers.add("X-Service-Id", "practice-service");
+    headers.add("X-Service-Scopes", "llm.tutor.interact");
+
+    assertThatThrownBy(() -> controller.create(body, UUID.randomUUID(), headers))
+        .isInstanceOfSatisfying(ResponseStatusException.class,
+            e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
+    Mockito.verifyNoInteractions(service);
   }
 
   @Test

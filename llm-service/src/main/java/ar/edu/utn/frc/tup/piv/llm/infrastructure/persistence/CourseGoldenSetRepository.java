@@ -19,6 +19,7 @@ public class CourseGoldenSetRepository {
   private static final ObjectMapper JSON = new ObjectMapper();
   private final JdbcTemplate jdbc;
   private final ObjectMapper mapper;
+  @org.springframework.beans.factory.annotation.Autowired
   public CourseGoldenSetRepository(JdbcTemplate jdbc, ObjectMapper mapper) { this.jdbc = jdbc; this.mapper = mapper; }
   public CourseGoldenSetRepository(JdbcTemplate jdbc) { this(jdbc, JSON); }
 

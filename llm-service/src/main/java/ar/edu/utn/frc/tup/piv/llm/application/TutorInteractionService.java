@@ -5,8 +5,10 @@ import ar.edu.utn.frc.tup.piv.llm.domain.ai.InvalidModelResponseException;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelFunction;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelTimeoutException;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.OutputAntiLeakGuard;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.UntrustedText;
 import ar.edu.utn.frc.tup.piv.llm.domain.tutor.Conversation;
 import ar.edu.utn.frc.tup.piv.llm.domain.tutor.ConversationRepository;
+import ar.edu.utn.frc.tup.piv.llm.domain.tutor.ExpectedSolutionProvider;
 import ar.edu.utn.frc.tup.piv.llm.domain.tutor.Message;
 import ar.edu.utn.frc.tup.piv.llm.domain.tutor.MessageRepository;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.AuditRepository;
@@ -20,7 +22,11 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -43,6 +49,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class TutorInteractionService {
   private static final String OPERATION = "tutor.interaction";
+  private static final Pattern PLACEHOLDER = Pattern.compile("\\{(tema|historico|pregunta)}");
   private static final int HISTORY_WINDOW = 4; // últimos 2 turnos, mismo criterio que RagChatService
 
   private final ModelInvocationService models;
@@ -50,6 +57,7 @@ public class TutorInteractionService {
   private final AuditRepository audit;
   private final ConversationRepository conversations;
   private final MessageRepository messages;
+  private final ExpectedSolutionProvider expectedSolutions;
   private final ObjectMapper mapper;
   private final InputGuard inputGuard = new InputGuard();
   private final OutputAntiLeakGuard outputGuard = new OutputAntiLeakGuard();
@@ -58,13 +66,15 @@ public class TutorInteractionService {
   private final String userPromptTemplate;
 
   public TutorInteractionService(ModelInvocationService models, IdempotencyRepository idempotency,
-      AuditRepository audit, ConversationRepository conversations, MessageRepository messages, ObjectMapper mapper,
+      AuditRepository audit, ConversationRepository conversations, MessageRepository messages,
+      ExpectedSolutionProvider expectedSolutions, ObjectMapper mapper,
       @Value("${llm.tutor.invocation-timeout-ms:8000}") long timeoutMs) {
     this.models = models;
     this.idempotency = idempotency;
     this.audit = audit;
     this.conversations = conversations;
     this.messages = messages;
+    this.expectedSolutions = expectedSolutions;
     this.mapper = mapper;
     this.timeout = Duration.ofMillis(timeoutMs);
     this.systemPrompt = readPrompt("system-v1.txt");
@@ -90,24 +100,25 @@ public class TutorInteractionService {
     UUID interactionId = UUID.randomUUID();
     Conversation conversation = resolveConversation(request);
     List<Message> recentHistory = recentHistory(conversation.id());
-    messages.save(Message.de(conversation.id(), Message.ROL_ALUMNO, request.message()));
+    messages.save(conversation.crearMensajeAlumno(request.message()));
 
     boolean guardTriggered = false;
     Response response;
 
-    if (inputGuard.isJailbreak(request.message())) {
+    if (inputGuard.isSuspicious(request.message())) {
       response = new Response(InputGuard.SAFE_REDIRECT, "completed", conversation.id());
       guardTriggered = true;
     } else {
       response = invokeModel(request, conversation, recentHistory);
       if ("completed".equals(response.state()) && !"low".equals(request.riskLevel())
-          && outputGuard.containsLeak(response.message(), null)) {
+          && outputGuard.containsLeak(response.message(),
+              expectedSolutions.forChallenge(request.challengeId()).orElse(null))) {
         response = new Response(OutputAntiLeakGuard.SAFE_REPLACEMENT, "completed", conversation.id());
         guardTriggered = true;
       }
     }
 
-    messages.save(Message.de(conversation.id(), Message.ROL_TUTOR, response.message()));
+    messages.save(conversation.crearMensajeTutor(response.message()));
     audit.record(OPERATION, "tutor-interaction", interactionId, actor, auditDetails(request, response, guardTriggered));
     idempotency.complete(OPERATION, actor, idempotencyKey, interactionId, mapper.valueToTree(response));
     return response;
@@ -133,15 +144,13 @@ public class TutorInteractionService {
 
   private Response invokeModel(Request request, Conversation conversation, List<Message> history) {
     String historico = history.stream()
-        .map(m -> m.rol() + ": " + m.contenido())
-        .reduce((a, b) -> a + "\n" + b)
-        .orElse("");
+        .map(m -> UntrustedText.historyTurn(m.rol(), m.contenido()))
+        .collect(Collectors.joining("\n"));
+    String pregunta = UntrustedText.studentMessage(request.message());
     String userPrompt = userPromptTemplate.isBlank()
-        ? request.message()
-        : userPromptTemplate
-            .replace("{tema}", "Desafío " + request.challengeId())
-            .replace("{historico}", historico)
-            .replace("{pregunta}", request.message());
+        ? pregunta
+        : render(userPromptTemplate, Map.of(
+            "tema", "Desafío " + request.challengeId(), "historico", historico, "pregunta", pregunta));
     String system = systemPrompt.isBlank()
         ? "Eres un tutor socrático. Guía al alumno sin dar la solución de código."
         : systemPrompt;
@@ -153,6 +162,19 @@ public class TutorInteractionService {
           "El tutor no está disponible en este momento. Podés seguir intentando el desafío mientras se restablece.",
           "unavailable", conversation.id());
     }
+  }
+
+  /** Reemplaza los `{campo}` de la plantilla en una sola pasada: lo que ya se insertó (texto del
+   * alumno, historial) nunca se vuelve a escanear, así que un `{pregunta}` escrito por el alumno no
+   * se expande. */
+  private static String render(String template, Map<String, String> values) {
+    var matcher = PLACEHOLDER.matcher(template);
+    var out = new StringBuilder();
+    while (matcher.find()) {
+      matcher.appendReplacement(out, Matcher.quoteReplacement(values.get(matcher.group(1))));
+    }
+    matcher.appendTail(out);
+    return out.toString();
   }
 
   private String auditDetails(Request request, Response response, boolean guardTriggered) {

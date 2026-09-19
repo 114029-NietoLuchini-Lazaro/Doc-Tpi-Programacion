@@ -18,6 +18,7 @@ public class CalibrationRunRepository {
   private final JdbcTemplate jdbc;
   private final ObjectMapper json;
 
+  @org.springframework.beans.factory.annotation.Autowired
   public CalibrationRunRepository(JdbcTemplate jdbc, ObjectMapper json) {
     this.jdbc = jdbc;
     this.json = json;
