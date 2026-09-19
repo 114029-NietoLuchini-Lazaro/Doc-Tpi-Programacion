@@ -60,7 +60,7 @@
 | EP-07 · Operación, cuotas y observabilidad | — | ⬜ sin código encontrado | — |
 | EP-08 · Moderación integrada (F2) | — | ⬜ sin código; contrato de referencia preservado en [`docs/contracts/llm-service-v1-moderacion-borrador.yaml`](../../contracts/historicos-y-contratos-v1/llm-service-v1-moderacion-borrador.yaml) | 2026-09-12 |
 | **EP-09** · RAG y consulta de material (F3) | [`ep-09/`](ep-09/README.md) | 🟡 ingesta + chat con citas construidos (179 tests, 76% cobertura); sin proveedor real de embeddings/LLM y sin verificar contra Postgres+pgvector real (los 4 repos JDBC están en 0% de cobertura, bloqueados por Docker en el entorno de esta sesión) | 2026-09-13 |
-| EP-10 · Personalización y agente (F3) | — | ⬜ sin código encontrado | — |
+| **EP-10** · Personalización y agente (F3) | [`../../07-planificacion-y-trabajo-equipo/09-epicas-historias-tareas-sprints/historias/ep-10/`](../../07-planificacion-y-trabajo-equipo/09-epicas-historias-tareas-sprints/historias/ep-10/README.md) | 🟡 código de mención al agente construido (`AgentMentionService`, protección anti-bucle, cuota, moderación de salida) y pruebas al ~90 % según el equipo (2026-09-19); pendiente confirmar el 10 % restante y la parte de generación/entrega de desafíos | 2026-09-19 |
 
 > Subsistemas que el código ya construyó pero que ninguna épica reclama con certeza:
 > [`pendiente-de-epica/`](pendiente-de-epica/README.md). Análisis de los dos proyectos de
