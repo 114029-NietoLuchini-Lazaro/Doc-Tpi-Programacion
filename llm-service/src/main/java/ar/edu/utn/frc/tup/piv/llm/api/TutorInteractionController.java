@@ -36,7 +36,8 @@ public class TutorInteractionController {
     var actor = authorization.require(headers);
     validate(body);
     var request = new TutorInteractionService.Request(body.attemptId(), body.challengeId(),
-        body.courseCohortId(), body.learnerId(), body.message(), body.riskLevel(), body.conversacionId());
+        body.courseCohortId(), body.learnerId(), body.message(), body.riskLevel(), body.conversacionId(),
+        body.expectedSolution());
     return service.respond(request, idempotencyKey, actor);
   }
 
@@ -52,7 +53,21 @@ public class TutorInteractionController {
     }
   }
 
-  /** Espejo de `TutorInteractionRequest` del contrato v1. `conversacionId` es opcional. */
+  /** Espejo de `TutorInteractionRequest` del contrato. `conversacionId` y `expectedSolution` son
+   * opcionales. `expectedSolution` es material sensible M2M: solo lo usa el guardarraíl de salida,
+   * en memoria; no se persiste, no se audita y no se imprime (ver `toString`). */
   public record Request(UUID attemptId, UUID challengeId, UUID courseCohortId, UUID learnerId, String message,
-      String riskLevel, UUID conversacionId) {}
+      String riskLevel, UUID conversacionId, String expectedSolution) {
+
+    public Request(UUID attemptId, UUID challengeId, UUID courseCohortId, UUID learnerId, String message,
+        String riskLevel, UUID conversacionId) {
+      this(attemptId, challengeId, courseCohortId, learnerId, message, riskLevel, conversacionId, null);
+    }
+
+    @Override
+    public String toString() {
+      return "Request[attemptId=" + attemptId + ", challengeId=" + challengeId + ", courseCohortId=" + courseCohortId
+          + ", riskLevel=" + riskLevel + ", expectedSolution=" + (expectedSolution == null ? "null" : "[REDACTED]") + "]";
+    }
+  }
 }

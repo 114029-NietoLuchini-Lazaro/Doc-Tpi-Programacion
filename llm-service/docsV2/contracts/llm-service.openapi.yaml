@@ -19,8 +19,10 @@ paths:
       summary: Solicita una respuesta pedagógica segura del tutor
       description: |
         Solo practice-service invoca esta operación. El Gateway debe propagar identidad delegada,
-        traceparent y X-Request-Id. expectedSolution es M2M, solo se usa en memoria para el
-        guardarraíl anti-fuga; no se persiste, no se audita y nunca se devuelve.
+        traceparent y X-Request-Id. expectedSolution es opcional y M2M: solo se usa en memoria para
+        el guardarraíl anti-fuga; no se persiste, no se audita y nunca se devuelve.
+        Un fallo del modelo NO es un error HTTP: responde 200 con state `unavailable`.
+        Mismo Idempotency-Key + mismo cuerpo devuelve la misma respuesta sin volver a invocar al modelo.
       operationId: createTutorInteraction
       security: [{ serviceJwt: [llm.tutor.interact] }]
       parameters:
@@ -34,13 +36,12 @@ paths:
             schema: { $ref: '#/components/schemas/TutorInteractionRequest' }
       responses:
         '200':
-          description: Interacción procesada; state informa si la respuesta se entregó, fue bloqueada o no está disponible.
+          description: Interacción procesada; state informa si la respuesta se entregó o el tutor no está disponible.
           headers: { X-Request-Id: { $ref: '#/components/headers/RequestId' } }
           content: { application/json: { schema: { $ref: '#/components/schemas/TutorInteractionResponse' } } }
-        '400': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Problem' }
-        '429': { $ref: '#/components/responses/Problem' }
-        '503': { $ref: '#/components/responses/Problem' }
+        '401': { description: Servicio o scope incorrecto (se exige practice-service con llm.tutor.interact)., content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+        '403': { description: Falta la identidad delegada o no es un UUID válido., content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+        '422': { description: Cuerpo inválido (campo obligatorio ausente, message en blanco o riskLevel fuera del enum)., content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
   /course-cohorts/{courseCohortId}/calibration:
     get:
       tags: [Courses]
@@ -317,22 +318,25 @@ components:
   schemas:
     TutorInteractionRequest:
       type: object
-      required: [attemptId, challengeId, courseCohortId, message, riskLevel]
+      description: Los campos desconocidos se ignoran (lector tolerante), así que se pueden agregar campos sin romper.
+      required: [attemptId, challengeId, courseCohortId, learnerId, message, riskLevel]
       properties:
         attemptId: { type: string, format: uuid }
         challengeId: { type: string, format: uuid }
         courseCohortId: { type: string, format: uuid, description: Debe coincidir con el contexto autorizado por Practice. }
-        message: { type: string, minLength: 1, maxLength: 12000 }
-        riskLevel: { type: string, enum: [low, medium, high] }
-        expectedSolution: { type: string, writeOnly: true, description: Material sensible M2M; no persistir, loguear ni devolver. }
+        learnerId: { type: string, format: uuid }
+        message: { type: string, minLength: 1 }
+        riskLevel: { type: string, enum: [low, medium, high], description: "Lo fija Tema 05 según el tipo de desafío. Con `low` no corre el guardarraíl de salida." }
+        conversacionId: { type: string, format: uuid, description: "Opcional. Agrupa turnos de una misma conversación; si no viene se abre una nueva y se devuelve su id." }
+        expectedSolution: { type: string, writeOnly: true, description: "Opcional. Material sensible M2M: solo lo usa el guardarraíl de salida (con riskLevel medium o high), en memoria; no se persiste, loguea, audita ni devuelve. Si el mensaje del tutor la contiene, se reemplaza por una redirección socrática." }
     TutorInteractionResponse:
       type: object
-      required: [interactionId, state]
+      description: Se pueden agregar campos opcionales sin romper a quien ya consume (lector tolerante).
+      required: [message, state, conversacionId]
       properties:
-        interactionId: { type: string, format: uuid }
-        state: { type: string, enum: [completed, blocked, unavailable] }
-        message: { type: string, description: Presente solo en completed; nunca contiene solución ni código resolutivo. }
-        reason: { type: string, enum: [anti_leak_guard, provider_unavailable], description: Presente para blocked o unavailable. }
+        message: { type: string, description: "Siempre presente. En `completed`, el mensaje del tutor (nunca la solución); en `unavailable`, un aviso fijo." }
+        state: { type: string, enum: [completed, blocked, unavailable], description: "`blocked` está reservado para la variante con streaming y hoy no se produce (cuando el guardarraíl actúa se sustituye el mensaje y queda `completed`), pero el consumidor debe manejarlo para no romperse cuando se use." }
+        conversacionId: { type: string, format: uuid }
     ActiveCalibration:
       type: object
       required: [courseCohortId, calibrationRunId, rubricVersionId, activatedAt]

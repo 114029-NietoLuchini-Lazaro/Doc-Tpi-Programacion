@@ -1,7 +1,8 @@
 # Tema 05 — Desafíos Prácticos — contratos
 
-> Este documento es el contrato completo y vigente con Tema 05 (incluye los diagramas de
-> secuencia del tutor y el evaluador) — `18` §4 ya no repite este detalle. Carta original:
+> **Lo que se le entrega a Tema 05 para integrar es [`tema-05-contrato-de-integracion.md`](tema-05-contrato-de-integracion.md)**
+> (contrato, decisiones y política de evolución). Este documento conserva el contexto: diagramas de
+> secuencia del tutor y el evaluador, presupuestos y decisiones de diseño — `18` §4 ya no repite este detalle. Carta original:
 > [docs/entregas/alcance-y-contrato-para-desafios-practicos.md](../../01-vision-alcance-y-entrega/03-entregas/alcance-y-contrato-para-desafios-practicos.md).
 > Reglas generales: [18 §0](../91-contratos-inter-equipos-historicos.md#0-cómo-leemos-los-contratos).
 
@@ -73,7 +74,7 @@ sequenceDiagram
 > todavía; (2) el cálculo del pico de tráfico usa ~8 s por respuesta contra un objetivo de 2 s
 > — de esa brecha depende cuántas réplicas hacen falta (I-03 en `17` §8).
 
-### Cuerpo de la solicitud ✅ (schema real: `TutorInteractionRequest`)
+### Cuerpo de la solicitud ✅ (schema: `TutorInteractionRequest`; el ejemplo completo con los campos opcionales está en el [contrato de integración](tema-05-contrato-de-integracion.md#request))
 
 ```json
 {
@@ -97,12 +98,13 @@ desafío, nosotros no lo inferimos.
 - El guardarraíl anti-fuga (RF-IA-20) corre de nuestro lado antes de devolver la respuesta:
   nunca se expone la solución ni los tests ocultos (ADR-008).
 
-### Cuerpo de la respuesta ✅ (schema real: `TutorInteractionResponse`)
+### Cuerpo de la respuesta ✅ (schema: `TutorInteractionResponse`)
 
 ```json
 {
   "message": "¿Qué pasa con `n` en cada llamada recursiva? Fijate qué valor tiene justo antes de que se cumpla la condición de corte.",
-  "state": "completed"
+  "state": "completed",
+  "conversacionId": "b1e2c3d4-0005-4a00-8000-000000000005"
 }
 ```
 
@@ -265,7 +267,7 @@ redeploy) el contrato que ustedes consumen es el mismo.
 | `state` | Siempre `completed`. El bot no produce `unavailable` ni `blocked` |
 | Idempotencia | Real: reintento con la misma `Idempotency-Key` devuelve la misma respuesta |
 | Guardarraíl de entrada | Real: un intento de jailbreak devuelve un mensaje fijo, `completed`, sin invocar al modelo |
-| Guardarraíl de salida | Real, pero solo con `riskLevel` `high`/`medium`, y solo detecta bloques de código de más de 8 líneas. **No compara contra la solución esperada** (nadie se la entrega todavía) |
+| Guardarraíl de salida | Real, pero solo con `riskLevel` `high`/`medium`: detecta bloques de código de más de 8 líneas y, si mandan `expectedSolution`, su coincidencia literal |
 | Auditoría | Real: una fila por interacción |
 | Autenticación | Real: servicio confiable `practice-service` + scope `llm.tutor.interact` |
 
@@ -273,6 +275,7 @@ redeploy) el contrato que ustedes consumen es el mismo.
 
 - La calidad pedagógica ni la latencia real (el objetivo de 2 s no se mide contra el fake).
 - La regeneración por fuga ni el estado `unavailable` (la escalera de degradación no se ejercita).
+- La comparación por similitud (umbral 70%): hoy es coincidencia literal.
 - La calidad del score: el evaluador `fake` devuelve puntajes determinísticos por hash del prompt
   (entre 55 y 95), no evalúa nada. Sirve para probar el circuito, no la nota.
 - Que la rúbrica sea la del curso: no hay forma de saber a qué curso pertenece una cohorte, así que

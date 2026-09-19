@@ -101,7 +101,7 @@ public class TutorInteractionService {
     } else {
       response = invokeModel(request, conversation, recentHistory);
       if ("completed".equals(response.state()) && !"low".equals(request.riskLevel())
-          && outputGuard.containsLeak(response.message(), null)) {
+          && outputGuard.containsLeak(response.message(), request.expectedSolution())) {
         response = new Response(OutputAntiLeakGuard.SAFE_REPLACEMENT, "completed", conversation.id());
         guardTriggered = true;
       }
@@ -181,9 +181,23 @@ public class TutorInteractionService {
     }
   }
 
-  /** Espejo de `TutorInteractionRequest` del contrato v1. `conversacionId` es opcional. */
+  /** Espejo de `TutorInteractionRequest` del contrato. `conversacionId` y `expectedSolution` son
+   * opcionales; esta última solo la ve el guardarraíl de salida, no entra en el hash de
+   * idempotencia, la auditoría ni el `toString`. */
   public record Request(UUID attemptId, UUID challengeId, UUID courseCohortId, UUID learnerId, String message,
-      String riskLevel, UUID conversacionId) {}
+      String riskLevel, UUID conversacionId, String expectedSolution) {
+
+    public Request(UUID attemptId, UUID challengeId, UUID courseCohortId, UUID learnerId, String message,
+        String riskLevel, UUID conversacionId) {
+      this(attemptId, challengeId, courseCohortId, learnerId, message, riskLevel, conversacionId, null);
+    }
+
+    @Override
+    public String toString() {
+      return "Request[attemptId=" + attemptId + ", challengeId=" + challengeId + ", courseCohortId=" + courseCohortId
+          + ", riskLevel=" + riskLevel + ", expectedSolution=" + (expectedSolution == null ? "null" : "[REDACTED]") + "]";
+    }
+  }
 
   /** Espejo de `TutorInteractionResponse` del contrato v1 (`state`: completed | blocked |
    * unavailable). `conversacionId` siempre viene presente. */

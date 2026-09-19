@@ -21,7 +21,8 @@ Portado (adaptado) de `codigo-ejemplo/ms-evaluacion-llm`
    por instancia del service.
 4. **Invocación** — vía [`ModelInvocationService`](../ep-02/h10.md) (hoy siempre el fake).
 5. **Guardarraíl de salida** — `OutputAntiLeakGuard.containsLeak` corre cuando `riskLevel` es
-   `high`/`medium` (no en `low`, según la propia adenda SSE); si detecta fuga, reemplaza el
+   `high`/`medium` (no en `low`, según la propia adenda SSE); si detecta fuga (bloque de código
+   largo, o el `expectedSolution` opcional que manda Tema 05, solo en memoria), reemplaza el
    mensaje por una redirección socrática.
 6. **Auditoría** — una fila en `audit_events` (reutilizado, no se creó tabla nueva) por
    interacción, con `courseCohortId`/`learnerId`/`riskLevel`/`state`/si se disparó un guardarraíl.

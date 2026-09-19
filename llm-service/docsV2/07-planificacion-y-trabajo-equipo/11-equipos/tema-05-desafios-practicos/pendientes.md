@@ -3,36 +3,20 @@
 > Este documento es la fuente completa de lo pendiente con Tema 05. Antecedentes:
 > [17 §7.3](../../../contracts/90-mapa-de-integracion-historico.md#73-quién-nos-bloquea-y-a-quién-bloqueamos) (N1, N3),
 > [08 B-1](../../../00-gobierno-y-evolucion/02-decisiones-y-pendientes.md), [20-backlog-y-sprints.md](../../01-backlog-y-sprints.md) E12-02.
+> Lo que se le entrega a Tema 05 para integrar: [`tema-05-contrato-de-integracion.md`](../../../contracts/equipos/tema-05-contrato-de-integracion.md).
 
-## 🔴 Cruzado — la solución esperada del desafío
+## 🟡 Solución esperada del desafío — decidido de nuestro lado, falta que lo confirmen
 
-Sin esto el guardarraíl anti-fuga (RF-IA-20) no tiene contra qué comparar. Falta definir
-endpoint, verbo y payload. Hay resistencia esperable: le estamos pidiendo a Tema 05 que exponga
-algo que hoy consideran interno y sensible.
+Sin la solución esperada, el guardarraíl anti-fuga (RF-IA-20) solo detecta bloques de código largos.
 
-**Nuestra propuesta ya escrita** (doc 08 B-1): que Tema 05 exponga un endpoint que devuelva la
-solución esperada **solo a nosotros**, solo para comparación — nunca la almacenamos, la usamos
-y la descartamos. Ofrecer esa garantía por escrito destraba la conversación.
+**Decisión (2026-09-19):** Tema 05 la manda, opcional, en el campo `expectedSolution` del request
+del tutor. Es implementación en el servicio y contrato en el OpenAPI: se usa solo en memoria, no se
+persiste, loguea, audita ni devuelve. Reemplaza la propuesta anterior de que la pidiéramos nosotros
+por `GET .../expected-solution` (que exigía un cliente y credenciales hacia Tema 05).
 
-**Estado a la fecha de `20-backlog-y-sprints.md`:** sin resolver — la salvaguarda corre hoy
-contra una solución mock, y la integración real queda anotada como deuda.
-
-**🟡 Propuesta de cuerpo — no acordado, solo para arrancar la conversación:**
-
-```json
-// GET (hipotético) {tema-05}/challenges/{challengeId}/expected-solution
-// Llamado por nosotros, con nuestro JWT M2M — nunca al revés.
-{
-  "challengeId": "b1e2c3d4-0002-4a00-8000-000000000002",
-  "language": "java",
-  "expectedSolution": "public int factorial(int n) { ... }",
-  "hiddenTestsSummary": "3 casos borde: n=0, n=1, overflow"
-}
-```
-
-Ningún campo de este ejemplo está cerrado — ni el verbo, ni si viaja por HTTP o por evento, ni
-si incluye `hiddenTestsSummary` o solo el código de referencia. Se pone acá para que la sesión
-de integración tenga algo concreto para tachar o corregir, no para presentarlo como decidido.
+**Falta:** que Tema 05 confirme que acepta mandarla. Si prefieren otro camino es un cambio de contrato
+y hay que decidirlo antes de integrar. Mejora futura sin cambio de contrato: comparar por similitud
+(umbral del 70%, PAR-11) en vez de coincidencia literal.
 
 ## 🔴 Cruzado — evento de ediciones y ejecuciones de tests del IDE
 

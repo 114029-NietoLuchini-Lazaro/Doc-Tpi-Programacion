@@ -56,6 +56,41 @@ class TutorInteractionServiceTest {
   }
 
   @Test
+  void aResponseThatContainsTheExpectedSolutionIsReplacedAndTheSolutionIsNeverPersisted() {
+    var models = mock(ModelInvocationService.class);
+    String solution = "return n <= 1 ? 1 : n * factorial(n - 1);";
+    when(models.invoke(eq(ModelFunction.TUTOR), anyString(), anyString(), any()))
+        .thenReturn(new ModelInvocationResult("Probá con: " + solution, "fake", "fake-socratic-v1"));
+    var audit = mock(AuditRepository.class);
+    var messages = messagesMock();
+    var service = new TutorInteractionService(models, idempotencyThatAlwaysProceeds(), audit, conversationsMock(), messages, mapper, 1000);
+    var request = new TutorInteractionService.Request(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+        UUID.randomUUID(), "¿cómo hago el factorial?", "high", null, solution);
+
+    var response = service.respond(request, UUID.randomUUID(), actor);
+
+    assertThat(response.message()).doesNotContain("factorial(n - 1)");
+    assertThat(response.state()).isEqualTo("completed");
+    var auditDetails = org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(audit).record(anyString(), anyString(), any(), any(), auditDetails.capture());
+    assertThat(auditDetails.getValue()).doesNotContain("factorial");
+    assertThat(request.toString()).doesNotContain("factorial").contains("[REDACTED]");
+  }
+
+  @Test
+  void withoutAnExpectedSolutionTheSameResponseIsDelivered() {
+    var models = mock(ModelInvocationService.class);
+    when(models.invoke(eq(ModelFunction.TUTOR), anyString(), anyString(), any()))
+        .thenReturn(new ModelInvocationResult("Probá con: return n <= 1 ? 1 : n * factorial(n - 1);", "fake", "fake-socratic-v1"));
+    var service = new TutorInteractionService(models, idempotencyThatAlwaysProceeds(), mock(AuditRepository.class),
+        conversationsMock(), messagesMock(), mapper, 1000);
+
+    var response = service.respond(request("¿cómo hago el factorial?", "high"), UUID.randomUUID(), actor);
+
+    assertThat(response.message()).contains("factorial(n - 1)");
+  }
+
+  @Test
   void aLowRiskResponseIsNotFilteredByTheOutputGuard() {
     var models = mock(ModelInvocationService.class);
     String longButLowRisk = "```java\n" + "line;\n".repeat(9) + "```";

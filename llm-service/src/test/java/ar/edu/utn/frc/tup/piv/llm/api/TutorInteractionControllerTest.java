@@ -59,4 +59,22 @@ class TutorInteractionControllerTest {
 
     assertThatThrownBy(() -> controller.create(body, UUID.randomUUID(), headers)).isInstanceOf(IllegalArgumentException.class);
   }
+
+  @Test
+  void readsTheOptionalFieldsOfTheContractFromJsonAndIgnoresUnknownOnes() throws Exception {
+    var json = """
+        {"attemptId":"b1e2c3d4-0001-4a00-8000-000000000001","challengeId":"b1e2c3d4-0002-4a00-8000-000000000002",
+         "courseCohortId":"b1e2c3d4-0003-4a00-8000-000000000003","learnerId":"b1e2c3d4-0004-4a00-8000-000000000004",
+         "message":"hola","riskLevel":"medium","conversacionId":"b1e2c3d4-0005-4a00-8000-000000000005",
+         "expectedSolution":"return 1;","campoNuevo":"se ignora"}
+        """;
+    var mapper = new com.fasterxml.jackson.databind.ObjectMapper()
+        .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    var body = mapper.readValue(json, TutorInteractionController.Request.class);
+
+    assertThat(body.expectedSolution()).isEqualTo("return 1;");
+    assertThat(body.conversacionId()).hasToString("b1e2c3d4-0005-4a00-8000-000000000005");
+    assertThat(body.toString()).doesNotContain("return 1;");
+  }
 }
