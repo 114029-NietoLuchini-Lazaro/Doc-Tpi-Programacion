@@ -1,10 +1,10 @@
-# Integración llm-service ↔ Tema 05 (Desafíos Prácticos) — guía y contrato v1
+# llm-service — contrato para Desafíos Prácticos (Tema 05) · guía y contrato v1
 
-> **Para quién:** el equipo de Tema 05 (`practice-service`). **Cómo leerlo:** la sección 1 explica de qué
-> se trata, la 2 es el paso a paso para empezar a probar, y de la 5 en adelante está el contrato
-> completo. Este documento se entiende solo. Para validar contra un cliente o un consumidor, lo
-> ejecutable está en `llm-service.openapi.yaml` (tutor) y `llm-service.asyncapi.yaml` (eventos Kafka),
-> que acompañan a este archivo.
+> **Para quién:** el equipo de Tema 05 (`practice-service`). **Es el único archivo que necesitan:** se
+> entiende solo y trae, como anexos, los contratos ejecutables (Anexo A: OpenAPI del tutor; Anexo B:
+> AsyncAPI de los eventos Kafka), recortados a lo que les toca. **Cómo leerlo:** la sección 1 explica de
+> qué se trata, la 2 es el paso a paso para empezar a probar, de la 5 a la 11 está el contrato
+> completo, la 12 cuenta en qué estado está todo y qué sigue, y al final están los anexos.
 
 ## 1. En una página
 
@@ -461,7 +461,7 @@ Cada decisión se puede cambiar sin tocar el contrato salvo donde se indica.
 | D5 | El score sale por Kafka a ustedes; nunca hablamos directo con Tema 03 | Un único camino de vuelta; ustedes se lo reenvían a Tema 03 |
 | D6 | Message Key de `evaluation-events`: `courseCohortId` | Ordena los scores de una cohorte |
 | D7 | Rúbrica única (la plantilla institucional) para todas las cohortes hasta que exista un mapa cohorte → curso | Es interno; lo único visible es `rubricVersionId` en el evento, que ya viaja |
-| D8 | Campos, tipos, `eventType` y `eventVersion: 1` de los eventos como figuran en el AsyncAPI | Un cambio incompatible sería `eventVersion: 2`, con aviso previo |
+| D8 | Campos, tipos, `eventType` y `eventVersion: 1` de los eventos como figuran en el Anexo B | Un cambio incompatible sería `eventVersion: 2`, con aviso previo |
 | D9 | Los nombres de topic (`practice-events`, `evaluation-events`) son una propuesta a acordar | Cambiarlos es configuración nuestra y de ustedes; no altera los campos de los eventos |
 
 ## 8. Cómo va a evolucionar (sin romper)
@@ -521,3 +521,491 @@ para pruebas locales sirve cualquiera, por ejemplo la que genera `openssl rand -
 - **Evaluador.** Con el Kafka del mismo compose (`kafka:9092` dentro de su red): publicar el
   `ATTEMPT-CLOSED` de la sección 6 en `practice-events` (con `kafka-console-producer.sh` dentro del
   contenedor de Kafka) y leer `evaluation-events`.
+
+## 12. Estado de las pruebas y próximos pasos
+
+**Lo que ya probamos de nuestro lado:**
+
+| Qué | Resultado |
+|---|---|
+| Tutor con el bot, por HTTP | Respuesta normal, repetición de la `Idempotency-Key` con la misma respuesta, y los errores `401`, `403` y `422`. También forzamos un fallo del modelo y responde `200` con `state: unavailable` |
+| Evaluador con el bot, con un broker Kafka local | Un `ATTEMPT-CLOSED` válido produce un `SCORE-CALCULATED` con la cohorte como key; un `eventId` repetido no duplica el score; un evento inválido va a `practice-events.dlt`; un fallo del evaluador produce un `SCORE-DEFERRED` |
+| Modelo real, en una prueba puntual con un proveedor de prueba | El tutor respondió en español de forma socrática (en menos de 3 s en las dos llamadas que hicimos) y no entregó código ante un pedido directo de la solución. El evaluador devolvió puntajes válidos y distinguió un intento bueno (90) de uno malo (25), pero **puso el mismo valor en las cinco dimensiones**: el desglose por dimensión todavía no es confiable |
+
+**Lo que todavía no está verificado:**
+
+- El **ruteo por el API Gateway**: desde nuestro entorno de pruebas la plataforma hoy no es alcanzable, así que
+  no probamos el circuito completo con el token, ni si el Gateway agrega la identidad delegada.
+- Un **broker Kafka compartido**: no hay uno definido, así que el circuito de eventos se probó solo con uno local.
+- La calidad del evaluador con el modelo real, que falta calibrar.
+
+**Próximos pasos, por equipo:**
+
+| Quién | Qué |
+|---|---|
+| Equipo de la plataforma | Dar de alta a `practice-service` como cliente con el scope `llm.tutor.interact`; agregar `llm-service` a la allowlist del Gateway; confirmar la ruta del pedido del token y si el Gateway agrega `X-Delegated-User` con un token de servicio; asegurar que `llm-service` y el Gateway se vean en la red |
+| Quien administre Kafka | Definir el broker compartido, la seguridad si la hay, y crear los topics (incluida la cola `practice-events.dlt`) |
+| Tema 05 | Confirmar los puntos de la sección 10 y empezar a integrar el tutor con el bot |
+| `llm-service` | Calibrar el evaluador con el modelo real; resolver el reintento automático de los diferidos y el mapa cohorte → curso para la rúbrica; cambiar el tutor para no exigir la identidad delegada si el Gateway no la agrega |
+
+## Anexo A · OpenAPI del tutor
+
+Contrato ejecutable de `POST /api/llm/tutor/interactions`, para validar un cliente o generar uno. Es un
+extracto del contrato completo de `llm-service` recortado al tutor; cuando difiera de las secciones 2 y 5,
+avísennos. El número de versión que figura adentro (`2.0.0-proposed`) es el del archivo completo de
+`llm-service`: para ustedes rige la versión v1 de esta guía.
+
+```yaml
+openapi: 3.1.0
+info:
+  title: llm-service — tutor (extracto para Tema 05)
+  version: 2.0.0-proposed
+servers:
+- url: "/api/llm"
+paths:
+  "/tutor/interactions":
+    post:
+      tags:
+      - Practice
+      summary: Solicita una respuesta pedagógica segura del tutor
+      description: |
+        Solo practice-service invoca esta operación. El Gateway debe propagar identidad delegada,
+        traceparent y X-Request-Id. expectedSolution es opcional y M2M: solo se usa en memoria para
+        el guardarraíl anti-fuga; no se persiste, no se audita y nunca se devuelve.
+        Un fallo del modelo NO es un error HTTP: responde 200 con state `unavailable`.
+        Mismo Idempotency-Key + mismo cuerpo devuelve la misma respuesta sin volver a invocar al modelo.
+      operationId: createTutorInteraction
+      security:
+      - serviceJwt:
+        - llm.tutor.interact
+      parameters:
+      - "$ref": "#/components/parameters/IdempotencyKey"
+      - "$ref": "#/components/parameters/Traceparent"
+      - "$ref": "#/components/parameters/RequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/TutorInteractionRequest"
+      responses:
+        '200':
+          description: Interacción procesada; state informa si la respuesta se entregó
+            o el tutor no está disponible.
+          headers:
+            X-Request-Id:
+              "$ref": "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/TutorInteractionResponse"
+        '401':
+          description: Servicio o scope incorrecto (se exige practice-service con
+            llm.tutor.interact).
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        '403':
+          description: Falta la identidad delegada o no es un UUID válido.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        '409':
+          description: Se repitió una Idempotency-Key cuya primera solicitud todavía
+            sigue en curso.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        '422':
+          description: Cuerpo inválido (campo obligatorio ausente, message en blanco
+            o riskLevel fuera del enum), o Idempotency-Key ya usada con otro cuerpo.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+components:
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Traceparent:
+      name: traceparent
+      in: header
+      required: true
+      schema:
+        type: string
+    RequestId:
+      name: X-Request-Id
+      in: header
+      required: true
+      schema:
+        type: string
+        maxLength: 128
+  schemas:
+    TutorInteractionRequest:
+      type: object
+      description: Los campos desconocidos se ignoran (lector tolerante), así que
+        se pueden agregar campos sin romper.
+      required:
+      - attemptId
+      - challengeId
+      - courseCohortId
+      - learnerId
+      - message
+      - riskLevel
+      properties:
+        attemptId:
+          type: string
+          format: uuid
+        challengeId:
+          type: string
+          format: uuid
+        courseCohortId:
+          type: string
+          format: uuid
+          description: Debe coincidir con el contexto autorizado por Practice.
+        learnerId:
+          type: string
+          format: uuid
+        message:
+          type: string
+          minLength: 1
+        riskLevel:
+          type: string
+          enum:
+          - low
+          - medium
+          - high
+          description: Lo fija Tema 05 según el tipo de desafío. Con `low` no corre
+            el guardarraíl de salida.
+        conversacionId:
+          type: string
+          format: uuid
+          description: Opcional. Agrupa turnos de una misma conversación; si no viene
+            se abre una nueva y se devuelve su id.
+        expectedSolution:
+          type: string
+          writeOnly: true
+          description: 'Opcional. Material sensible M2M: solo lo usa el guardarraíl
+            de salida (con riskLevel medium o high), en memoria; no se persiste, loguea,
+            audita ni devuelve. Si el mensaje del tutor la contiene, se reemplaza
+            por una redirección socrática.'
+    TutorInteractionResponse:
+      type: object
+      description: Se pueden agregar campos opcionales sin romper a quien ya consume
+        (lector tolerante).
+      required:
+      - message
+      - state
+      - conversacionId
+      properties:
+        message:
+          type: string
+          description: Siempre presente. En `completed`, el mensaje del tutor (nunca
+            la solución); en `unavailable`, un aviso fijo.
+        state:
+          type: string
+          enum:
+          - completed
+          - blocked
+          - unavailable
+          description: "`blocked` está reservado para la variante con streaming y
+            hoy no se produce (cuando el guardarraíl actúa se sustituye el mensaje
+            y queda `completed`), pero el consumidor debe manejarlo para no romperse
+            cuando se use."
+        conversacionId:
+          type: string
+          format: uuid
+    Problem:
+      type: object
+      description: RFC 7807. `codigo` (código estable de error) está reservado y hoy
+        no se emite; no depender de él.
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - requestId
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        codigo:
+          type: string
+        requestId:
+          type: string
+  headers:
+    RequestId:
+      description: Correlación recibida, devuelta sin cambios.
+      schema:
+        type: string
+  securitySchemes:
+    serviceJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+```
+
+## Anexo B · AsyncAPI de los eventos Kafka
+
+Contrato ejecutable de los dos topics que les tocan, `practice-events` y `evaluation-events`. Es un extracto
+del contrato completo recortado a esos dos canales. Ojo con la perspectiva: las operaciones están
+descriptas **desde `llm-service`**, así que `receive` significa que nosotros leemos (ustedes publican) y
+`send` que nosotros publicamos (ustedes leen). El `host: kafka:9092` es el del compose local de
+`llm-service`; el broker real está por definir (sección 10). Sobre los números de versión, vale lo mismo
+que en el Anexo A.
+
+```yaml
+asyncapi: 3.0.0
+info:
+  title: llm-service — eventos Kafka (extracto para Tema 05)
+  version: 2.0.0
+servers:
+  platformKafka:
+    host: kafka:9092
+    protocol: kafka
+channels:
+  practice-events:
+    address: practice-events
+    description: 'Dominio de practice-service (Tema 05). Consumido por llm-service.
+      Message Key: definida por el productor (Tema 05) — Pendiente de documentar acá
+      hasta que confirmen su estrategia.
+
+'
+    messages:
+      attemptClosed:
+        "$ref": "#/components/messages/AttemptClosed"
+  evaluation-events:
+    address: evaluation-events
+    description: 'Dominio de evaluación automática, publicado por llm-service. Message
+      Key: `courseCohortId` (preserva el orden de los scores dentro de una misma cohorte/curso).
+
+'
+    messages:
+      scoreCalculated:
+        "$ref": "#/components/messages/ScoreResult"
+      scoreDeferred:
+        "$ref": "#/components/messages/DeferredScore"
+operations:
+  consumeAttemptClosed:
+    action: receive
+    channel:
+      "$ref": "#/channels/practice-events"
+  publishScoreCalculated:
+    action: send
+    channel:
+      "$ref": "#/channels/evaluation-events"
+  publishScoreDeferred:
+    action: send
+    channel:
+      "$ref": "#/channels/evaluation-events"
+components:
+  messages:
+    AttemptClosed:
+      payload:
+        "$ref": "#/components/schemas/AttemptClosedEvent"
+    ScoreResult:
+      payload:
+        "$ref": "#/components/schemas/ScoreCalculatedEvent"
+    DeferredScore:
+      payload:
+        "$ref": "#/components/schemas/ScoreDeferredEvent"
+  schemas:
+    AttemptClosedEvent:
+      allOf:
+      - "$ref": "#/components/schemas/Envelope"
+      - type: object
+        properties:
+          payload:
+            type: object
+            required:
+            - attemptId
+            - courseCohortId
+            - learnerId
+            - transcript
+            properties:
+              attemptId:
+                type: string
+                format: uuid
+              courseCohortId:
+                type: string
+                format: uuid
+              learnerId:
+                type: string
+                format: uuid
+              transcript:
+                type: array
+                items:
+                  type: object
+    ScoreCalculatedEvent:
+      description: 'PROVISORIO — propuesta de llm-service, todavía sin validar con
+        Tema 05 (consumidor). Implementado en AttemptEvaluationService; el campo `score`
+        lo calcula el código con los pesos fijos de la rúbrica, no el modelo (RF-IA-15).
+
+'
+      allOf:
+      - "$ref": "#/components/schemas/Envelope"
+      - type: object
+        properties:
+          eventType:
+            const: SCORE-CALCULATED
+          payload:
+            type: object
+            required:
+            - attemptId
+            - courseCohortId
+            - learnerId
+            - rubricVersionId
+            - score
+            - dimensions
+            - evaluator
+            properties:
+              attemptId:
+                type: string
+                format: uuid
+              courseCohortId:
+                type: string
+                format: uuid
+              learnerId:
+                type: string
+                format: uuid
+              rubricVersionId:
+                type: string
+                format: uuid
+              score:
+                type: integer
+                minimum: 0
+                maximum: 100
+                description: Agregado ponderado, redondeado.
+              dimensions:
+                type: object
+                required:
+                - autonomy
+                - clarity
+                - progression
+                - compliance
+                - efficiency
+                additionalProperties: false
+                properties:
+                  autonomy:
+                    type: integer
+                    minimum: 0
+                    maximum: 100
+                  clarity:
+                    type: integer
+                    minimum: 0
+                    maximum: 100
+                  progression:
+                    type: integer
+                    minimum: 0
+                    maximum: 100
+                  compliance:
+                    type: integer
+                    minimum: 0
+                    maximum: 100
+                  efficiency:
+                    type: integer
+                    minimum: 0
+                    maximum: 100
+              evaluator:
+                type: object
+                required:
+                - provider
+                - model
+                properties:
+                  provider:
+                    type: string
+                    description: "`fake` en modo test."
+                  model:
+                    type: string
+                    description: "`fake-evaluator-v1` en modo test."
+    ScoreDeferredEvent:
+      description: 'PROVISORIO — propuesta de llm-service, todavía sin validar con
+        Tema 05. Se publica cuando el intento no se pudo evaluar ahora; `retryFrom`
+        es un instante ISO-8601 sugerido para reintentar.
+
+'
+      allOf:
+      - "$ref": "#/components/schemas/Envelope"
+      - type: object
+        properties:
+          eventType:
+            const: SCORE-DEFERRED
+          payload:
+            type: object
+            required:
+            - attemptId
+            - courseCohortId
+            - learnerId
+            - reason
+            - retryFrom
+            properties:
+              attemptId:
+                type: string
+                format: uuid
+              courseCohortId:
+                type: string
+                format: uuid
+              learnerId:
+                type: string
+                format: uuid
+              reason:
+                type: string
+                enum:
+                - MODEL_UNAVAILABLE
+                - INVALID_MODEL_RESPONSE
+                - RUBRIC_UNAVAILABLE
+              retryFrom:
+                type: string
+                format: date-time
+    Envelope:
+      type: object
+      description: Envelope común de plataforma (KAFKA_EVENT_STANDARD.md §5). No renombrar/eliminar
+        estos campos.
+      required:
+      - eventId
+      - eventType
+      - eventVersion
+      - timestamp
+      - producer
+      - payload
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          description: UUID único de esta instancia del evento (§6).
+        eventType:
+          type: string
+          description: Hecho del dominio, MAYÚSCULAS-CON-GUIONES, p.ej. MESSAGE-UNBLOCKED
+            (§7).
+        eventVersion:
+          type: integer
+          minimum: 1
+          description: Versión del contrato de este eventType, empieza en 1 (§8).
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 UTC (§9).
+        producer:
+          type: string
+          description: Identificador del microservicio productor (§10).
+        payload:
+          type: object
+          description: Datos específicos del eventType/eventVersion (§11).
+```

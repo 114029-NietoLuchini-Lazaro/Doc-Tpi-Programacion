@@ -1,6 +1,6 @@
 # Tema 05 — Desafíos Prácticos — contratos
 
-> **Lo que se le entrega a Tema 05 para integrar es [`tema-05-contrato-de-integracion.md`](tema-05-contrato-de-integracion.md)**
+> **Lo que se le entrega a Tema 05 para integrar es [`llm-service-contrato-para-desafios-practicos.md`](llm-service-contrato-para-desafios-practicos.md)**
 > (contrato, decisiones y política de evolución). Este documento conserva el contexto: diagramas de
 > secuencia del tutor y el evaluador, presupuestos y decisiones de diseño — `18` §4 ya no repite este detalle. Carta original:
 > [docs/entregas/alcance-y-contrato-para-desafios-practicos.md](../../01-vision-alcance-y-entrega/03-entregas/alcance-y-contrato-para-desafios-practicos.md).
@@ -74,7 +74,7 @@ sequenceDiagram
 > todavía; (2) el cálculo del pico de tráfico usa ~8 s por respuesta contra un objetivo de 2 s
 > — de esa brecha depende cuántas réplicas hacen falta (I-03 en `17` §8).
 
-### Cuerpo de la solicitud ✅ (schema: `TutorInteractionRequest`; el ejemplo completo con los campos opcionales está en el [contrato de integración](tema-05-contrato-de-integracion.md#request))
+### Cuerpo de la solicitud ✅ (schema: `TutorInteractionRequest`; el ejemplo completo con los campos opcionales está en el [contrato de integración](llm-service-contrato-para-desafios-practicos.md#request))
 
 ```json
 {

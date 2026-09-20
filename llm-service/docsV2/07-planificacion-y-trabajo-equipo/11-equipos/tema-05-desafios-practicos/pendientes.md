@@ -3,7 +3,7 @@
 > Este documento es la fuente completa de lo pendiente con Tema 05. Antecedentes:
 > [17 §7.3](../../../contracts/90-mapa-de-integracion-historico.md#73-quién-nos-bloquea-y-a-quién-bloqueamos) (N1, N3),
 > [08 B-1](../../../00-gobierno-y-evolucion/02-decisiones-y-pendientes.md), [20-backlog-y-sprints.md](../../01-backlog-y-sprints.md) E12-02.
-> Lo que se le entrega a Tema 05 para integrar: [`tema-05-contrato-de-integracion.md`](../../../contracts/equipos/tema-05-contrato-de-integracion.md).
+> Lo que se le entrega a Tema 05 para integrar: [`llm-service-contrato-para-desafios-practicos.md`](../../../contracts/equipos/llm-service-contrato-para-desafios-practicos.md).
 
 ## 🟡 Solución esperada del desafío — decidido de nuestro lado, falta que lo confirmen
 
@@ -106,7 +106,7 @@ se agregan acá todos los temas nuevos que salgan de la charla.
 ## 🔴 Pedido al equipo del Gateway y de users-service (identidad y enrutamiento)
 
 Tema 05 nos llama con un token de servicio `client_credentials` por el Gateway (receta en
-[`tema-05-contrato-de-integracion.md`](../../../contracts/equipos/tema-05-contrato-de-integracion.md#cómo-obtener-el-token-y-llamar-por-el-gateway)).
+[`llm-service-contrato-para-desafios-practicos.md`](../../../contracts/equipos/llm-service-contrato-para-desafios-practicos.md#2-cómo-arrancar-paso-a-paso)).
 
 - [ ] **Identidad delegada (riesgo de 403 total):** el tutor exige `X-Delegated-User` y devuelve `403` sin
   él. Preguntar si el Gateway lo agrega cuando el token es de servicio puro (sin usuario). Si no,
