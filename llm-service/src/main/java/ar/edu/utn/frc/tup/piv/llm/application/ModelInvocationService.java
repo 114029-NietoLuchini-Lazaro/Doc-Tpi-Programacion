@@ -71,7 +71,7 @@ public class ModelInvocationService {
           "No hay adaptador registrado para el proveedor '" + config.provider() + "' asignado a " + name(function));
     }
 
-    var request = new ModelInvocationRequest(function, systemPrompt, userPrompt, timeout);
+    var request = new ModelInvocationRequest(function, systemPrompt, userPrompt, timeout, config.modelId());
     int estimatedIn = GatewayUsageLog.estimateTokens(systemPrompt) + GatewayUsageLog.estimateTokens(userPrompt);
     return executor.run(new GatewayExecutor.Spec<>(function, providerKey, config.modelId(), estimatedIn, timeout,
         () -> adapter.invoke(request),

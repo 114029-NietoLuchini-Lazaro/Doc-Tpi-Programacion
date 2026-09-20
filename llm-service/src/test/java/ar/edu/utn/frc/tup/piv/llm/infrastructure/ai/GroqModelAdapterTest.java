@@ -88,6 +88,28 @@ class GroqModelAdapterTest {
   }
 
   @Test
+  void theModelAssignedToTheFunctionWinsOverTheDefaultOne() {
+    ChatLanguageModel mockModel = mock(ChatLanguageModel.class);
+    when(mockModel.generate(anyList())).thenReturn(Response.from(AiMessage.from("respuesta")));
+    var adapter = new GroqModelAdapter("gsk_test_key", null, "modelo-por-defecto", mockModel);
+    var request = new ModelInvocationRequest(ModelFunction.TUTOR, "system", "pregunta", Duration.ofSeconds(5), "  llama-3.3-70b-versatile ");
+
+    assertThat(adapter.invoke(request).model()).isEqualTo("llama-3.3-70b-versatile");
+  }
+
+  @Test
+  void withoutAnAssignedModelItFallsBackToTheDefaultOne() {
+    ChatLanguageModel mockModel = mock(ChatLanguageModel.class);
+    when(mockModel.generate(anyList())).thenReturn(Response.from(AiMessage.from("respuesta")));
+    var adapter = new GroqModelAdapter("gsk_test_key", null, "modelo-por-defecto", mockModel);
+
+    assertThat(adapter.invoke(new ModelInvocationRequest(ModelFunction.TUTOR, "system", "pregunta", Duration.ofSeconds(5))).model())
+        .isEqualTo("modelo-por-defecto");
+    assertThat(adapter.invoke(new ModelInvocationRequest(ModelFunction.TUTOR, "system", "pregunta", Duration.ofSeconds(5), "  ")).model())
+        .isEqualTo("modelo-por-defecto");
+  }
+
+  @Test
   void wrapsProviderExceptionControlled_Scenario2TransportError() {
     ChatLanguageModel mockModel = mock(ChatLanguageModel.class);
     when(mockModel.generate(anyList()))

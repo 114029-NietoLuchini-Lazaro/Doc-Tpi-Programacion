@@ -56,9 +56,14 @@ public class GroqModelAdapter implements ModelInvocationPort {
           "No se configuró la variable de entorno GROQ_API_KEY para el proveedor '" + PROVIDER + "'");
     }
 
+    // El modelo lo decide la asignación de la función (`function_model_config`); GROQ_MODEL es solo el
+    // valor por defecto para cuando el pedido no trae uno.
+    String effectiveModel = request.modelId() != null && !request.modelId().isBlank()
+        ? request.modelId().trim()
+        : modelName;
     ChatLanguageModel chatModel = customChatModel != null
         ? customChatModel
-        : buildChatModel(request.timeout());
+        : buildChatModel(effectiveModel, request.timeout());
 
     List<ChatMessage> messages = new ArrayList<>();
     if (request.systemPrompt() != null && !request.systemPrompt().isBlank()) {
@@ -74,7 +79,7 @@ public class GroqModelAdapter implements ModelInvocationPort {
         responseText = JsonObjectExtractor.extract(responseText);
       }
       var usage = response != null ? response.tokenUsage() : null;
-      return new ModelInvocationResult(responseText, PROVIDER, modelName,
+      return new ModelInvocationResult(responseText, PROVIDER, effectiveModel,
           usage != null ? usage.inputTokenCount() : null, usage != null ? usage.outputTokenCount() : null);
     } catch (Exception exception) {
       throw new IllegalStateException(
@@ -82,11 +87,11 @@ public class GroqModelAdapter implements ModelInvocationPort {
     }
   }
 
-  private ChatLanguageModel buildChatModel(Duration timeout) {
+  private ChatLanguageModel buildChatModel(String model, Duration timeout) {
     return OpenAiChatModel.builder()
         .baseUrl(baseUrl)
         .apiKey(apiKey)
-        .modelName(modelName)
+        .modelName(model)
         .timeout(timeout != null ? timeout : Duration.ofSeconds(15))
         .maxRetries(0)
         .temperature(0.3)
