@@ -1,0 +1,7 @@
+# Overlay opcional: reenvía la clave de Groq al contenedor para que FakeModelAdapter llame al
+# proveedor real. La clave vive en llm-service/.env (ignorado por git), nunca en este archivo.
+services:
+  llm-service:
+    environment:
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-20b}
