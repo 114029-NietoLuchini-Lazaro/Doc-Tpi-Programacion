@@ -42,7 +42,7 @@ paths:
         '401': { description: Servicio o scope incorrecto (se exige practice-service con llm.tutor.interact)., content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
         '403': { description: Falta la identidad delegada o no es un UUID válido., content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
         '409': { description: Se repitió una Idempotency-Key cuya primera solicitud todavía sigue en curso., content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
-        '422': { description: Cuerpo inválido (campo obligatorio ausente, message en blanco o riskLevel fuera del enum), o Idempotency-Key ya usada con otro cuerpo., content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+        '422': { description: "Cuerpo inválido (campo obligatorio ausente, message en blanco o riskLevel fuera del enum), o Idempotency-Key ya usada con otro cuerpo.", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
   /course-cohorts/{courseCohortId}/calibration:
     get:
       tags: [Courses]
@@ -186,7 +186,7 @@ paths:
         - $ref: '#/components/parameters/Traceparent'
         - $ref: '#/components/parameters/RequestId'
       responses:
-        '200': { description: Corridas del curso, más recientes primero (máx. 100), content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: '#/components/schemas/ShadowRun' } } } } } } }
+        '200': { description: "Corridas del curso, más recientes primero (máx. 100)", content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: '#/components/schemas/ShadowRun' } } } } } } }
         '403': { $ref: '#/components/responses/Problem' }
     post:
       tags: [Administration]
@@ -310,7 +310,7 @@ components:
     ModelDeploymentId: { name: modelDeploymentId, in: path, required: true, schema: { type: string, format: uuid } }
     IfMatch: { name: If-Match, in: header, required: true, schema: { type: integer, minimum: 1 } }
   headers:
-    RequestId: { description: Correlación recibida, devuelta sin cambios., schema: { type: string } }
+    RequestId: { description: "Correlación recibida, devuelta sin cambios.", schema: { type: string } }
   responses:
     Problem:
       description: RFC 7807 Problem Details con requestId.
@@ -467,7 +467,7 @@ components:
       type: object
       required: [provider, displayName, apiKey]
       properties:
-        provider: { type: string, enum: [OPENAI_COMPATIBLE, ANTHROPIC, GEMINI], description: OPENAI_COMPATIBLE incluye OpenAI, Groq y proveedores que respeten la API OpenAI. }
+        provider: { type: string, enum: [OPENAI_COMPATIBLE, ANTHROPIC, GEMINI], description: "OPENAI_COMPATIBLE incluye OpenAI, Groq y proveedores que respeten la API OpenAI." }
         displayName: { type: string, minLength: 1, maxLength: 120 }
         baseUrl: { type: string, format: uri, description: Obligatoria para OPENAI_COMPATIBLE; HTTPS pública. }
         apiKey: { type: string, writeOnly: true, minLength: 1 }
@@ -531,7 +531,7 @@ components:
         candidateRubricVersionId: { type: string, format: uuid, description: Rúbrica a validar (puede ser un borrador del curso). Debe ser distinta de la activa. }
         source: { type: string, enum: [GOLDEN_SET, TUTOR_CONVERSATIONS], description: GOLDEN_SET reproduce una versión del golden set (con nota humana); TUTOR_CONVERSATIONS reproduce conversaciones reales del tutor del curso. }
         goldenSetVersionId: { type: string, format: uuid, description: Obligatorio con GOLDEN_SET y prohibido con la otra fuente. }
-        sampleSize: { type: integer, minimum: 1, maximum: 100, description: Tope configurable (llm.shadow.max-sample-size). Por defecto, el tope. }
+        sampleSize: { type: integer, minimum: 1, maximum: 100, description: "Tope configurable (llm.shadow.max-sample-size). Por defecto, el tope." }
         divergenceThreshold: { type: number, exclusiveMinimum: 0, description: Puntos de diferencia final a partir de los cuales un caso cuenta como divergente. Por defecto 10. }
     ShadowRun:
       type: object
@@ -573,4 +573,4 @@ components:
           type: array
           maxItems: 5
           items: { type: object, properties: { sourceRef: { type: string }, baselineFinal: { type: number }, candidateFinal: { type: number }, delta: { type: number } } }
-        recommendation: { type: string, enum: [PROCEED_TO_CALIBRATION, REVIEW, INSUFFICIENT_DATA], description: Consejo para el docente, no una decisión automática. PROCEED_TO_CALIBRATION habilita lanzar la calibración PAR-14 formal. }
+        recommendation: { type: string, enum: [PROCEED_TO_CALIBRATION, REVIEW, INSUFFICIENT_DATA], description: "Consejo para el docente, no una decisión automática. PROCEED_TO_CALIBRATION habilita lanzar la calibración PAR-14 formal." }
