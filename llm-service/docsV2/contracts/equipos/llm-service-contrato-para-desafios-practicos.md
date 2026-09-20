@@ -532,6 +532,20 @@ para pruebas locales sirve cualquiera, por ejemplo la que genera `openssl rand -
 | Evaluador con el bot, con un broker Kafka local | Un `ATTEMPT-CLOSED` válido produce un `SCORE-CALCULATED` con la cohorte como key; un `eventId` repetido no duplica el score; un evento inválido va a `practice-events.dlt`; un fallo del evaluador produce un `SCORE-DEFERRED` |
 | Modelo real, en una prueba puntual con un proveedor de prueba | El tutor respondió en español de forma socrática (en menos de 3 s en las dos llamadas que hicimos) y no entregó código ante un pedido directo de la solución. El evaluador devolvió puntajes válidos y distinguió un intento bueno (90) de uno malo (25), pero **puso el mismo valor en las cinco dimensiones**: el desglose por dimensión todavía no es confiable |
 
+**Repetición en limpio (2026-09-20).** Levantamos de cero el compose local de `llm-service` (bot, sin keys de
+proveedor, Kafka local) y corrimos los casos de las secciones 3 y 6 con dos scripts que quedan en el repo de
+`llm-service`: `scripts/probar-bot-tutor.sh` y `scripts/probar-bot-evaluador.sh`. Salen con error si algún caso
+falla y se pueden repetir contra el mismo broker. Resultado: **todos los casos dieron OK, sin diferencias con lo
+descrito en este documento**.
+
+| Script | Casos que comprueba |
+|---|---|
+| `probar-bot-tutor.sh` | Mensaje normal (`200`, `completed`, `conversacionId`); misma key y mismo cuerpo (respuesta idéntica); misma key con otro cuerpo (`422`); scope incorrecto y otro servicio (`401`); sin identidad delegada (`403`); `riskLevel` inválido y campos ausentes (`422`); jailbreak (`200`, mensaje fijo). Los errores llegan como `application/problem+json` |
+| `probar-bot-evaluador.sh` | `ATTEMPT-CLOSED` válido produce un `SCORE-CALCULATED` con la cohorte como key, los headers `eventId`, `eventType` y `eventVersion`, y `evaluator` `fake` / `fake-evaluator-v1`; un `eventId` repetido, otro `eventType` y los eventos inválidos no producen un segundo score; sin `attemptId`, con un `attemptId` que no es UUID y con `transcript` que no es array van a `practice-events.dlt`; el otro `eventType` no va a la cola; reenviar el intento con un `eventId` nuevo produce un segundo score |
+
+Los scripts no cubren `state: unavailable` ni `SCORE-DEFERRED`: el bot no los produce solo y hay que forzar el
+fallo.
+
 **Lo que todavía no está verificado:**
 
 - El **ruteo por el API Gateway**: desde nuestro entorno de pruebas la plataforma hoy no es alcanzable, así que
