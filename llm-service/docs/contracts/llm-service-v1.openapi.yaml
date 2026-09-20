@@ -256,6 +256,7 @@ components:
         message: { type: string, minLength: 1 }
         riskLevel: { type: string, enum: [high, medium, low] }
         conversacionId: { type: string, format: uuid, nullable: true, description: 'Opcional. Si no viene, la interacción es independiente (comportamiento actual, sin cambios).' }
+        expectedSolution: { type: string, nullable: true, writeOnly: true, description: 'Opcional. Solución esperada del desafío, enviada por practice-service (M2M). Solo la usa el guardarraíl de salida para detectar fugas: no entra al prompt del modelo, no se persiste, no se audita ni se registra en logs. Sin este campo el guardarraíl aplica solo la heurística de bloques de código largos. Solo se evalúa cuando riskLevel es medium o high.' }
     TutorInteractionResponse:
       type: object
       required: [message, state, conversacionId]
