@@ -54,7 +54,7 @@ flowchart LR
     K2 --> C
 ```
 
-- **El tutor es síncrono y va por el API Gateway**, con un token de servicio. Nunca se le pega directo al servicio.
+- **El tutor es síncrono y va por el API Gateway**, con un token de servicio. En la plataforma nunca se le pega directo al servicio (solo en pruebas locales, sección 11).
 - **El evaluador es asíncrono y va por Kafka.** Nadie espera la respuesta en pantalla.
 - Nosotros nunca otorgamos XP y nunca hablamos con Tema 03: el score llega a ustedes y ustedes se lo
   reenvían a Tema 03.
@@ -78,8 +78,12 @@ microservicios (el mismo que usa `echo-service`): un token `client_credentials`,
 **siempre por el Gateway**. El `audience` es obligatorio y debe ser `llm-service`; si no coincide, el
 Gateway responde `403`.
 
-```json
+```text
 POST {gateway}/api/users/public/auth/token
+Content-Type: application/json
+```
+
+```json
 {
   "clientId": "practice-service",
   "clientSecret": "<de una variable de entorno, nunca del repo>",
@@ -91,6 +95,10 @@ POST {gateway}/api/users/public/auth/token
 
 La respuesta trae `accessToken`. Reutilícenlo mientras sea válido en vez de pedir uno por llamada.
 
+> La ruta y los nombres de los campos del pedido del token son los del patrón que nos pasó el equipo de
+> la plataforma; confírmenlos con el equipo de `users-service` antes de usarlos, porque es el servicio
+> que emite el token y no lo controlamos nosotros.
+
 **Paso 3 · Llamar al tutor con ese token**, contra el Gateway:
 
 ```text
@@ -100,7 +108,7 @@ Idempotency-Key: <uuid nuevo por cada mensaje>
 Content-Type: application/json
 ```
 
-Ejemplo en Java (Spring `RestClient`, con la base URL apuntando siempre al Gateway):
+Ejemplo orientativo en Java, sin compilar (Spring `RestClient`, con la base URL apuntando siempre al Gateway):
 
 ```java
 RestClient http = RestClient.builder().baseUrl(gatewayUrl).build();
@@ -272,7 +280,7 @@ como fallo.
 - **Guardarraíl de entrada.** Un intento de jailbreak devuelve un mensaje fijo con `state: completed`,
   sin llamar al modelo.
 - **Guardarraíl de salida** (solo `riskLevel` `medium`/`high`). Si la respuesta trae un bloque de
-  código de más de 8 líneas, o contiene literalmente el `expectedSolution` (sin distinguir
+  código de 7 o más líneas, o contiene literalmente el `expectedSolution` (sin distinguir
   mayúsculas), se reemplaza por una redirección socrática y el `state` sigue en `completed`. Sin
   `expectedSolution` solo actúa la regla del bloque de código.
 - **Timeout.** Cada llamada al modelo espera hasta 8 s y se reintenta hasta 3 veces: con un proveedor
@@ -349,7 +357,7 @@ completo, mejor puntúa. Si algún día validáramos la forma, sería con un `ev
     "courseCohortId": "b1e2c3d4-0003-4a00-8000-000000000003",
     "learnerId": "b1e2c3d4-0004-4a00-8000-000000000004",
     "rubricVersionId": "10000000-0000-0000-0000-000000000002",
-    "score": 77,
+    "score": 76,
     "dimensions": { "autonomy": 80, "clarity": 71, "progression": 68, "compliance": 90, "efficiency": 74 },
     "evaluator": { "provider": "fake", "model": "fake-evaluator-v1" }
   }
@@ -372,6 +380,73 @@ completo, mejor puntúa. Si algún día validáramos la forma, sería con un `ev
 
 Consuman los eventos de score de forma idempotente por `eventId`. Nuestros mensajes llevan además
 como headers `eventId`, `eventType`, `eventVersion` y, si los hay, `traceparent` y `X-Request-Id`.
+
+### Cómo funciona y cómo conectarse
+
+**Kafka no es una cola donde el mensaje desaparece al leerlo.** Cada topic es un registro que conserva
+los mensajes durante un tiempo (la retención la define el broker), y cada **grupo de consumidores** lee a
+su ritmo, con su propio avance (*offset*). Dos servicios con grupos distintos reciben, los dos, todos los
+mensajes. Nadie le "pregunta" nada a nadie: uno publica en un topic y el otro está suscripto a ese topic.
+
+| Topic | Publica | Lee | Grupo de consumidores | Message Key |
+|---|---|---|---|---|
+| `practice-events` | Tema 05 | `llm-service` | `llm-service` | La eligen ustedes |
+| `evaluation-events` | `llm-service` | Tema 05 | **El que elijan ustedes** (uno propio y estable, p. ej. `practice-service`) | `courseCohortId` |
+| `practice-events.dlt` | `llm-service` | Quien monitoree | — | La del mensaje original |
+
+El flujo completo de un intento:
+
+1. Ustedes cierran el intento y **publican** un `ATTEMPT-CLOSED` en `practice-events`.
+2. Nosotros lo leemos, lo evaluamos y dejamos el resultado en una tabla propia (patrón *outbox*).
+3. Un proceso nuestro revisa esa tabla **cada 2 segundos** y **publica** el score en `evaluation-events`.
+4. Ustedes lo **leen** de `evaluation-events`, filtran por `eventType` y lo relacionan con el intento por
+   `payload.attemptId`.
+
+No hay una respuesta directa al `ATTEMPT-CLOSED`: el resultado se espera en `evaluation-events`. Con el
+bot llega en unos segundos; con el modelo real, según cuánto tarde el modelo.
+
+**Cómo publican ustedes** (a `practice-events`):
+
+- Clave y valor como texto (`StringSerializer`); el valor es el envelope JSON completo.
+- `acks=all` recomendado, y un `eventId` (UUID) único por evento: nosotros deduplicamos por él, así que
+  si reintentan un envío, reutilicen el mismo `eventId`.
+- Un `ATTEMPT-CLOSED` por intento, publicado cuando el intento ya está cerrado y el `transcript` está
+  completo. Para no perder el evento si Kafka no está disponible, conviene guardarlo primero en su base y
+  publicarlo después (el mismo patrón *outbox* que usamos nosotros).
+
+```java
+// Ejemplo (Spring Kafka, no compilado): publicar el cierre de un intento.
+kafkaTemplate.send("practice-events", attemptId.toString(), objectMapper.writeValueAsString(envelope));
+```
+
+**Cómo se suscriben ustedes** (a `evaluation-events`):
+
+- Con un **`group.id` propio y estable**. Si usaran el nuestro (`llm-service`), nos repartiríamos los
+  mensajes y a ninguno le llegaría todo.
+- Clave y valor como texto (`StringDeserializer`) y parsear el JSON: el envelope viene en el cuerpo.
+- El topic trae los dos tipos de evento, así que **filtren por `eventType`** (`SCORE-CALCULATED` y
+  `SCORE-DEFERRED`). Además viaja como header, para filtrar sin deserializar.
+- Recomendamos `auto.offset.reset=earliest` la primera vez, para no perder scores publicados antes de que
+  arranquen, y confirmar el offset **después** de procesar cada evento.
+- Puede llegar el mismo evento más de una vez: deduplicar por `eventId`.
+- El orden solo está garantizado **dentro de una misma cohorte** (misma key, misma partición); no hay
+  orden entre cohortes.
+- Si un intento se reevalúa pueden llegar varios eventos con el mismo `attemptId` (por ejemplo un
+  `SCORE-DEFERRED` y luego un `SCORE-CALCULATED`): quédense con el más reciente por `timestamp`.
+
+```java
+// Ejemplo (Spring Kafka, no compilado): recibir los scores.
+@KafkaListener(topics = "evaluation-events", groupId = "practice-service")
+public void onScore(String body) throws JsonProcessingException {
+    JsonNode event = objectMapper.readTree(body);
+    String type = event.get("eventType").asText();       // SCORE-CALCULATED | SCORE-DEFERRED
+    JsonNode payload = event.get("payload");             // attemptId, score, dimensions...
+}
+```
+
+**Conexión.** La dirección del broker (`bootstrap.servers`) y, si el broker lo exige, TLS o usuario y
+contraseña, los define el equipo que lo administra: hoy no hay un broker compartido definido (ver la
+sección 10). Los topics los crea ese equipo; nosotros no los creamos.
 
 ## 7. Decisiones tomadas
 

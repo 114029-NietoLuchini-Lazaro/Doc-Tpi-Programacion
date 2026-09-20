@@ -41,7 +41,8 @@ paths:
           content: { application/json: { schema: { $ref: '#/components/schemas/TutorInteractionResponse' } } }
         '401': { description: Servicio o scope incorrecto (se exige practice-service con llm.tutor.interact)., content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
         '403': { description: Falta la identidad delegada o no es un UUID válido., content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
-        '422': { description: Cuerpo inválido (campo obligatorio ausente, message en blanco o riskLevel fuera del enum)., content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+        '409': { description: Se repitió una Idempotency-Key cuya primera solicitud todavía sigue en curso., content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+        '422': { description: Cuerpo inválido (campo obligatorio ausente, message en blanco o riskLevel fuera del enum), o Idempotency-Key ya usada con otro cuerpo., content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
   /course-cohorts/{courseCohortId}/calibration:
     get:
       tags: [Courses]
