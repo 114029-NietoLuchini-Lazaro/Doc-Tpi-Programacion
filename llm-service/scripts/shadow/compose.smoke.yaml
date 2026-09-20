@@ -1,0 +1,75 @@
+# Smoke test del shadow deploy con el llm-service REAL (dos instancias de la misma imagen).
+# Sin Tailscale, Eureka, Kafka ni gateway. Lo levanta scripts/shadow/smoke-shadow-real.sh.
+#   llm-primary -> :18086   llm-shadow -> :18087   (cada uno con su propio Postgres)
+
+x-llm-env: &llm-env
+  SERVER_PORT: "8086"
+  MANAGEMENT_PORT: "8087"
+  SPRING_DATASOURCE_USERNAME: llm
+  SPRING_DATASOURCE_PASSWORD: llm
+  # Clave AES de prueba (32 bytes en base64). Solo para este smoke.
+  LLM_CREDENTIALS_MASTER_KEY: "MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE="
+  EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
+  LLM_KAFKA_ENABLED: "false"
+  NOTIFICATIONS_ENABLED: "false"
+  TRUST_UNSIGNED_BEARER: "false"
+
+x-postgres: &postgres
+  image: pgvector/pgvector:pg16
+  environment:
+    POSTGRES_DB: llm
+    POSTGRES_USER: llm
+    POSTGRES_PASSWORD: llm
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U llm -d llm"]
+    interval: 3s
+    timeout: 3s
+    retries: 20
+
+services:
+  pg-primary:
+    <<: *postgres
+  pg-shadow:
+    <<: *postgres
+
+  llm-primary:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: llm-service-shadow-smoke:latest
+    environment:
+      <<: *llm-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://pg-primary:5432/llm
+    ports:
+      - "18086:8086"
+    depends_on:
+      pg-primary:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8087/actuator/health | grep -q UP"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  llm-shadow:
+    image: llm-service-shadow-smoke:latest
+    environment:
+      <<: *llm-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://pg-shadow:5432/llm
+      # Punto de divergencia controlado: el smoke lo cambia para probar que el comparador detecta
+      # un cambio de comportamiento real (real = 3 URLs distintas para bloquear spam corto).
+      LLM_MODERATION_SPAM_MAX_DISTINCT_URLS_SHORT_TEXT: "${SHADOW_SPAM_MAX_URLS:-3}"
+    ports:
+      - "18087:8086"
+    depends_on:
+      pg-shadow:
+        condition: service_healthy
+      llm-primary:
+        condition: service_healthy   # evita compilar/arrancar los dos a la vez y que Flyway compita por CPU
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8087/actuator/health | grep -q UP"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 20s

@@ -74,7 +74,7 @@ Este resultado es una **migración de documentación**, no una migración de có
 
 | Servicio dueño | Responsabilidad frente a LLM | Ejemplo de scope |
 |---|---|---|
-| `practice-service` | Solicitar tutoría contextual. | `llm.tutor.invoke` |
+| `practice-service` | Solicitar tutoría contextual. | `llm.tutor.interact` |
 | `challenges-service` | Consultar resultado de evaluación y gestionar apelación. | `llm.evaluation.read` |
 | `courses-service` | Consultar calibración y evaluaciones pendientes. | `llm.calibration.read` |
 | `admin-service` | Gestionar golden set, calibración, modelos y overrides. | `llm.golden-set.write` |

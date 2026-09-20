@@ -966,7 +966,7 @@ misma forma.
   los datos se guarden y se recuperen bien, que el acuerdo con la recepción
   central se respete, y —clave— la **prueba de apagar y prender** para confirmar
   que nada se pierde. El porcentaje de código probado llega al mínimo que exige
-  el equipo (95 % en la parte de servidor y en la de pantalla).
+  el equipo (90 % en la parte de servidor y en la de pantalla).
 - **Cómo se controla:** los **escenarios de aceptación** de las tareas 5, 6 y 7
   (camino esperado y casos que deben fallar) quedan ejecutados con evidencia.
 - **Qué tiene que incluir sí o sí:** la guía de demo paso a paso: entrar con

@@ -77,8 +77,9 @@ public class CalibrationEvaluationRunner {
   }
 
   private void evaluate(UUID runId, CalibrationRun run) {
-    Map<Dimension, Integer> weights = new EnumMap<>(Dimension.class);
-    String systemPrompt = buildSystemPromptAndWeights(rubrics.weightsAndPrompts(run.rubricVersionId()), weights);
+    var rendered = EvaluatorPrompt.render(rubrics.weightsAndPrompts(run.rubricVersionId()));
+    Map<Dimension, Integer> weights = rendered.weights();
+    String systemPrompt = rendered.systemPrompt();
 
     List<GoldenSetCaseDetail> cases = goldenSets.casesOf(run.goldenSetVersionId());
     List<CaseScores> caseScores = new ArrayList<>();
@@ -91,32 +92,12 @@ public class CalibrationEvaluationRunner {
     workflow.finish(runId, result.passed());
   }
 
-  /** Además de armar el prompt, llena {@code weights} (efecto de lado deliberado: ambos vienen
-   * de la misma lista de dimensiones y siempre se necesitan juntos). */
-  private String buildSystemPromptAndWeights(List<RubricDraftService.DimensionInput> dimensions,
-      Map<Dimension, Integer> weights) {
-    StringBuilder prompt = new StringBuilder(
-        "Eres un evaluador que puntúa una transcripción de tutoría en cinco dimensiones, cada una de 0 a 100. "
-            + "Respondé únicamente un JSON con las cinco claves en minúscula: autonomy, clarity, progression, compliance, efficiency.\n\n");
-    for (var dimension : dimensions) {
-      weights.put(dimension.key(), dimension.weight().setScale(0, java.math.RoundingMode.HALF_UP).intValueExact());
-      prompt.append("- ").append(dimension.key().name().toLowerCase(Locale.ROOT)).append(" (peso ")
-          .append(dimension.weight()).append("): ").append(dimension.criterion());
-      if (dimension.anchors() != null) {
-        prompt.append(" Anclas: ").append(dimension.anchors());
-      }
-      prompt.append('\n');
-    }
-    return prompt.toString();
-  }
-
   private CaseScores evaluateCase(UUID runId, GoldenSetCaseDetail testCase, String systemPrompt, Map<Dimension, Integer> weights) {
-    String userPrompt = "CONTEXTO DEL DESAFÍO:\n" + testCase.challengeContext()
-        + "\n\nTRANSCRIPCIÓN:\n" + testCase.transcript();
+    String userPrompt = EvaluatorPrompt.userPrompt(testCase.challengeContext(), testCase.transcript());
     var result = models.invoke(ModelFunction.EVALUATOR, systemPrompt, userPrompt, timeout);
 
-    Map<Dimension, Integer> humanScores = scoresFrom(testCase.referenceScores());
-    Map<Dimension, Integer> modelScores = scoresFrom(parse(result.text()));
+    Map<Dimension, Integer> humanScores = EvaluatorPrompt.scoresFrom(testCase.referenceScores());
+    Map<Dimension, Integer> modelScores = EvaluatorPrompt.scoresFrom(parse(result.text()));
 
     BigDecimal humanFinal = BigDecimal.ZERO;
     BigDecimal modelFinal = BigDecimal.ZERO;
@@ -133,18 +114,6 @@ public class CalibrationEvaluationRunner {
 
     caseResults.record(runId, testCase.id(), toJson(modelScores), humanFinal, modelFinal, toJson(dimensionErrors), finalError);
     return new CaseScores(humanScores, modelScores);
-  }
-
-  private Map<Dimension, Integer> scoresFrom(JsonNode node) {
-    Map<Dimension, Integer> scores = new EnumMap<>(Dimension.class);
-    for (Dimension dimension : Dimension.values()) {
-      JsonNode value = node.get(dimension.name().toLowerCase(Locale.ROOT));
-      if (value == null || !value.isIntegralNumber()) {
-        throw new IllegalStateException("Falta la dimensión " + dimension + " en los puntajes");
-      }
-      scores.put(dimension, value.intValue());
-    }
-    return scores;
   }
 
   private JsonNode parse(String text) {

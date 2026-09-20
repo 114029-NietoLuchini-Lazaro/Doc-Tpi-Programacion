@@ -1,0 +1,118 @@
+# ==============================================================================
+# Shadow deploy de llm-service en la mesh Tailscale.
+#
+# Levanta una segunda instancia AISLADA de la real: recibe una copia del tráfico
+# (la duplicación la hace el gateway/proxy, no este servicio) y su respuesta se descarta.
+#
+# Uso (siempre con -p distinto para no pisar el stack real de compose.mesh.yaml):
+#   docker compose -p llm-shadow -f compose.shadow.yaml up -d --build
+#
+# Requisitos:
+#   - llm-service/.env con TS_AUTHKEY (o TS_AUTHKEY_SHADOW) y LLM_CREDENTIALS_MASTER_KEY
+#   - llm-service/resolv.conf presente
+#
+# Qué la hace "sombra" (no tocar sin entender el efecto):
+#   - hostname Tailscale propio: llm-service-shadow (el real sigue siendo llm-service)
+#   - Postgres y volúmenes propios: nunca comparte datos con el servicio real
+#   - NO se registra en Eureka: el gateway no le manda tráfico real por descubrimiento
+#   - Kafka apagado y consumer group propio: no consume ni publica eventos reales
+#   - Notificaciones apagadas: no dispara mails/eventos reales a notifications-service
+#   - Claves de proveedores LLM vacías por defecto: no gasta cuota real (ver más abajo)
+#
+# Para mirrorear tráfico apuntar el proxy a: http://llm-service-shadow.<tailnet>.ts.net:8086
+# ==============================================================================
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: tpi-llm-shadow-postgres
+    environment:
+      POSTGRES_DB: llm
+      POSTGRES_USER: llm
+      POSTGRES_PASSWORD: llm
+    volumes:
+      - llm-shadow-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U llm -d llm"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  mesh-client:
+    image: tailscale/tailscale:v1.102.3
+    container_name: mesh-llm-shadow
+    hostname: llm-service-shadow
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY_SHADOW:-${TS_AUTHKEY}}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_HOSTNAME=llm-service-shadow
+      - TS_USERSPACE=false
+    volumes:
+      - mesh_shadow_state:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "tailscale status --json | grep -q Running"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 20s
+
+  llm-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tpi-llm-shadow
+    # Comparte el namespace de red del sidecar Tailscale:
+    # SIN ports:, SIN networks:, SIN dns:, SIN extra_hosts:.
+    network_mode: "service:mesh-client"
+    restart: unless-stopped
+    depends_on:
+      mesh-client:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: "${SERVER_PORT:-8086}"
+      MANAGEMENT_PORT: "${MANAGEMENT_PORT:-8087}"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/llm"
+      SPRING_DATASOURCE_USERNAME: "llm"
+      SPRING_DATASOURCE_PASSWORD: "llm"
+      LLM_CREDENTIALS_MASTER_KEY: "${LLM_CREDENTIALS_MASTER_KEY}"
+      # Necesita el gateway/JWKS para validar tokens de las requests espejadas
+      GATEWAY_URL: "${GATEWAY_URL:-http://tpi-plataforma.tail767776.ts.net:8080}"
+      JWKS_URL: "${JWKS_URL:-http://tpi-plataforma.tail767776.ts.net:8080/.well-known/jwks.json}"
+      APP_CLIENT_ID: "${APP_CLIENT_ID:-llm-service}"
+      APP_CLIENT_SECRET: "${APP_CLIENT_SECRET:-}"
+      # Eureka: NO registrar la sombra (si se registra como llm-service el gateway le rutea tráfico real)
+      EUREKA_URL: "${EUREKA_URL:-http://tpi-plataforma.tail767776.ts.net:8761/eureka/}"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "${EUREKA_URL:-http://tpi-plataforma.tail767776.ts.net:8761/eureka/}"
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
+      EUREKA_INSTANCE_INSTANCE_ID: "llm-service-shadow:${SERVER_PORT:-8086}"
+      SPRING_CLOUD_INETUTILS_PREFERRED_NETWORKS_0: "100."
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      # Sin efectos laterales
+      LLM_KAFKA_ENABLED: "false"
+      SPRING_KAFKA_CONSUMER_GROUP_ID: "llm-service-shadow"
+      NOTIFICATIONS_ENABLED: "false"
+      TRUST_UNSIGNED_BEARER: "false"
+      # Proveedores LLM: vacíos por defecto para no consumir cuota real.
+      # Para comparar respuestas de IA reales, definir claves de prueba en .env.
+      GROQ_API_KEY: "${SHADOW_GROQ_API_KEY:-}"
+      LLM_MODERATION_CONTEXTUAL_API_KEY: "${SHADOW_MODERATION_CONTEXTUAL_API_KEY:-}"
+    volumes:
+      - ./resolv.conf:/etc/resolv.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:${MANAGEMENT_PORT:-8087}/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+
+volumes:
+  llm-shadow-postgres-data:
+  mesh_shadow_state:

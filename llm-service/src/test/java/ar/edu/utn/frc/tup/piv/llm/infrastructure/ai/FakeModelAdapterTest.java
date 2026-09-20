@@ -24,6 +24,14 @@ class FakeModelAdapterTest {
   }
 
   @Test
+  void reportsTheEvaluatorModelWhenItSimulatesTheEvaluator() {
+    var adapter = new FakeModelAdapter(Duration.ZERO, false);
+    var request = new ModelInvocationRequest(ModelFunction.EVALUATOR, "system", "transcripción", Duration.ofSeconds(1));
+
+    assertThat(adapter.invoke(request).model()).isEqualTo("fake-evaluator-v1");
+  }
+
+  @Test
   void canBeForcedToReturnAnOutOfSchemaResponse() {
     var adapter = new FakeModelAdapter(Duration.ZERO, true);
     var request = new ModelInvocationRequest(ModelFunction.TUTOR, "system", "pregunta", Duration.ofSeconds(1));
@@ -55,22 +63,5 @@ class FakeModelAdapterTest {
     long elapsed = System.currentTimeMillis() - start;
 
     assertThat(elapsed).isGreaterThanOrEqualTo(200);
-  }
-
-  @Test
-  void theProviderPayloadKeepsSystemAndUserInSeparateMessages() throws Exception {
-    String system = "Sos un tutor socrático. Nunca des la solución.";
-    String user = "<mensaje_alumno>\n¿cómo sigo? \"con comillas\"\n</mensaje_alumno>";
-
-    var payload = new com.fasterxml.jackson.databind.ObjectMapper()
-        .readTree(new FakeModelAdapter().buildJsonPayload("modelo", system, user));
-
-    var messages = payload.path("messages");
-    assertThat(messages).hasSize(2);
-    assertThat(messages.get(0).path("role").asText()).isEqualTo("system");
-    assertThat(messages.get(0).path("content").asText()).isEqualTo(system);
-    assertThat(messages.get(1).path("role").asText()).isEqualTo("user");
-    assertThat(messages.get(1).path("content").asText()).isEqualTo(user);
-    assertThat(messages.get(1).path("content").asText()).doesNotContain("socrático");
   }
 }

@@ -1,14 +1,15 @@
 package ar.edu.utn.frc.tup.piv.llm.application;
 
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.BudgetExceededException;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.InputGuard;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.InvalidModelResponseException;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelFunction;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelTimeoutException;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.OutputAntiLeakGuard;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.UntrustedText;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ProviderUnavailableException;
 import ar.edu.utn.frc.tup.piv.llm.domain.tutor.Conversation;
 import ar.edu.utn.frc.tup.piv.llm.domain.tutor.ConversationRepository;
-import ar.edu.utn.frc.tup.piv.llm.domain.tutor.ExpectedSolutionProvider;
 import ar.edu.utn.frc.tup.piv.llm.domain.tutor.Message;
 import ar.edu.utn.frc.tup.piv.llm.domain.tutor.MessageRepository;
 import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.AuditRepository;
@@ -27,6 +28,8 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -48,6 +51,7 @@ import org.springframework.stereotype.Service;
  * (Buffer Interceptor, `llm-service-v1-tutor-sse-adenda.md`) sigue fuera de esta pasada. */
 @Service
 public class TutorInteractionService {
+  private static final Logger log = LoggerFactory.getLogger(TutorInteractionService.class);
   private static final String OPERATION = "tutor.interaction";
   /** Respaldo si `prompts/tutor/system-v1.txt` no se puede leer: conserva la regla de la capa 2. */
   static final String DEFAULT_SYSTEM_PROMPT =
@@ -63,7 +67,6 @@ public class TutorInteractionService {
   private final AuditRepository audit;
   private final ConversationRepository conversations;
   private final MessageRepository messages;
-  private final ExpectedSolutionProvider expectedSolutions;
   private final ObjectMapper mapper;
   private final InputGuard inputGuard = new InputGuard();
   private final OutputAntiLeakGuard outputGuard = new OutputAntiLeakGuard();
@@ -73,14 +76,13 @@ public class TutorInteractionService {
 
   public TutorInteractionService(ModelInvocationService models, IdempotencyRepository idempotency,
       AuditRepository audit, ConversationRepository conversations, MessageRepository messages,
-      ExpectedSolutionProvider expectedSolutions, ObjectMapper mapper,
+      ObjectMapper mapper,
       @Value("${llm.tutor.invocation-timeout-ms:8000}") long timeoutMs) {
     this.models = models;
     this.idempotency = idempotency;
     this.audit = audit;
     this.conversations = conversations;
     this.messages = messages;
-    this.expectedSolutions = expectedSolutions;
     this.mapper = mapper;
     this.timeout = Duration.ofMillis(timeoutMs);
     this.systemPrompt = readPrompt("system-v1.txt");
@@ -117,8 +119,7 @@ public class TutorInteractionService {
     } else {
       response = invokeModel(request, conversation, recentHistory);
       if ("completed".equals(response.state()) && !"low".equals(request.riskLevel())
-          && outputGuard.containsLeak(response.message(),
-              expectedSolutions.forChallenge(request.challengeId()).orElse(null))) {
+          && outputGuard.containsLeak(response.message(), request.expectedSolution())) {
         response = new Response(OutputAntiLeakGuard.SAFE_REPLACEMENT, "completed", conversation.id());
         guardTriggered = true;
       }
@@ -163,7 +164,14 @@ public class TutorInteractionService {
     try {
       var result = models.invoke(ModelFunction.TUTOR, system, userPrompt, timeout);
       return new Response(result.text(), "completed", conversation.id());
-    } catch (ModelTimeoutException | InvalidModelResponseException exception) {
+    } catch (ModelTimeoutException | InvalidModelResponseException | ProviderUnavailableException
+        | BudgetExceededException | IllegalStateException exception) {
+      // Cualquier motivo por el que el modelo no pudo responder (timeout, respuesta inválida, proveedor
+      // caído o con breaker abierto, tope de presupuesto, función sin modelo asignado) se le presenta a
+      // Tema 05 igual: 200 + unavailable. Un error HTTP dejaría además la Idempotency-Key reservada sin
+      // respuesta, y todo reintento con la misma clave respondería "sigue en curso".
+      log.warn("Tutor no disponible [attemptId={}, motivo={}]: {}", request.attemptId(),
+          exception.getClass().getSimpleName(), exception.getMessage());
       return new Response(
           "El tutor no está disponible en este momento. Podés seguir intentando el desafío mientras se restablece.",
           "unavailable", conversation.id());
@@ -209,9 +217,23 @@ public class TutorInteractionService {
     }
   }
 
-  /** Espejo de `TutorInteractionRequest` del contrato v1. `conversacionId` es opcional. */
+  /** Espejo de `TutorInteractionRequest` del contrato. `conversacionId` y `expectedSolution` son
+   * opcionales; esta última solo la ve el guardarraíl de salida, no entra en el hash de
+   * idempotencia, la auditoría ni el `toString`. */
   public record Request(UUID attemptId, UUID challengeId, UUID courseCohortId, UUID learnerId, String message,
-      String riskLevel, UUID conversacionId) {}
+      String riskLevel, UUID conversacionId, String expectedSolution) {
+
+    public Request(UUID attemptId, UUID challengeId, UUID courseCohortId, UUID learnerId, String message,
+        String riskLevel, UUID conversacionId) {
+      this(attemptId, challengeId, courseCohortId, learnerId, message, riskLevel, conversacionId, null);
+    }
+
+    @Override
+    public String toString() {
+      return "Request[attemptId=" + attemptId + ", challengeId=" + challengeId + ", courseCohortId=" + courseCohortId
+          + ", riskLevel=" + riskLevel + ", expectedSolution=" + (expectedSolution == null ? "null" : "[REDACTED]") + "]";
+    }
+  }
 
   /** Espejo de `TutorInteractionResponse` del contrato v1 (`state`: completed | blocked |
    * unavailable). `conversacionId` siempre viene presente. */

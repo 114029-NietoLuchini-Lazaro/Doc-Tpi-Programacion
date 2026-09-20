@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Course context is gateway-derived; it deliberately does not trust browser state. */
 @RestController
-@RequestMapping("/api/llm/courses")
+@RequestMapping("${app.api.private-path:/api/llm}/courses")
 public class CourseContextController {
   private static final String TEACHER_COURSES_HEADER = "X-Teacher-Course-Ids";
   private final GoldenSetAuthorization authorization;

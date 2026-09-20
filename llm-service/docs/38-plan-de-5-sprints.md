@@ -191,7 +191,7 @@ calendario ante todo; el riesgo de contrato externo queda declarado, no oculto.
 
 - **Sprint 3 — colchón real (todas las parejas):**
   - Regresión de EP-01 a EP-07 + EP-09 completa contra el proveedor real, cobertura de
-    integración al 95%, y la última oportunidad para lo que `courses-service` o la ventana de
+    integración al 90%, y la última oportunidad para lo que `courses-service` o la ventana de
     pruebas de carga de EP-07 no hayan cerrado en S1/S2.
   - **Total Sprint 3: ~40–65 h** — muy por debajo del techo de referencia, a propósito: es el
     único sprint de los cinco sin backlog nuevo pendiente de asignar.

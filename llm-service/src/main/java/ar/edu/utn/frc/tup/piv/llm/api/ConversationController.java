@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  * {@link TutorGatewayAuthorization}: son el mismo scope M2M que el tutor (EP-05), no uno propio
  * como sí lo tiene RAG (EP-09, épica distinta). */
 @RestController
-@RequestMapping("/api/llm/tutor/conversations")
+@RequestMapping("${app.api.private-path}/tutor/conversations")
 public class ConversationController {
   private final ConversationService service;
   private final TutorGatewayAuthorization authorization;

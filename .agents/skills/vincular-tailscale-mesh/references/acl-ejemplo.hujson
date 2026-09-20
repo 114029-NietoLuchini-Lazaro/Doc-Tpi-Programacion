@@ -1,0 +1,65 @@
+// Politica de ACL de ejemplo para la tailnet (Tailscale admin > Access controls).
+//
+// POR QUE ES OBLIGATORIA: la tailnet por defecto acepta todo. Sin esta politica,
+// "sin ports:" NO protege: cualquier nodo llega directo a <ip-micro>:<APP_PORT>
+// y puede inventar headers de identidad. La unica defensa real es que SOLO el
+// gateway (tag:plataforma) pueda iniciar conexiones al micro.
+//
+// REGLAS DEL LENGUAJE (leer antes de editar):
+//   1. Todo lo que no esta en "acls" queda DENEGADO. NO se escriben reglas de
+//      "deny": el editor de la consola las rechaza.
+//   2. Este archivo lleva un bloque "tests": la consola los ejecuta al guardar
+//      y NO deja aplicar la politica si alguno falla. Es la prueba negativa que
+//      no depende de desde donde corras el script.
+//   3. Las auth keys se generan CON el tag, y quien las crea debe figurar en
+//      tagOwners. Los nodos que ya existen NO toman el tag solos: hay que
+//      re-autenticarlos (borrar estado y volver a levantar el sidecar con la
+//      key tagged), o la mesh queda cortada al activar la ACL.
+//
+// Esquema de tags:
+//   tag:plataforma  -> nodos de la plataforma (nginx, api-gateway, eureka)
+//   tag:micros      -> micros de los equipos (sus sidecars)
+// Ajustar el puerto del micro (8086 es el ejemplo de la prueba).
+
+{
+  "tagOwners": {
+    "tag:plataforma": ["autogroup:admin"],
+    "tag:micros": ["autogroup:admin"]
+  },
+
+  "acls": [
+    // Personas (navegador / curl) -> borde de la plataforma (nginx via serve).
+    { "action": "accept", "src": ["autogroup:member"], "dst": ["tag:plataforma:80"] },
+
+    // El gateway -> micros: SOLO el puerto de app. Nada mas.
+    { "action": "accept", "src": ["tag:plataforma"], "dst": ["tag:micros:8086"] },
+
+    // Micros -> registro (Eureka) y gateway (R2: token + llamadas).
+    { "action": "accept", "src": ["tag:micros"], "dst": ["tag:plataforma:8761", "tag:plataforma:8080"] }
+  ],
+
+  // La consola corre estos tests antes de guardar. Cubren lo que los "accept"
+  // no dicen: puertos cerrados y accesos que NO deben existir.
+  "tests": [
+    // Un micro llega a registro y gateway, y NO a puertos de servicios internos.
+    { "src": "tag:micros",
+      "accept": ["tag:plataforma:8761", "tag:plataforma:8080"],
+      "deny":   ["tag:plataforma:8082", "tag:plataforma:8081"] },
+
+    // El gateway llega al micro solo por el puerto de app (management cerrado).
+    { "src": "tag:plataforma",
+      "accept": ["tag:micros:8086"],
+      "deny":   ["tag:micros:8087"] },
+
+    // Una persona NO llega directo al micro.
+    { "src": "autogroup:member", "deny": ["tag:micros:8086"] }
+  ]
+
+  // NOTA sobre el control positivo de las pruebas:
+  //   - Desde el MICRO (tag:micros), el unico control valido es
+  //     tag:plataforma:8761 (o :8080). El borde :80 NO esta permitido para micros.
+  //   - Desde el HOST de una persona (autogroup:member), el control es el borde
+  //     tag:plataforma:80. Directo a :8080/:8761/:8082 queda denegado por esta
+  //     politica: si un dev necesita curl al gateway, agregar la tupla explicita
+  //     (autogroup:member -> tag:plataforma:8080) y actualizar los tests.
+}

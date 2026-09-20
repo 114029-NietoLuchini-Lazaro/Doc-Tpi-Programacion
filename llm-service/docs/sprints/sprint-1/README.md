@@ -20,8 +20,10 @@
 - **Registro de planning:** [`s1.md`](s1.md)
 - **Cierre de huecos auditados:** [`s1-cierre.md`](s1-cierre.md)
 - **Vista de historias completa:** [`s1-historias.md`](s1-historias.md)
+- **Historias agregadas y guía de carga en Taiga:** [`historias-agregadas-s1.md`](historias-agregadas-s1.md)
 - **Historias explicadas sin jerga:** [`s1-explicado.md`](s1-explicado.md)
 - **Backlog priorizado (orden de trabajo):** [`backlog-priorizado-s1.md`](backlog-priorizado-s1.md)
+- **Guía de carga en Taiga por épicas:** [`historias-sprint-1-taiga.md`](../../historias-sprint-1-taiga.md)
 
 ## Objetivo
 

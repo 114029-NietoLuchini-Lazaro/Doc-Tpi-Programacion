@@ -1248,11 +1248,11 @@ dónde está, quién lo define y cuándo.
 | # | Qué | Dónde | Marca | Quién lo define |
 |---|---|---|---|---|
 | E-30 | **Quién provee el gestor de secretos en producción.** [06](../06-operacion-calidad-y-pruebas/01-operacion-e-ingenieria.md)Parte 5 dice *"secretos del orquestador"* sin decir cuál | [15](../02-arquitectura-y-plataforma/02-sincronizacion-arquitectura-y-despliegue.md) §7 | ⬜ | 🔴 **La sesión de integración**: es infraestructura compartida |
-| E-31 | El modo shadow del evaluador: dónde se activa, dónde va la salida descartada, cómo se compara | [15](../02-arquitectura-y-plataforma/02-sincronizacion-arquitectura-y-despliegue.md) §7 | ⬜ | Nosotros, con el módulo de calibración |
+| E-31 | El modo shadow del evaluador: dónde se activa, dónde va la salida descartada, cómo se compara | [15](../02-arquitectura-y-plataforma/02-sincronizacion-arquitectura-y-despliegue.md) §7 | ✅ **Fase 1** (2026-09-19): job aparte por replay, salida solo a tablas propias, comparación candidata vs. baseline. ⬜ Fase 2 (tráfico real) bloqueada por el pipeline de evaluación. Umbrales de la recomendación a confirmar. | Nosotros — ver [04](../03-capacidades-de-ia/golden-set-y-calibracion/04-shadow-del-evaluador.md) |
 
 ## Lo que hay que definir esta semana
 
-De los 31 ítems uno ya está cerrado —E-05, por ADR-012—, así que quedan **30 abiertos**. De esos treinta, **cinco no pueden esperar**:
+De los 31 ítems dos ya están cerrados —E-05, por ADR-012, y E-31 (Fase 1, 2026-09-19)—, así que quedan **29 abiertos**. De esos veintinueve, **cinco no pueden esperar**:
 
 | # | Qué | Por qué ahora |
 |---|---|---|

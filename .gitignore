@@ -1,5 +1,7 @@
 # Material de origen (se distribuye por la catedra)
 *.pdf
+# Excepción: PDF de muestra que sirve el endpoint /api/llm/rag/documents/sample (recurso de la app)
+!llm-service/src/main/resources/fuentes/*.pdf
 
 # Python
 __pycache__/

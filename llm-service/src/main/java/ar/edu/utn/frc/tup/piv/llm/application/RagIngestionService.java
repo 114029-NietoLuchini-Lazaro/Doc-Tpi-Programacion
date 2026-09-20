@@ -100,8 +100,14 @@ public class RagIngestionService {
     RagDocument document = new RagDocument(documentId, courseCohortId, fileName, bytes.length,
         extracted.totalPages(), chunks.size(), OffsetDateTime.now(), preview, true);
 
+    // El documento se guarda primero: rag_chunks.document_id tiene FK contra rag_documents.
     RagDocument saved = documents.save(document, bytes);
-    vectorStore.indexChunks(documentId, chunks, chunkEmbeddings);
+    try {
+      vectorStore.indexChunks(documentId, chunks, chunkEmbeddings);
+    } catch (RuntimeException failure) {
+      documents.deactivate(documentId); // no dejar un documento activo sin fragmentos
+      throw failure;
+    }
     idempotency.complete(OPERATION, actor, idempotencyKey, saved.id(), mapper.valueToTree(saved));
     return saved;
   }

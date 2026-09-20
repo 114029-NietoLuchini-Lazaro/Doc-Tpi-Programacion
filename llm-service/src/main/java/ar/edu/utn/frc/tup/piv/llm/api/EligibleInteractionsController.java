@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@RequestMapping("/api/llm/courses/{courseId}/eligible-interactions")
+@RequestMapping("${app.api.private-path}/courses/{courseId}/eligible-interactions")
 public class EligibleInteractionsController {
   private final EligibleInteractionsService service;
   private final GoldenSetAuthorization authorization;

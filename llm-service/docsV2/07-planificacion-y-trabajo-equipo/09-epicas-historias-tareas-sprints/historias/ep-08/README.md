@@ -9,9 +9,9 @@
 
 | ID | Título | Tipo | Pareja | Estado |
 |---|---|---|---|---|
-| [LLM-S11-H01](h01.md) | Que un mensaje del chat se permita o bloquee antes de entregarse | Tarea (habilitador — contrato con chat) | P3+P2+P1 | ⚪ Borrador |
-| [LLM-S11-H02](h02.md) | Detectar spam, contenido ofensivo e intentos de ocultar código | Tarea (habilitador) | P3 | ⚪ Borrador |
-| [LLM-S12-H01](h03.md) | Apelar un mensaje que bloqueó la moderación | HU de valor | P3 | ⚪ Borrador |
-| [LLM-S12-H02](h04.md) | Que el docente revise un incidente de moderación y lo resuelva | HU de valor | P3 | ⚪ Borrador |
-| [LLM-S13-H01](h05.md) | Que la moderación siga funcionando (en modo degradado) si el clasificador contextual falla | Tarea (habilitador) | P3+P2 | ⚪ Borrador — escrita 2026-09-13 |
-| [LLM-S13-H02](h06.md) | Que la evidencia de moderación se retenga el tiempo necesario y luego se purgue | Tarea (habilitador) | P1 | ⚪ Borrador — escrita 2026-09-13 |
+| [LLM-S11-H01](h01.md) | Que un mensaje del chat se permita o bloquee antes de entregarse | Tarea (habilitador — contrato con chat) | P3+P2+P1 | 🟡 Verificado en vivo — `CA_negativo_1` implementado (2026-09-19); `sender_id`/camino contextual mockeados |
+| [LLM-S11-H02](h02.md) | Detectar spam, contenido ofensivo e intentos de ocultar código | Tarea (habilitador) | P3 | 🟢 Verificado en vivo — umbrales por defecto sin calibrar (2026-09-18) |
+| [LLM-S12-H01](h03.md) | Apelar un mensaje que bloqueó la moderación | HU de valor | P3 | 🟢 Verificado en vivo (2026-09-18) |
+| [LLM-S12-H02](h04.md) | Que el docente revise un incidente de moderación y lo resuelva | HU de valor | P3 | 🟡 Verificado en vivo — notificación real implementada (HTTP + Kafka, mock con `NOTIFICATIONS_ENABLED=false`); falta contrato con notifications-service (2026-09-19) |
+| [LLM-S13-H01](h05.md) | Que la moderación siga funcionando (en modo degradado) si el clasificador contextual falla | Tarea (habilitador) | P3+P2 | 🟢 Verificado (2026-09-18) |
+| [LLM-S13-H02](h06.md) | Que la evidencia de moderación se retenga el tiempo necesario y luego se purgue | Tarea (habilitador) | P1 | 🟡 Cubierto por tests, no ejercitado en vivo — períodos de retención hardcodeados (2026-09-18) |

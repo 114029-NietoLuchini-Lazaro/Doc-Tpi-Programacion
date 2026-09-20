@@ -19,10 +19,12 @@ paths:
       summary: Solicita una respuesta pedagógica segura del tutor
       description: |
         Solo practice-service invoca esta operación. El Gateway debe propagar identidad delegada,
-        traceparent y X-Request-Id. expectedSolution es M2M, solo se usa en memoria para el
-        guardarraíl anti-fuga; no se persiste, no se audita y nunca se devuelve.
+        traceparent y X-Request-Id. expectedSolution es opcional y M2M: solo se usa en memoria para
+        el guardarraíl anti-fuga; no se persiste, no se audita y nunca se devuelve.
+        Un fallo del modelo NO es un error HTTP: responde 200 con state `unavailable`.
+        Mismo Idempotency-Key + mismo cuerpo devuelve la misma respuesta sin volver a invocar al modelo.
       operationId: createTutorInteraction
-      security: [{ serviceJwt: [llm.tutor.invoke] }]
+      security: [{ serviceJwt: [llm.tutor.interact] }]
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Traceparent'
@@ -34,13 +36,13 @@ paths:
             schema: { $ref: '#/components/schemas/TutorInteractionRequest' }
       responses:
         '200':
-          description: Interacción procesada; state informa si la respuesta se entregó, fue bloqueada o no está disponible.
+          description: Interacción procesada; state informa si la respuesta se entregó o el tutor no está disponible.
           headers: { X-Request-Id: { $ref: '#/components/headers/RequestId' } }
           content: { application/json: { schema: { $ref: '#/components/schemas/TutorInteractionResponse' } } }
-        '400': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Problem' }
-        '429': { $ref: '#/components/responses/Problem' }
-        '503': { $ref: '#/components/responses/Problem' }
+        '401': { description: Servicio o scope incorrecto (se exige practice-service con llm.tutor.interact)., content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+        '403': { description: Falta la identidad delegada o no es un UUID válido., content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+        '409': { description: Se repitió una Idempotency-Key cuya primera solicitud todavía sigue en curso., content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+        '422': { description: "Cuerpo inválido (campo obligatorio ausente, message en blanco o riskLevel fuera del enum), o Idempotency-Key ya usada con otro cuerpo.", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
   /course-cohorts/{courseCohortId}/calibration:
     get:
       tags: [Courses]
@@ -172,6 +174,59 @@ paths:
       security: [{ serviceJwt: [llm.golden-set.manage] }]
       parameters: [ { $ref: '#/components/parameters/CourseCohortId' }, { $ref: '#/components/parameters/GoldenSetVersionId' }, { $ref: '#/components/parameters/IdempotencyKey' }, { $ref: '#/components/parameters/Traceparent' }, { $ref: '#/components/parameters/RequestId' } ]
       responses: { '200': { description: Golden Set publicado, content: { application/json: { schema: { $ref: '#/components/schemas/GoldenSetVersion' } } } }, '409': { $ref: '#/components/responses/Problem' }, '422': { $ref: '#/components/responses/Problem' } }
+  /course-cohorts/{courseCohortId}/shadow-runs:
+    get:
+      tags: [Administration]
+      summary: Lista las corridas de shadow del evaluador de un curso
+      description: En el código vive en `/api/llm/courses/{courseId}/shadow-runs`, igual que las calibraciones.
+      operationId: listShadowRuns
+      security: [{ serviceJwt: [llm.calibration.manage] }]
+      parameters:
+        - $ref: '#/components/parameters/CourseCohortId'
+        - $ref: '#/components/parameters/Traceparent'
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200': { description: "Corridas del curso, más recientes primero (máx. 100)", content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: '#/components/schemas/ShadowRun' } } } } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Administration]
+      summary: Pide un shadow del evaluador (E-31)
+      description: |
+        Evalúa una rúbrica candidata y la activa del curso (baseline) sobre las mismas transcripciones ya
+        guardadas y compara los puntajes. **La salida se descarta**: solo se guarda la comparación en tablas
+        propias; no emite scores, eventos ni toca la calibración ni las evaluaciones reales. Es informativo:
+        no activa nada. Exige una calibración activa en el curso (esa rúbrica es la baseline). Asíncrono:
+        consultar el recurso hasta COMPLETED o FAILED. Las transcripciones se anonimizan antes de salir al proveedor.
+      operationId: createShadowRun
+      security: [{ serviceJwt: [llm.calibration.manage] }]
+      parameters:
+        - $ref: '#/components/parameters/CourseCohortId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Traceparent'
+        - $ref: '#/components/parameters/RequestId'
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateShadowRunRequest' } } }
+      responses:
+        '202': { description: Corrida aceptada, content: { application/json: { schema: { $ref: '#/components/schemas/ShadowRun' } } } }
+        '400': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /course-cohorts/{courseCohortId}/shadow-runs/{shadowRunId}:
+    get:
+      tags: [Administration]
+      summary: Consulta el progreso y la comparación de un shadow
+      operationId: getShadowRun
+      security: [{ serviceJwt: [llm.calibration.manage] }]
+      parameters:
+        - $ref: '#/components/parameters/CourseCohortId'
+        - $ref: '#/components/parameters/ShadowRunId'
+        - $ref: '#/components/parameters/Traceparent'
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200': { description: Estado actual, content: { application/json: { schema: { $ref: '#/components/schemas/ShadowRun' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
   /admin/provider-credentials:
     get:
       tags: [Administration]
@@ -248,37 +303,41 @@ components:
     RequestId: { name: X-Request-Id, in: header, required: true, schema: { type: string, maxLength: 128 } }
     CourseCohortId: { name: courseCohortId, in: path, required: true, schema: { type: string, format: uuid } }
     CalibrationRunId: { name: calibrationRunId, in: path, required: true, schema: { type: string, format: uuid } }
+    ShadowRunId: { name: shadowRunId, in: path, required: true, schema: { type: string, format: uuid } }
     RubricVersionId: { name: rubricVersionId, in: path, required: true, schema: { type: string, format: uuid } }
     GoldenSetVersionId: { name: goldenSetVersionId, in: path, required: true, schema: { type: string, format: uuid } }
     CredentialId: { name: credentialId, in: path, required: true, schema: { type: string, format: uuid } }
     ModelDeploymentId: { name: modelDeploymentId, in: path, required: true, schema: { type: string, format: uuid } }
     IfMatch: { name: If-Match, in: header, required: true, schema: { type: integer, minimum: 1 } }
   headers:
-    RequestId: { description: Correlación recibida, devuelta sin cambios., schema: { type: string } }
+    RequestId: { description: "Correlación recibida, devuelta sin cambios.", schema: { type: string } }
   responses:
     Problem:
-      description: RFC 7807 Problem Details con codigo estable y requestId.
+      description: RFC 7807 Problem Details con requestId.
       headers: { X-Request-Id: { $ref: '#/components/headers/RequestId' } }
       content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
   schemas:
     TutorInteractionRequest:
       type: object
-      required: [attemptId, challengeId, courseCohortId, message, riskLevel]
+      description: Los campos desconocidos se ignoran (lector tolerante), así que se pueden agregar campos sin romper.
+      required: [attemptId, challengeId, courseCohortId, learnerId, message, riskLevel]
       properties:
         attemptId: { type: string, format: uuid }
         challengeId: { type: string, format: uuid }
         courseCohortId: { type: string, format: uuid, description: Debe coincidir con el contexto autorizado por Practice. }
-        message: { type: string, minLength: 1, maxLength: 12000 }
-        riskLevel: { type: string, enum: [low, medium, high] }
-        expectedSolution: { type: string, writeOnly: true, description: Material sensible M2M; no persistir, loguear ni devolver. }
+        learnerId: { type: string, format: uuid }
+        message: { type: string, minLength: 1 }
+        riskLevel: { type: string, enum: [low, medium, high], description: "Lo fija Tema 05 según el tipo de desafío. Con `low` no corre el guardarraíl de salida." }
+        conversacionId: { type: string, format: uuid, description: "Opcional. Agrupa turnos de una misma conversación; si no viene se abre una nueva y se devuelve su id." }
+        expectedSolution: { type: string, writeOnly: true, description: "Opcional. Material sensible M2M: solo lo usa el guardarraíl de salida (con riskLevel medium o high), en memoria; no se persiste, loguea, audita ni devuelve. Si el mensaje del tutor la contiene, se reemplaza por una redirección socrática." }
     TutorInteractionResponse:
       type: object
-      required: [interactionId, state]
+      description: Se pueden agregar campos opcionales sin romper a quien ya consume (lector tolerante).
+      required: [message, state, conversacionId]
       properties:
-        interactionId: { type: string, format: uuid }
-        state: { type: string, enum: [completed, blocked, unavailable] }
-        message: { type: string, description: Presente solo en completed; nunca contiene solución ni código resolutivo. }
-        reason: { type: string, enum: [anti_leak_guard, provider_unavailable], description: Presente para blocked o unavailable. }
+        message: { type: string, description: "Siempre presente. En `completed`, el mensaje del tutor (nunca la solución); en `unavailable`, un aviso fijo." }
+        state: { type: string, enum: [completed, blocked, unavailable], description: "`blocked` está reservado para la variante con streaming y hoy no se produce (cuando el guardarraíl actúa se sustituye el mensaje y queda `completed`), pero el consumidor debe manejarlo para no romperse cuando se use." }
+        conversacionId: { type: string, format: uuid }
     ActiveCalibration:
       type: object
       required: [courseCohortId, calibrationRunId, rubricVersionId, activatedAt]
@@ -408,7 +467,7 @@ components:
       type: object
       required: [provider, displayName, apiKey]
       properties:
-        provider: { type: string, enum: [OPENAI_COMPATIBLE, ANTHROPIC, GEMINI], description: OPENAI_COMPATIBLE incluye OpenAI, Groq y proveedores que respeten la API OpenAI. }
+        provider: { type: string, enum: [OPENAI_COMPATIBLE, ANTHROPIC, GEMINI], description: "OPENAI_COMPATIBLE incluye OpenAI, Groq y proveedores que respeten la API OpenAI." }
         displayName: { type: string, minLength: 1, maxLength: 120 }
         baseUrl: { type: string, format: uri, description: Obligatoria para OPENAI_COMPATIBLE; HTTPS pública. }
         apiKey: { type: string, writeOnly: true, minLength: 1 }
@@ -455,11 +514,63 @@ components:
       properties: { items: { type: array, items: { $ref: '#/components/schemas/ModelDeployment' } } }
     Problem:
       type: object
-      required: [type, title, status, detail, codigo, requestId]
+      description: RFC 7807. `codigo` (código estable de error) está reservado y hoy no se emite; no depender de él.
+      required: [type, title, status, detail, requestId]
       properties:
         type: { type: string, format: uri-reference }
         title: { type: string }
         status: { type: integer }
         detail: { type: string }
+        instance: { type: string, format: uri-reference }
         codigo: { type: string }
         requestId: { type: string }
+    CreateShadowRunRequest:
+      type: object
+      required: [candidateRubricVersionId, source]
+      properties:
+        candidateRubricVersionId: { type: string, format: uuid, description: Rúbrica a validar (puede ser un borrador del curso). Debe ser distinta de la activa. }
+        source: { type: string, enum: [GOLDEN_SET, TUTOR_CONVERSATIONS], description: GOLDEN_SET reproduce una versión del golden set (con nota humana); TUTOR_CONVERSATIONS reproduce conversaciones reales del tutor del curso. }
+        goldenSetVersionId: { type: string, format: uuid, description: Obligatorio con GOLDEN_SET y prohibido con la otra fuente. }
+        sampleSize: { type: integer, minimum: 1, maximum: 100, description: "Tope configurable (llm.shadow.max-sample-size). Por defecto, el tope." }
+        divergenceThreshold: { type: number, exclusiveMinimum: 0, description: Puntos de diferencia final a partir de los cuales un caso cuenta como divergente. Por defecto 10. }
+    ShadowRun:
+      type: object
+      required: [id, courseId, baselineRubricVersionId, candidateRubricVersionId, source, state, progress, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        courseId: { type: string, format: uuid }
+        baselineRubricVersionId: { type: string, format: uuid }
+        candidateRubricVersionId: { type: string, format: uuid }
+        source: { type: string, enum: [GOLDEN_SET, TUTOR_CONVERSATIONS] }
+        goldenSetVersionId: { type: string, format: uuid, nullable: true }
+        sampleSize: { type: integer }
+        divergenceThreshold: { type: number }
+        state: { type: string, enum: [QUEUED, RUNNING, COMPLETED, FAILED] }
+        progress: { type: integer, minimum: 0, maximum: 100 }
+        summary: { allOf: [{ $ref: '#/components/schemas/ShadowSummary' }], nullable: true, description: Solo cuando state es COMPLETED. }
+        failureCode: { type: string, nullable: true, enum: [NO_SAMPLES, INVALID_RUBRIC, SHADOW_EXECUTION_FAILED] }
+        createdByUserId: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+        startedAt: { type: string, format: date-time, nullable: true }
+        finishedAt: { type: string, format: date-time, nullable: true }
+    ShadowSummary:
+      type: object
+      description: |
+        Comparación candidata vs. baseline. Cada versión se pondera con los pesos de su propia rúbrica.
+        divergencia = candidata − baseline; sesgo > 0 significa que la candidata puntúa más alto.
+        Los casos fallidos se cuentan pero quedan fuera de las estadísticas.
+      properties:
+        totalCases: { type: integer }
+        comparedCases: { type: integer }
+        failedCases: { type: integer }
+        mae: { type: number, description: Promedio de la divergencia absoluta. }
+        bias: { type: number, description: Promedio de la divergencia con signo. }
+        maxDivergence: { type: number }
+        shareOverThreshold: { type: number, minimum: 0, maximum: 1 }
+        baselineMaeVsHuman: { type: number, nullable: true, description: Solo con fuente GOLDEN_SET. }
+        candidateMaeVsHuman: { type: number, nullable: true, description: Solo con fuente GOLDEN_SET. }
+        mostDivergent:
+          type: array
+          maxItems: 5
+          items: { type: object, properties: { sourceRef: { type: string }, baselineFinal: { type: number }, candidateFinal: { type: number }, delta: { type: number } } }
+        recommendation: { type: string, enum: [PROCEED_TO_CALIBRATION, REVIEW, INSUFFICIENT_DATA], description: "Consejo para el docente, no una decisión automática. PROCEED_TO_CALIBRATION habilita lanzar la calibración PAR-14 formal." }

@@ -22,19 +22,23 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class RequestCorrelationFilter extends OncePerRequestFilter {
 
+  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(RequestCorrelationFilter.class);
   public static final String REQUEST_ID_HEADER = "X-Request-Id";
+  public static final String REQUEST_ID_MDC_KEY = "requestId";
   public static final String TRACEPARENT_HEADER = "traceparent";
   public static final String TRACE_ID_MDC_KEY = "traceId";
 
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
+    long inicio = System.nanoTime();
     String requestId = request.getHeader(REQUEST_ID_HEADER);
     if (requestId == null || requestId.isBlank()) {
       requestId = UUID.randomUUID().toString();
     }
     response.setHeader(REQUEST_ID_HEADER, requestId);
     request.setAttribute(REQUEST_ID_HEADER, requestId);
+    MDC.put(REQUEST_ID_MDC_KEY, requestId);
 
     String traceparent = request.getHeader(TRACEPARENT_HEADER);
     boolean traceIdSet = false;
@@ -47,6 +51,9 @@ public class RequestCorrelationFilter extends OncePerRequestFilter {
     try {
       filterChain.doFilter(request, response);
     } finally {
+      log.info("{} {} -> {} ({} ms)", request.getMethod(), request.getRequestURI(),
+          response.getStatus(), (System.nanoTime() - inicio) / 1_000_000);
+      MDC.remove(REQUEST_ID_MDC_KEY);
       if (traceIdSet) {
         MDC.remove(TRACE_ID_MDC_KEY);
       }

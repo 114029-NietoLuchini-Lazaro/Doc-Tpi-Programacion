@@ -83,7 +83,7 @@ sequenceDiagram
     PR-->>AL: muestra la respuesta en el chat
 ```
 
-- `practice-service` tiene el scope M2M **`llm.tutor.invoke`**. Es el único scope que necesitan
+- `practice-service` tiene el scope M2M **`llm.tutor.interact`**. Es el único scope que necesitan
   hacia nosotros.
 - Nunca hay llamada directa: siempre pasa por el API Gateway, que valida el JWT de servicio
   (`aud=llm-service`) y agrega los headers de identidad (`X-User-Id`, `X-User-Roles`, etc.).

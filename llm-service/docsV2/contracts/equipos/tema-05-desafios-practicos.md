@@ -1,7 +1,8 @@
 # Tema 05 — Desafíos Prácticos — contratos
 
-> Este documento es el contrato completo y vigente con Tema 05 (incluye los diagramas de
-> secuencia del tutor y el evaluador) — `18` §4 ya no repite este detalle. Carta original:
+> **Lo que se le entrega a Tema 05 para integrar es [`llm-service-contrato-para-desafios-practicos.md`](llm-service-contrato-para-desafios-practicos.md)**
+> (contrato, decisiones y política de evolución). Este documento conserva el contexto: diagramas de
+> secuencia del tutor y el evaluador, presupuestos y decisiones de diseño — `18` §4 ya no repite este detalle. Carta original:
 > [docs/entregas/alcance-y-contrato-para-desafios-practicos.md](../../01-vision-alcance-y-entrega/03-entregas/alcance-y-contrato-para-desafios-practicos.md).
 > Reglas generales: [18 §0](../91-contratos-inter-equipos-historicos.md#0-cómo-leemos-los-contratos).
 
@@ -73,7 +74,7 @@ sequenceDiagram
 > todavía; (2) el cálculo del pico de tráfico usa ~8 s por respuesta contra un objetivo de 2 s
 > — de esa brecha depende cuántas réplicas hacen falta (I-03 en `17` §8).
 
-### Cuerpo de la solicitud ✅ (schema real: `TutorInteractionRequest`)
+### Cuerpo de la solicitud ✅ (schema: `TutorInteractionRequest`; el ejemplo completo con los campos opcionales está en el [contrato de integración](llm-service-contrato-para-desafios-practicos.md#request))
 
 ```json
 {
@@ -97,12 +98,13 @@ desafío, nosotros no lo inferimos.
 - El guardarraíl anti-fuga (RF-IA-20) corre de nuestro lado antes de devolver la respuesta:
   nunca se expone la solución ni los tests ocultos (ADR-008).
 
-### Cuerpo de la respuesta ✅ (schema real: `TutorInteractionResponse`)
+### Cuerpo de la respuesta ✅ (schema: `TutorInteractionResponse`)
 
 ```json
 {
   "message": "¿Qué pasa con `n` en cada llamada recursiva? Fijate qué valor tiene justo antes de que se cumpla la condición de corte.",
-  "state": "completed"
+  "state": "completed",
+  "conversacionId": "b1e2c3d4-0005-4a00-8000-000000000005"
 }
 ```
 
@@ -119,7 +121,7 @@ Caso puntual del tutor, vía el campo `state` de la respuesta:
 | `state` | Cuándo pasa | Qué ve Tema 05 |
 |---|---|---|
 | `completed` | El modelo respondió y pasó el guardarraíl de salida | Respuesta normal |
-| `blocked` | El guardarraíl anti-fuga (ADR-008) detectó que la respuesta se acercaba a la solución esperada | Mensaje regenerado o bloqueado — **hoy no se produce en el código real** (`docs/estado-implementacion/ep-05/interactions.md`): solo hay guardarraíl de entrada implementado, el de salida está pendiente |
+| `blocked` | El guardarraíl anti-fuga (ADR-008) detectó que la respuesta se acercaba a la solución esperada | **Hoy no se produce en el código real** ([`ep-05/interactions.md`](../../06-operacion-calidad-y-pruebas/04-estado-de-implementacion/ep-05/interactions.md)): el guardarraíl de salida ya existe, pero cuando actúa reemplaza el mensaje por una redirección socrática y responde `completed`. `blocked` queda reservado para SSE |
 | `unavailable` | Se agotó la escalera de degradación (Nivel 1-3 fallaron: modelo primario, otro proveedor, modelo local) | El tutor no puede responder — presupuesto de 2 s ya se gastó en los reintentos, así que no hay margen para más de un fallback |
 
 Si el `503`/`unavailable` se sostiene, Tema 05 tiene que decidir qué mostrarle al alumno — no
@@ -248,6 +250,104 @@ otorgamos XP**, eso lo sigue calculando y aplicando el Motor de Desafíos.
 **Sin decidir todavía** (ver [`pendientes.md`](../../07-planificacion-y-trabajo-equipo/11-equipos/tema-05-desafios-practicos/pendientes.md)): el tópico/nombre de versión
 exacto de estos eventos con el nuevo consumidor.
 
+## Modo de prueba — integrar contra el tutor sin modelo real (2026-09-19)
+
+Para que Tema 05 pueda avanzar sin esperar al proveedor real, el contrato de arriba se puede
+consumir **hoy** contra el llm-service levantado con el adaptador `fake` (`FakeModelAdapter`,
+modelo `fake-socratic-v1`). Es el estado por defecto: la semilla `function_model_config` asigna
+`tutor → fake` y `evaluator → fake`. **No cambia ni un endpoint ni un schema** — solo quién genera
+el texto. Cuando se pase a un proveedor real (Groq, `PUT /api/llm/model-assignments/tutor`, sin
+redeploy) el contrato que ustedes consumen es el mismo.
+
+### Qué pueden asumir del bot
+
+| Aspecto | Comportamiento en modo test |
+|---|---|
+| Respuesta del tutor | Una pregunta socrática de plantilla que cita las primeras 12 palabras del prompt armado (no del `message` del alumno, así que el texto puede leerse raro). Determinística, sin llamada de red, latencia ~0 |
+| `state` | Siempre `completed`. El bot no produce `unavailable` ni `blocked` |
+| Idempotencia | Real: reintento con la misma `Idempotency-Key` devuelve la misma respuesta |
+| Guardarraíl de entrada | Real: un intento de jailbreak devuelve un mensaje fijo, `completed`, sin invocar al modelo |
+| Guardarraíl de salida | Real, pero solo con `riskLevel` `high`/`medium`: detecta bloques de código de más de 8 líneas y, si mandan `expectedSolution`, su coincidencia literal |
+| Auditoría | Real: una fila por interacción |
+| Autenticación | Real: servicio confiable `practice-service` + scope `llm.tutor.interact` |
+
+### Qué NO pueden probar con el bot
+
+- La calidad pedagógica ni la latencia real (el objetivo de 2 s no se mide contra el fake).
+- La regeneración por fuga ni el estado `unavailable` (la escalera de degradación no se ejercita).
+- La comparación por similitud (umbral 70%): hoy es coincidencia literal.
+- La calidad del score: el evaluador `fake` devuelve puntajes determinísticos por hash del prompt
+  (entre 55 y 95), no evalúa nada. Sirve para probar el circuito, no la nota.
+- Que la rúbrica sea la del curso: no hay forma de saber a qué curso pertenece una cohorte, así que
+  se usa siempre la plantilla institucional sembrada (configurable con
+  `llm.evaluation.rubric-version-id`).
+
+### Evaluador por Kafka en modo test (2026-09-19)
+
+Está conectado de punta a punta contra el fake. Ustedes publican `ATTEMPT-CLOSED` en
+`practice-events` y reciben `SCORE-CALCULATED` (o `SCORE-DEFERRED`) en `evaluation-events`, con
+`courseCohortId` como Message Key. El schema de los dos eventos de salida está en el
+[AsyncAPI](../llm-service.asyncapi.yaml) y es **provisorio**: es nuestra propuesta, ustedes tienen
+que validarla como consumidores.
+
+Ejemplo de lo que nos mandan (los cuatro campos del payload son los únicos que leemos):
+
+```json
+{
+  "eventId": "9f0c6c1e-6d0b-4c53-9a3e-0b1f6c8f2a11",
+  "eventType": "ATTEMPT-CLOSED",
+  "eventVersion": 1,
+  "timestamp": "2026-09-19T15:00:00Z",
+  "producer": "practice-service",
+  "payload": {
+    "attemptId": "b1e2c3d4-0001-4a00-8000-000000000001",
+    "courseCohortId": "b1e2c3d4-0003-4a00-8000-000000000003",
+    "learnerId": "b1e2c3d4-0004-4a00-8000-000000000004",
+    "transcript": [{ "role": "student", "content": "No entiendo por qué mi recursión no corta" }]
+  }
+}
+```
+
+Lo que recibirían (el `payload` de `SCORE-CALCULATED`):
+
+```json
+{
+  "attemptId": "b1e2c3d4-0001-4a00-8000-000000000001",
+  "courseCohortId": "b1e2c3d4-0003-4a00-8000-000000000003",
+  "learnerId": "b1e2c3d4-0004-4a00-8000-000000000004",
+  "rubricVersionId": "10000000-0000-0000-0000-000000000002",
+  "score": 77,
+  "dimensions": { "autonomy": 80, "clarity": 71, "progression": 68, "compliance": 90, "efficiency": 74 },
+  "evaluator": { "provider": "fake", "model": "fake-evaluator-v1" }
+}
+```
+
+Comportamiento a tener en cuenta:
+
+| Caso | Qué pasa |
+|---|---|
+| `eventId` repetido | Se ignora (idempotencia por `eventId`), no se vuelve a publicar el score |
+| `eventType` distinto de `ATTEMPT-CLOSED` en el mismo topic | Se registra y se ignora |
+| Falta `attemptId`, `courseCohortId` o `learnerId`, no son UUID, o `transcript` no es un array | Va a `practice-events.dlt`, no se evalúa |
+| El evaluador no responde o responde algo inválido | Se publica `SCORE-DEFERRED` con `reason` (`MODEL_UNAVAILABLE`, `INVALID_MODEL_RESPONSE` o `RUBRIC_UNAVAILABLE`) y `retryFrom` |
+
+### Cómo probar la conexión
+
+Nada de esto necesita un proveedor de modelo ni credenciales. Con el servicio levantado
+(`docker compose up`, Kafka viene activo por defecto):
+
+- **Tutor (HTTP):** `POST /api/llm/tutor/interactions` con `Idempotency-Key`. En la plataforma real
+  entra por el API Gateway, que agrega `X-Service-Id: practice-service`,
+  `X-Service-Scopes: llm.tutor.interact` y `X-Delegated-User: <uuid>` a partir del JWT M2M. Para pegarle
+  directo desde el host, el overlay `compose.debug.yaml` publica el puerto 8086; y con
+  `compose.workbench.yaml` se saltea la autenticación por completo.
+- **Evaluador (Kafka):** publicar el `ATTEMPT-CLOSED` de arriba en `practice-events` y leer
+  `evaluation-events`. Broker `kafka:9092` dentro de la red de compose.
+
+> **Scope del tutor: `llm.tutor.interact`.** Es el que está dado de alta en el Gateway, el que exige
+> el código y el que declara el [OpenAPI](../llm-service.openapi.yaml). Hasta 2026-09-19 varios
+> documentos decían `llm.tutor.invoke`; ese nombre no existe en el Gateway y devuelve 401.
+
 ## Deslinde de alcance ya acordado
 
 - **"Originalidad entre alumnos"** (comparar una entrega contra otra, o contra ediciones
@@ -256,3 +356,19 @@ exacto de estos eventos con el nuevo consumidor.
   el perímetro anti-fuga de un único intento contra su propia solución esperada.
 - La carta completa de alcance ([`docs/entregas/alcance-y-contrato-para-desafios-practicos.md`](../../01-vision-alcance-y-entrega/03-entregas/alcance-y-contrato-para-desafios-practicos.md))
   ya detalla esta frontera para que Tema 05 la lea sin ambigüedad.
+
+## 🔴 Pendientes de contrato Kafka con Tema 05 (2026-09-19)
+
+Registro vivo de lo que hay que acordar con Tema 05 sobre eventos. Detalle y checklist en
+[`pendientes.md`](../../07-planificacion-y-trabajo-equipo/11-equipos/tema-05-desafios-practicos/pendientes.md).
+
+| Tema | Estado |
+|---|---|
+| Message Key de `practice-events` | 🔴 sin confirmar (AsyncAPI dice "Pendiente") |
+| Campos y `eventVersion` de `AttemptClosed` (incl. forma del `transcript`) | 🟡 schema publicado, falta que lo validen |
+| Topic/`eventType` de `SCORE-CALCULATED` / `SCORE-DEFERRED` en `evaluation-events` | 🟡 a confirmar como consumidores |
+| Fuente del evento de ediciones/tests del IDE (Tema 05 vs Tema 06) | 🔴 sin decidir |
+| Reintentos / DLQ ante `AttemptClosed` inválido o duplicado | 🟡 a acordar |
+| Payload de `SCORE-CALCULATED` / `SCORE-DEFERRED` | 🟡 implementado y publicado en el AsyncAPI como provisorio, falta que lo validen |
+| Cohorte → curso → rúbrica activa | 🔴 hoy se usa siempre la plantilla institucional; hace falta un mapa de cohorte a curso |
+| _(nuevos temas)_ | agregar acá |

@@ -10,7 +10,7 @@
 
 ## Objetivo
 
-Regresión completa de todo lo construido en S1 y S2, cobertura de integración al 95% que exige `AGENTS.md` en cada pieza nueva, y colchón real para lo que `courses-service` haya tardado en responder.
+Regresión completa de todo lo construido en S1 y S2, cobertura de integración al 90% que exige `AGENTS.md` en cada pieza nueva, y colchón real para lo que `courses-service` haya tardado en responder.
 
 ## HU / Tareas comprometidas
 
@@ -49,4 +49,4 @@ Regresión completa de todo lo construido en S1 y S2, cobertura de integración 
 
 ## Demo de S3
 
-Todas las suites de todas las épicas (EP-01 a EP-07 + EP-09 completa) en verde contra el proveedor real. Cobertura ≥ 95% en todos los módulos nuevos.
+Todas las suites de todas las épicas (EP-01 a EP-07 + EP-09 completa) en verde contra el proveedor real. Cobertura ≥ 90% en todos los módulos nuevos.

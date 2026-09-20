@@ -19,7 +19,7 @@ docker compose -p "$project_name" up --build --wait
 end_ts=$(date +%s)
 elapsed=$((end_ts - start_ts))
 
-docker compose -p "$project_name" exec -T llm-service wget -qO- http://localhost:8080/actuator/health | grep -q '"status":"UP"'
+docker compose -p "$project_name" exec -T llm-service wget -qO- http://localhost:8087/actuator/health | grep -q '"status":"UP"'
 echo "Docker Compose S1 smoke test: OK"
 if [[ "$mode" == "--cold" ]]; then
   echo "[T7] Tiempo de arranque en frío (docker compose up --build --wait): ${elapsed}s"
