@@ -57,4 +57,16 @@ class ModerationNotificationClientTest {
 
         server.verify();
     }
+
+    @Test
+    void doesNotCallNotificationsServiceWhenDisabled() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+
+        ModerationNotificationClient client = new ModerationNotificationClient(builder.build(), PATH, false);
+
+        client.notifyMessageUnblocked(sampleEvent());
+
+        server.verify();
+    }
 }

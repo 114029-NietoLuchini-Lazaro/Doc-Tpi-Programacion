@@ -1,5 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.infrastructure.ai;
 
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.JsonObjectExtractor;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelFunction;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationPort;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationRequest;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationResult;
@@ -54,9 +56,14 @@ public class GroqModelAdapter implements ModelInvocationPort {
           "No se configuró la variable de entorno GROQ_API_KEY para el proveedor '" + PROVIDER + "'");
     }
 
+    // El modelo lo decide la asignación de la función (`function_model_config`); GROQ_MODEL es solo el
+    // valor por defecto para cuando el pedido no trae uno.
+    String effectiveModel = request.modelId() != null && !request.modelId().isBlank()
+        ? request.modelId().trim()
+        : modelName;
     ChatLanguageModel chatModel = customChatModel != null
         ? customChatModel
-        : buildChatModel(request.timeout());
+        : buildChatModel(effectiveModel, request.timeout());
 
     List<ChatMessage> messages = new ArrayList<>();
     if (request.systemPrompt() != null && !request.systemPrompt().isBlank()) {
@@ -67,18 +74,24 @@ public class GroqModelAdapter implements ModelInvocationPort {
     try {
       Response<AiMessage> response = chatModel.generate(messages);
       String responseText = response != null && response.content() != null ? response.content().text() : "";
-      return new ModelInvocationResult(responseText, PROVIDER, modelName);
+      if (request.function() == ModelFunction.EVALUATOR) {
+        // El evaluador espera un JSON pelado; los modelos reales suelen envolverlo en ```json o en texto.
+        responseText = JsonObjectExtractor.extract(responseText);
+      }
+      var usage = response != null ? response.tokenUsage() : null;
+      return new ModelInvocationResult(responseText, PROVIDER, effectiveModel,
+          usage != null ? usage.inputTokenCount() : null, usage != null ? usage.outputTokenCount() : null);
     } catch (Exception exception) {
       throw new IllegalStateException(
           "Fallo en la comunicación con el proveedor '" + PROVIDER + "': " + exception.getMessage(), exception);
     }
   }
 
-  private ChatLanguageModel buildChatModel(Duration timeout) {
+  private ChatLanguageModel buildChatModel(String model, Duration timeout) {
     return OpenAiChatModel.builder()
         .baseUrl(baseUrl)
         .apiKey(apiKey)
-        .modelName(modelName)
+        .modelName(model)
         .timeout(timeout != null ? timeout : Duration.ofSeconds(15))
         .maxRetries(0)
         .temperature(0.3)

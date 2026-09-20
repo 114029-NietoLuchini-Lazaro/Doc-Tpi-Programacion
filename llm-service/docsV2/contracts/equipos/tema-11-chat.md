@@ -1,5 +1,13 @@
 # Tema 11 — Chat — contratos
 
+> ✅ **Vigente desde 2026-09-19:** el contrato de moderación implementado es
+> `POST /moderation/v1/decisions` (v1.1.0: `ALLOW` / `BLOCK` / `PENDING` / `PENDING_REVIEW`, con
+> `sender_id` obligatorio), documentado en
+> [`llm-service-v1-moderacion.openapi.yaml`](../llm-service-v1-moderacion.openapi.yaml).
+> Lo que Tema 11 debe cerrar está en [`moderacion-pendientes-chat-service.md`](../moderacion-pendientes-chat-service.md).
+> **Todo lo de este documento sobre `POST /ai/moderador`, `RespuestaModeracion`, `severidad` y
+> `< 300 ms` es del borrador OBSOLETO** y se conserva solo como histórico: el timeout vigente es 800 ms.
+
 > Este documento es el contrato completo y vigente con Tema 11 (incluye el diagrama de
 > secuencia del moderador) — `18` §4 ya no repite este detalle. Contexto adicional:
 > [04-funciones-de-ia.md](../../03-capacidades-de-ia/02-funciones-de-ia.md) líneas 1658-1679 ("qué construimos y qué
@@ -10,7 +18,7 @@
 - `POST /ai/moderador` — siempre sincrónico, siempre antes de entregar el mensaje al hilo
   (presupuesto **< 300 ms**). **No está en el contrato v1 vigente** — vive solo en el borrador
   [`llm-service-v1-moderacion-borrador.yaml`](../historicos-y-contratos-v1/llm-service-v1-moderacion-borrador.yaml)
-  (EP-08, sin implementar).
+  (EP-08 — **obsoleto**, reemplazado por `/moderation/v1/decisions`).
 
 ### Cuerpo de la solicitud 🟡 (borrador — sin implementar, pero con schema detallado)
 

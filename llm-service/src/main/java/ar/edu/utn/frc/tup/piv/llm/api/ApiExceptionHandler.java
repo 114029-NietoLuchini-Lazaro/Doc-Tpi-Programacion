@@ -38,6 +38,19 @@ public class ApiExceptionHandler {
         .header(org.springframework.http.HttpHeaders.RETRY_AFTER, String.valueOf(exception.getRetryAfterSeconds()))
         .body(p);
   }
+  @ExceptionHandler(ar.edu.utn.frc.tup.piv.llm.domain.ai.BudgetExceededException.class)
+  ProblemDetail budgetExceeded(ar.edu.utn.frc.tup.piv.llm.domain.ai.BudgetExceededException exception, HttpServletRequest request) {
+    ProblemDetail p = problem(HttpStatus.TOO_MANY_REQUESTS, exception.getMessage(), request);
+    p.setProperty("error", "budget_exceeded");
+    p.setProperty("function", exception.function().name().toLowerCase());
+    return p;
+  }
+  @ExceptionHandler(ar.edu.utn.frc.tup.piv.llm.domain.ai.ProviderUnavailableException.class)
+  ProblemDetail providerUnavailable(ar.edu.utn.frc.tup.piv.llm.domain.ai.ProviderUnavailableException exception, HttpServletRequest request) {
+    ProblemDetail p = problem(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), request);
+    p.setProperty("error", "provider_unavailable");
+    return p;
+  }
   private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
   @ExceptionHandler(ResponseStatusException.class)
   ProblemDetail statusException(ResponseStatusException exception, HttpServletRequest request) {

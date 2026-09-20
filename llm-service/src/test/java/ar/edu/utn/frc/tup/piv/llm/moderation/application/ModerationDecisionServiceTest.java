@@ -6,14 +6,18 @@ import ar.edu.utn.frc.tup.piv.llm.moderation.domain.ModerationDecision;
 import ar.edu.utn.frc.tup.piv.llm.moderation.domain.ModerationDecisionEnum;
 import ar.edu.utn.frc.tup.piv.llm.moderation.domain.ModerationReasonCode;
 import ar.edu.utn.frc.tup.piv.llm.moderation.domain.port.ModerationDecisionRepositoryPort;
+import ar.edu.utn.frc.tup.piv.llm.moderation.domain.port.ModerationResolutionRepositoryPort;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.web.server.ResponseStatusException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -271,5 +275,64 @@ class ModerationDecisionServiceTest {
                 new ModerationDecisionCommand("m-dup", "curso-1", "student", "spam", Map.of(), "alumno-7"));
 
         verify(incidents, never()).save(any());
+    }
+
+    // --- CA_negativo_1 (LLM-S11-H01): retiro de decisiones sin revisión explícita ---
+
+    @Test
+    void retiringAllowDecisionIsRejectedAsProtocolViolation() {
+        ModerationDecision allow = ModerationDecision.allow(
+                "m-allow", ModerationReasonCode.CLEAN, "deterministic", 1L, "hash-allow");
+        when(repository.findByMessageId("m-allow")).thenReturn(Optional.of(allow));
+
+        assertThatThrownBy(() -> service.retireDecision("m-allow", "docente-1"))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("PROTOCOL_VIOLATION");
+    }
+
+    @Test
+    void retiringBlockDecisionWithoutExplicitReviewIsRejectedAsProtocolViolation() {
+        UUID incidentId = UUID.randomUUID();
+        ModerationDecision block = ModerationDecision.block(
+                "m-block", "SPAM", "deterministic", 1L, "hash-block", incidentId);
+        when(repository.findByMessageId("m-block")).thenReturn(Optional.of(block));
+
+        ModerationResolutionRepositoryPort resolutions = mock(ModerationResolutionRepositoryPort.class);
+        when(resolutions.existsByIncidentId(incidentId)).thenReturn(false);
+        ModerationDecisionService serviceWithResolutions = new ModerationDecisionService(
+                repository, 800L, (Function<ModerationDecisionCommand, ModerationDecision>) null,
+                mock(ar.edu.utn.frc.tup.piv.llm.moderation.domain.port.ModerationIncidentRepositoryPort.class),
+                resolutions);
+
+        assertThatThrownBy(() -> serviceWithResolutions.retireDecision("m-block", "docente-1"))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("PROTOCOL_VIOLATION");
+    }
+
+    @Test
+    void retiringBlockDecisionWithExplicitReviewIsAllowed() {
+        UUID incidentId = UUID.randomUUID();
+        ModerationDecision block = ModerationDecision.block(
+                "m-block-ok", "SPAM", "deterministic", 1L, "hash-block-ok", incidentId);
+        when(repository.findByMessageId("m-block-ok")).thenReturn(Optional.of(block));
+
+        ModerationResolutionRepositoryPort resolutions = mock(ModerationResolutionRepositoryPort.class);
+        when(resolutions.existsByIncidentId(incidentId)).thenReturn(true);
+        ModerationDecisionService serviceWithResolutions = new ModerationDecisionService(
+                repository, 800L, (Function<ModerationDecisionCommand, ModerationDecision>) null,
+                mock(ar.edu.utn.frc.tup.piv.llm.moderation.domain.port.ModerationIncidentRepositoryPort.class),
+                resolutions);
+
+        org.assertj.core.api.Assertions.assertThatCode(
+                        () -> serviceWithResolutions.retireDecision("m-block-ok", "docente-1"))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void retiringUnknownMessageIdReturnsNotFound() {
+        when(repository.findByMessageId("m-missing")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.retireDecision("m-missing", "docente-1"))
+                .isInstanceOf(ResponseStatusException.class);
     }
 }

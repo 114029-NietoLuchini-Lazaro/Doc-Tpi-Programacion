@@ -92,7 +92,7 @@ Los service IDs canónicos son `practice-service`, `challenges-service`, `course
 
 | Llamador | Scope M2M mínimo hacia `llm-service` |
 |---|---|
-| `practice-service` | `llm.tutor.invoke`; desde el 2026-09-13 también publica el cierre de intento y consume el score del evaluador (🟡 nombre de scope todavía no acordado) |
+| `practice-service` | `llm.tutor.interact`; desde el 2026-09-13 también publica el cierre de intento y consume el score del evaluador (🟡 nombre de scope todavía no acordado) |
 | `challenges-service` | — ya no llama directo a `llm-service` (🟡 retirado; antes `llm.evaluation.read`) |
 | `courses-service` | `llm.calibration.read`, `llm.pending.read` |
 | `admin-service` | `llm.golden-set.manage`, `llm.calibration.manage`, `llm.model-assignment.manage`, `llm.evaluation.override` |

@@ -16,6 +16,9 @@ public final class KafkaTopics {
    */
   public static final String PRACTICE_EVENTS = "practice-events";
 
+  /** Publicado por llm-service: score de los intentos evaluados (`SCORE-CALCULATED`/`SCORE-DEFERRED`). */
+  public static final String EVALUATION_EVENTS = "evaluation-events";
+
   private KafkaTopics() {
   }
 }

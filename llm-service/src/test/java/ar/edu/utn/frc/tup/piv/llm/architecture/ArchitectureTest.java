@@ -105,4 +105,22 @@ class ArchitectureTest {
         .should().dependOnClassesThat().resideInAnyPackage("..infrastructure.persistence..");
     rule.check(classes);
   }
+
+  /**
+   * E-31: el shadow descarta su salida por construcción. Si el módulo pudiera tocar el outbox/Kafka o
+   * las tablas de calibración y evaluaciones reales, una evaluación en sombra podría emitir un score.
+   */
+  @Test
+  void shadowCannotEmitEventsNorTouchRealCalibrationOrEvaluationState() {
+    ArchRule rule = noClasses()
+        .that().resideInAPackage("ar.edu.utn.frc.tup.piv.llm.shadow..")
+        .should().dependOnClassesThat().resideInAnyPackage("..messaging..", "org.apache.kafka..", "org.springframework.kafka..")
+        .orShould().dependOnClassesThat(com.tngtech.archunit.core.domain.JavaClass.Predicates.belongToAnyOf(
+            ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationRunRepository.class,
+            ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.CalibrationCaseResultRepository.class,
+            ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.JdbcCalibrationWorkflowStore.class,
+            ar.edu.utn.frc.tup.piv.llm.application.CalibrationWorkflowService.class,
+            ar.edu.utn.frc.tup.piv.llm.application.CalibrationActivationService.class));
+    rule.check(classes);
+  }
 }

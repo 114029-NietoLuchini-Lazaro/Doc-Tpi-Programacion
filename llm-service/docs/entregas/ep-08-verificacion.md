@@ -29,12 +29,25 @@ Verificado contra el servicio real (Docker: `pgvector/pg16` + `llm-service`, ove
 
 Tests: suite completa `mvn test` BUILD SUCCESS; moderación 177 tests (unitarios + 3 ITs) en verde.
 
+## Cobertura (2026-09-19)
+
+JaCoCo 0.8.12 sobre `mvn test` (612 tests, 0 fallas). Paquete `moderation`: 92,5 % instrucciones, 92,4 % líneas, 74,6 % ramas. `llm-service` completo: 68,9 % / 76,4 % / 64,8 %. JaCoCo no está en el `pom.xml`; se corrió por línea de comandos.
+
 ## Pendiente / no verificado
 - Con el clasificador contextual, sin API key de OpenAI, solo se ejercitó el camino degradado; el camino `contextual` exitoso no se probó en vivo.
-- `CA_negativo_1` de LLM-S11-H01 (retirar un ALLOW sin revisión = error de protocolo) sigue sin implementar.
+- `CA_negativo_1` de LLM-S11-H01: implementado el 2026-09-19 (`DELETE /moderation/v1/decisions/{message_id}` → `409 PROTOCOL_VIOLATION`); verificado con tests unitarios, no en vivo.
+- Notificación al alumno (H04/CA5): cliente HTTP + Kafka reales, con mock por `NOTIFICATIONS_ENABLED=false`; contrato pendiente con `notifications-service`. Ver `docs/contracts/moderacion-pendientes-chat-service.md`.
 - Retención/purga (H06) y `PUT` de política: cubiertas por tests, no ejercitadas en vivo.
-- Las fichas `docs/historias/ep-08/*` y el espejo `docsV2/` no se actualizaron (checkboxes ni contrato).
 - `chat-service` debe empezar a enviar `sender_id` (breaking): coordinarlo antes de integrar.
+
+## Actualización 2026-09-18 — checkboxes y valores mockeados documentados
+Las fichas `docs/historias/ep-08/*` (y su espejo en `docsV2/`) y el epígrafe de criterios del
+propio [`docs/epicas/ep-08.md`](../epicas/ep-08.md) ya reflejan el estado real de arriba: los CA
+verificados en vivo quedaron tildados, `CA_negativo_1` de H01 sigue sin tildar porque no está
+implementado, y cada ficha con un valor todavía mockeado/hardcodeado (H01: `sender_id` y camino
+`contextual`; H02: umbrales por defecto sin calibrar; H04: notificación al alumno vía stub
+interno, no Kafka/`notifications-service` real; H06: períodos de retención de seed) tiene una
+sección **"Estado de verificación (2026-09-18)"** explicando qué hay que reemplazar y cuándo.
 
 ## Para los grupos
 - **Mock (sin dependencias):** `docs/contracts/MOCK.md` §5 — `npx @stoplight/prism-cli mock docs/contracts/llm-service-v1-moderacion.openapi.yaml --port 4011`.

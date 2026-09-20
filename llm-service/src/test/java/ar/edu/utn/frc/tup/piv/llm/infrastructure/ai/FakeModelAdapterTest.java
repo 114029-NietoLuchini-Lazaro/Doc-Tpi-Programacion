@@ -24,6 +24,14 @@ class FakeModelAdapterTest {
   }
 
   @Test
+  void reportsTheEvaluatorModelWhenItSimulatesTheEvaluator() {
+    var adapter = new FakeModelAdapter(Duration.ZERO, false);
+    var request = new ModelInvocationRequest(ModelFunction.EVALUATOR, "system", "transcripción", Duration.ofSeconds(1));
+
+    assertThat(adapter.invoke(request).model()).isEqualTo("fake-evaluator-v1");
+  }
+
+  @Test
   void canBeForcedToReturnAnOutOfSchemaResponse() {
     var adapter = new FakeModelAdapter(Duration.ZERO, true);
     var request = new ModelInvocationRequest(ModelFunction.TUTOR, "system", "pregunta", Duration.ofSeconds(1));

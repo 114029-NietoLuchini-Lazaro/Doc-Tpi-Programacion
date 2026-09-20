@@ -51,16 +51,16 @@
 
 | Épica | Carpeta | Estado global | Última auditoría |
 |---|---|---|---|
-| **EP-01** · Plataforma, contratos e integración | [`ep-01/`](ep-01/README.md) | 🟡 desigual — H04 🟢, resto con huecos concretos (ver carpeta) | 2026-09-12 |
-| **EP-02** · AI Gateway, modelos y resiliencia | [`ep-02/`](ep-02/README.md) | 🟢 H10 construida (puerto + fake); 🔴 catálogo de modelos por curso sigue hardcodeado | 2026-09-12 |
+| **EP-01** · Plataforma, contratos e integración | [`ep-01/`](ep-01/README.md) | 🟡 desigual — H02, H04 y H09 🟢 (604 tests en verde, JaCoCo activo); H03 y H08 🟡 con huecos; H01 (ADR) 🔴 | 2026-09-19 |
+| **EP-02** · AI Gateway, modelos y resiliencia | [`ep-02/`](ep-02/README.md) | 🟡 flujo principal completo (puerto, fake, Groq, catálogo en base, cambio sin redeploy); H03 (reintentos, breaker, presupuesto, uso) construida con presupuesto y bitácora **mock en memoria**; siguen sin pasar por el gateway los embeddings y el chat de prueba admin; alertas solo por log — ver [`ep-02/`](ep-02/README.md) | 2026-09-19 |
 | **EP-03** · Golden set y referencia humana | [`ep-03/`](ep-03/README.md) | 🟢 golden set y rúbrica por curso sólidos; 🔴 dos placeholders sin LLM real | 2026-09-12 |
 | **EP-04** · Calibración y gobernanza del modelo | [`ep-04/`](ep-04/README.md) | 🟢 conectada con H10 — un run ya termina `PASSED`/`FAILED` | 2026-09-13 |
 | **EP-05** · Tutor seguro y guardarraíles | [`ep-05/`](ep-05/README.md) | 🟡 interacción síncrona con guardarraíles e histórico multi-turno construidos; sin historia formal ni streaming | 2026-09-13 |
 | **EP-06** · Evaluación, score y auditoría académica | [`ep-06/`](ep-06/README.md) | 🔴 **no iniciado, confirmado por auditoría exhaustiva** — cero código propio; lo que parecía EP-06 era EP-04 (ver hallazgo transversal) | 2026-09-12 |
 | EP-07 · Operación, cuotas y observabilidad | — | ⬜ sin código encontrado | — |
-| EP-08 · Moderación integrada (F2) | — | ⬜ sin código; contrato de referencia preservado en [`docs/contracts/llm-service-v1-moderacion-borrador.yaml`](../../contracts/historicos-y-contratos-v1/llm-service-v1-moderacion-borrador.yaml) | 2026-09-12 |
+| **EP-08** · Moderación integrada (F2) | [`../../07-planificacion-y-trabajo-equipo/09-epicas-historias-tareas-sprints/historias/ep-08/`](../../07-planificacion-y-trabajo-equipo/09-epicas-historias-tareas-sprints/historias/ep-08/README.md) | 🟡 flujo completo verificado en vivo (177 tests + pruebas manuales); `CA_negativo_1` de H01 implementado (2026-09-19); cobertura JaCoCo de `moderation` 92,4 % de líneas / 92,5 % de instrucciones (2026-09-19); siguen mockeados/hardcodeados `sender_id`, camino contextual real y períodos de retención de seed; notificación al alumno real pero sin contrato confirmado con notifications-service — detalle en [`docs/entregas/ep-08-verificacion.md`](../../../../docs/entregas/ep-08-verificacion.md) | 2026-09-18 |
 | **EP-09** · RAG y consulta de material (F3) | [`ep-09/`](ep-09/README.md) | 🟡 ingesta + chat con citas construidos (179 tests, 76% cobertura); sin proveedor real de embeddings/LLM y sin verificar contra Postgres+pgvector real (los 4 repos JDBC están en 0% de cobertura, bloqueados por Docker en el entorno de esta sesión) | 2026-09-13 |
-| EP-10 · Personalización y agente (F3) | — | ⬜ sin código encontrado | — |
+| **EP-10** · Personalización y agente (F3) | [`../../07-planificacion-y-trabajo-equipo/09-epicas-historias-tareas-sprints/historias/ep-10/`](../../07-planificacion-y-trabajo-equipo/09-epicas-historias-tareas-sprints/historias/ep-10/README.md) | 🟡 código de mención al agente construido (`AgentMentionService`, protección anti-bucle, cuota, moderación de salida) y pruebas al ~90 % según el equipo (2026-09-19); pendiente confirmar el 10 % restante y la parte de generación/entrega de desafíos | 2026-09-19 |
 
 > Subsistemas que el código ya construyó pero que ninguna épica reclama con certeza:
 > [`pendiente-de-epica/`](pendiente-de-epica/README.md). Análisis de los dos proyectos de
@@ -71,7 +71,7 @@
 El código de `llm-service` **no avanza parejo con el backlog**: en EP-03/EP-04 va muy
 adelantado (construyó golden set versionado, rúbrica versionada y calibración con métrica
 PAR-14 — funcionalidad de S2/S3 — sin que existieran las fichas), pero en EP-01 sigue con huecos
-que las fichas de S1 dan por hechos (Eureka, `401`, JaCoCo — ver [`ep-01/`](ep-01/README.md)).
+que las fichas de S1 dan por hechos (ADR, mock del golden set — ver [`ep-01/`](ep-01/README.md)).
 El puerto de invocación de modelos de `LLM-S01-H10` (EP-02), que estaba en 0 de 6 tareas, se
 cerró el 2026-09-12 portando código de `codigo-ejemplo/`; **T7 (conectar la calibración con ese
 puerto) se cerró el 2026-09-13** — `CalibrationEvaluationRunner` ya corre cada run contra el fake

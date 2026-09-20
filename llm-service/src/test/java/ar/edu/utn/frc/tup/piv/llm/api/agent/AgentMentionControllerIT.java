@@ -476,6 +476,11 @@ class AgentMentionControllerIT {
           command.messageId(), reasonCode, "stub", 10L, "hash"
       );
     }
+
+    @Override
+    public void retireDecision(String messageId, String requestedBy) {
+      // no-op: no ejercitado por estos tests de integración del agente.
+    }
   }
 
   private static class CapturingAuditRepository extends AuditRepository {

@@ -9,6 +9,8 @@ import ar.edu.utn.frc.tup.piv.llm.moderation.domain.ModerationDecision;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -42,5 +44,23 @@ public class ModerationDecisionController {
         ModerationDecision decision = useCase.decide(command);
 
         return ResponseEntity.ok(ModerationApiMapper.toResponse(decision));
+    }
+
+    /**
+     * Retira una decisión de moderación previamente emitida (CA_negativo_1 / LLM-S11-H01).
+     * Rechaza con 409 Conflict y registra un error de protocolo si el mensaje es ALLOW o si no
+     * pasó por una revisión explícita (resolución docente sobre su incidente).
+     */
+    @DeleteMapping({"/moderation/v1/decisions/{messageId}",
+            "${app.api.private-path:/api/llm}/moderation/v1/decisions/{messageId}"})
+    public ResponseEntity<Void> retire(
+            @PathVariable String messageId,
+            @RequestHeader(required = false) HttpHeaders headers,
+            @RequestHeader(value = "X-User-Id", required = false) String requestedBy) {
+        authorization.requireScope(headers);
+
+        useCase.retireDecision(messageId, requestedBy);
+
+        return ResponseEntity.noContent().build();
     }
 }

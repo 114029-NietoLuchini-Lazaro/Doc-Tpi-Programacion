@@ -56,6 +56,67 @@ class TutorInteractionServiceTest {
   }
 
   @Test
+  void aResponseThatContainsTheExpectedSolutionIsReplacedAndTheSolutionIsNeverPersisted() {
+    var models = mock(ModelInvocationService.class);
+    String solution = "return n <= 1 ? 1 : n * factorial(n - 1);";
+    when(models.invoke(eq(ModelFunction.TUTOR), anyString(), anyString(), any()))
+        .thenReturn(new ModelInvocationResult("Probá con: " + solution, "fake", "fake-socratic-v1"));
+    var audit = mock(AuditRepository.class);
+    var messages = messagesMock();
+    var service = new TutorInteractionService(models, idempotencyThatAlwaysProceeds(), audit, conversationsMock(), messages, mapper, 1000);
+    var request = new TutorInteractionService.Request(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+        UUID.randomUUID(), "¿cómo hago el factorial?", "high", null, solution);
+
+    var response = service.respond(request, UUID.randomUUID(), actor);
+
+    assertThat(response.message()).doesNotContain("factorial(n - 1)");
+    assertThat(response.state()).isEqualTo("completed");
+    var auditDetails = org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(audit).record(anyString(), anyString(), any(), any(), auditDetails.capture());
+    assertThat(auditDetails.getValue()).doesNotContain("factorial");
+    assertThat(request.toString()).doesNotContain("factorial").contains("[REDACTED]");
+  }
+
+  @Test
+  void withoutAnExpectedSolutionTheSameResponseIsDelivered() {
+    var models = mock(ModelInvocationService.class);
+    when(models.invoke(eq(ModelFunction.TUTOR), anyString(), anyString(), any()))
+        .thenReturn(new ModelInvocationResult("Probá con: return n <= 1 ? 1 : n * factorial(n - 1);", "fake", "fake-socratic-v1"));
+    var service = new TutorInteractionService(models, idempotencyThatAlwaysProceeds(), mock(AuditRepository.class),
+        conversationsMock(), messagesMock(), mapper, 1000);
+
+    var response = service.respond(request("¿cómo hago el factorial?", "high"), UUID.randomUUID(), actor);
+
+    assertThat(response.message()).contains("factorial(n - 1)");
+  }
+
+  @Test
+  void anyReasonTheModelCannotAnswerIsPresentedAsUnavailableNotAsAnHttpError() {
+    java.util.List<RuntimeException> failures = java.util.List.of(
+        new ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelTimeoutException("lento"),
+        new ar.edu.utn.frc.tup.piv.llm.domain.ai.InvalidModelResponseException("vacía"),
+        new ar.edu.utn.frc.tup.piv.llm.domain.ai.ProviderUnavailableException("breaker abierto"),
+        new ar.edu.utn.frc.tup.piv.llm.domain.ai.BudgetExceededException(ModelFunction.TUTOR, "presupuesto agotado"),
+        new IllegalStateException("Fallo en la comunicación con el proveedor 'groq': 429"),
+        new IllegalStateException("La función tutor no tiene modelo asignado"));
+    for (RuntimeException failure : failures) {
+      var models = mock(ModelInvocationService.class);
+      when(models.invoke(eq(ModelFunction.TUTOR), anyString(), anyString(), any())).thenThrow(failure);
+      var idempotency = idempotencyThatAlwaysProceeds();
+      var service = new TutorInteractionService(models, idempotency, mock(AuditRepository.class),
+          conversationsMock(), messagesMock(), mapper, 1000);
+
+      var response = service.respond(request("¿cómo ordeno una lista?", "medium"), UUID.randomUUID(), actor);
+
+      assertThat(response.state()).as(failure.getClass().getSimpleName()).isEqualTo("unavailable");
+      assertThat(response.message()).isNotBlank();
+      assertThat(response.conversacionId()).isNotNull();
+      // La clave de idempotencia queda completada: no puede quedar reservada sin respuesta.
+      verify(idempotency).complete(eq("tutor.interaction"), any(), any(), any(), any());
+    }
+  }
+
+  @Test
   void aLowRiskResponseIsNotFilteredByTheOutputGuard() {
     var models = mock(ModelInvocationService.class);
     String longButLowRisk = "```java\n" + "line;\n".repeat(9) + "```";

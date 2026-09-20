@@ -33,6 +33,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *       reconoce duplicados sin repetir el efecto.</li>
  *   <li>CA4: un mensaje sin eventId (o malformado) se enruta a {@code <topic>.dlt} y no bloquea
  *       el consumo de los eventos siguientes.</li>
+ *   <li>Un {@code ATTEMPT-CLOSED} válido se evalúa contra el evaluador {@code fake} sembrado y su
+ *       {@code SCORE-CALCULATED} sale por {@code evaluation-events}, con la cohorte como key.</li>
  * </ul>
  */
 @SpringBootTest(properties = {
@@ -43,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     "spring.task.scheduling.enabled=true",
     "spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}"
 })
-@EmbeddedKafka(partitions = 1, topics = {"moderation-events", "practice-events", "practice-events.dlt"})
+@EmbeddedKafka(partitions = 1, topics = {"moderation-events", "practice-events", "practice-events.dlt", "evaluation-events"})
 class EventOutboxKafkaFlowIT extends AbstractIntegrationIT {
 
   @Autowired
@@ -97,6 +99,9 @@ class EventOutboxKafkaFlowIT extends AbstractIntegrationIT {
 
     assertThat(record.key()).isEqualTo("curso-h07");
     assertThat(record.value()).contains("messageId").contains("msg-h07");
+    // El cuerpo es el envelope completo del estándar; el payload va anidado, no solo.
+    assertThat(record.value()).contains("\"eventId\":\"" + eventId + "\"").contains("\"eventType\":\"MESSAGE-UNBLOCKED\"")
+        .contains("\"eventVersion\":1").contains("\"timestamp\"").contains("\"producer\"").contains("\"payload\":{");
     assertThat(headerValue(record, "eventId")).isEqualTo(eventId.toString());
     assertThat(headerValue(record, "eventType")).isEqualTo("MESSAGE-UNBLOCKED");
     assertThat(headerValue(record, "eventVersion")).isEqualTo("1");
@@ -147,6 +152,25 @@ class EventOutboxKafkaFlowIT extends AbstractIntegrationIT {
           "select count(*) from llm.kafka_consumed_events where event_id = ?", Integer.class, nextEventId);
       return rows != null && rows == 1;
     });
+  }
+
+  @Test
+  void aClosedAttemptIsEvaluatedByTheFakeAndItsScoreIsPublishedInEvaluationEvents() {
+    UUID attemptId = UUID.randomUUID();
+    UUID cohortId = UUID.randomUUID();
+    String attemptClosed = "{\"eventId\":\"" + UUID.randomUUID() + "\",\"eventType\":\"ATTEMPT-CLOSED\",\"eventVersion\":1,"
+        + "\"producer\":\"practice-service\",\"payload\":{\"attemptId\":\"" + attemptId + "\",\"courseCohortId\":\"" + cohortId
+        + "\",\"learnerId\":\"" + UUID.randomUUID() + "\",\"transcript\":[{\"role\":\"student\",\"content\":\"no entiendo mi recursión\"}]}}";
+    testProducer.send(new ProducerRecord<>(KafkaTopics.PRACTICE_EVENTS, cohortId.toString(), attemptClosed));
+    testProducer.flush();
+
+    testConsumer.subscribe(java.util.List.of(KafkaTopics.EVALUATION_EVENTS));
+    ConsumerRecord<String, String> score = pollUntilAny(testConsumer);
+
+    assertThat(score.key()).isEqualTo(cohortId.toString());
+    assertThat(headerValue(score, "eventType")).isEqualTo("SCORE-CALCULATED");
+    assertThat(score.value()).contains(attemptId.toString()).contains("\"score\"").contains("fake-evaluator-v1");
+    assertThat(score.value()).contains("\"eventType\":\"SCORE-CALCULATED\"").contains("\"payload\":{");
   }
 
   private void waitUntil(java.util.function.BooleanSupplier condition) {

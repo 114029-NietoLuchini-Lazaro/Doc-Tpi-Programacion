@@ -3,36 +3,20 @@
 > Este documento es la fuente completa de lo pendiente con Tema 05. Antecedentes:
 > [17 §7.3](../../../contracts/90-mapa-de-integracion-historico.md#73-quién-nos-bloquea-y-a-quién-bloqueamos) (N1, N3),
 > [08 B-1](../../../00-gobierno-y-evolucion/02-decisiones-y-pendientes.md), [20-backlog-y-sprints.md](../../01-backlog-y-sprints.md) E12-02.
+> Lo que se le entrega a Tema 05 para integrar: [`llm-service-contrato-para-desafios-practicos.md`](../../../contracts/equipos/llm-service-contrato-para-desafios-practicos.md).
 
-## 🔴 Cruzado — la solución esperada del desafío
+## 🟡 Solución esperada del desafío — decidido de nuestro lado, falta que lo confirmen
 
-Sin esto el guardarraíl anti-fuga (RF-IA-20) no tiene contra qué comparar. Falta definir
-endpoint, verbo y payload. Hay resistencia esperable: le estamos pidiendo a Tema 05 que exponga
-algo que hoy consideran interno y sensible.
+Sin la solución esperada, el guardarraíl anti-fuga (RF-IA-20) solo detecta bloques de código largos.
 
-**Nuestra propuesta ya escrita** (doc 08 B-1): que Tema 05 exponga un endpoint que devuelva la
-solución esperada **solo a nosotros**, solo para comparación — nunca la almacenamos, la usamos
-y la descartamos. Ofrecer esa garantía por escrito destraba la conversación.
+**Decisión (2026-09-19):** Tema 05 la manda, opcional, en el campo `expectedSolution` del request
+del tutor. Es implementación en el servicio y contrato en el OpenAPI: se usa solo en memoria, no se
+persiste, loguea, audita ni devuelve. Reemplaza la propuesta anterior de que la pidiéramos nosotros
+por `GET .../expected-solution` (que exigía un cliente y credenciales hacia Tema 05).
 
-**Estado a la fecha de `20-backlog-y-sprints.md`:** sin resolver — la salvaguarda corre hoy
-contra una solución mock, y la integración real queda anotada como deuda.
-
-**🟡 Propuesta de cuerpo — no acordado, solo para arrancar la conversación:**
-
-```json
-// GET (hipotético) {tema-05}/challenges/{challengeId}/expected-solution
-// Llamado por nosotros, con nuestro JWT M2M — nunca al revés.
-{
-  "challengeId": "b1e2c3d4-0002-4a00-8000-000000000002",
-  "language": "java",
-  "expectedSolution": "public int factorial(int n) { ... }",
-  "hiddenTestsSummary": "3 casos borde: n=0, n=1, overflow"
-}
-```
-
-Ningún campo de este ejemplo está cerrado — ni el verbo, ni si viaja por HTTP o por evento, ni
-si incluye `hiddenTestsSummary` o solo el código de referencia. Se pone acá para que la sesión
-de integración tenga algo concreto para tachar o corregir, no para presentarlo como decidido.
+**Falta:** que Tema 05 confirme que acepta mandarla. Si prefieren otro camino es un cambio de contrato
+y hay que decidirlo antes de integrar. Mejora futura sin cambio de contrato: comparar por similitud
+(umbral del 70%, PAR-11) en vez de coincidencia literal.
 
 ## 🔴 Cruzado — evento de ediciones y ejecuciones de tests del IDE
 
@@ -86,3 +70,79 @@ la pantalla 1.
 del guardarraíl anti-fuga; para Tema 05 es el umbral de originalidad entre entregas de
 alumnos. Ver [transversales del README](../README.md#glosario-de-colisiones-de-vocabulario) y
 [`11-glosario-y-metadata.md`](../../../00-gobierno-y-evolucion/03-glosario-y-metadata.md).
+
+## 🔴 Kafka — contrato de `practice-events` a cerrar (2026-09-19)
+
+Al revisar [`llm-service.asyncapi.yaml`](../../../contracts/llm-service.asyncapi.yaml) v2.0.0 contra el código
+(`PracticeAttemptClosedListener`) quedan estas preguntas para Tema 05. Es la lista de arranque:
+se agregan acá todos los temas nuevos que salgan de la charla.
+
+- [ ] **Message Key de `practice-events`:** la define el productor y hoy figura "Pendiente" en el
+  AsyncAPI. Confirmar qué usan (¿`attemptId`? ¿`courseCohortId`?) y el orden que garantiza.
+- [ ] **`AttemptClosed` — campos y versión:** confirmar `attemptId`, `courseCohortId`, `learnerId`,
+  `transcript` (forma de cada mensaje del transcript, tamaño máximo) y `eventVersion` de partida.
+- [ ] **Topic y `eventType` de nuestros eventos de score:** hoy publicamos en `evaluation-events`
+  (`SCORE-CALCULATED` / `SCORE-DEFERRED`). Confirmar que consumen ese topic y que el nombre les sirve
+  (sigue pendiente lo de "tópico/nombre de versión" de la sección de contrato).
+- [ ] **Payload de `ScoreCalculated` / `ScoreDeferred`:** ya está en el AsyncAPI como **provisorio**
+  (`score`, `dimensions`, `evaluator`, `rubricVersionId`; `reason` y `retryFrom` en el diferido).
+  Falta que Tema 05 lo valide como consumidor.
+- [ ] **Fuente del evento de ediciones/tests del IDE:** ¿Tema 05 o Tema 06 (sandbox)? Ya listado arriba;
+  si es Tema 06 hay que sumarlos a la conversación.
+- [ ] **Reintentos y DLQ:** qué esperan que hagamos ante un `AttemptClosed` inválido o duplicado
+  (hoy: idempotencia por `eventId` + `DeadLetterPublisher`) y quién monitorea la DLQ.
+- [x] **Scope del tutor:** alineado a `llm.tutor.interact` (el registrado en el Gateway y el que exige el
+  código). Se corrigieron los documentos que decían `llm.tutor.invoke`; hay que avisarle a Tema 05.
+- [x] **Evaluador por Kafka (nuestro lado):** `PracticeAttemptClosedListener` ya dispara la evaluación
+  contra el fake y publica `SCORE-CALCULATED`/`SCORE-DEFERRED` en `evaluation-events`
+  (`AttemptEvaluationService`, con IT sobre Kafka embebido). Queda que Tema 05 valide el payload.
+- [ ] **Cohorte → curso → rúbrica:** el evento trae `courseCohortId` y no hay mapa a curso, así que se
+  evalúa siempre con la plantilla institucional. Definir de dónde sale la rúbrica activa del curso.
+- [ ] **Nombres de topic:** `practice-events` y `evaluation-events` son nuestros; el estándar
+  ([KAFKA_EVENT_STANDARD §17](../../../contracts/KAFKA_EVENT_STANDARD.md)) lista `challenge-events` y otros, sin ellos.
+  Acordarlos con Tema 05 y registrarlos en esa tabla.
+- [ ] _(agregar acá lo que surja)_
+
+## 🔴 Pedido al equipo del Gateway y de users-service (identidad y enrutamiento)
+
+Tema 05 nos llama con un token de servicio `client_credentials` por el Gateway (receta en
+[`llm-service-contrato-para-desafios-practicos.md`](../../../contracts/equipos/llm-service-contrato-para-desafios-practicos.md#2-cómo-arrancar-paso-a-paso)).
+
+- [ ] **Identidad delegada (riesgo de 403 total):** el tutor exige `X-Delegated-User` y devuelve `403` sin
+  él. Preguntar si el Gateway lo agrega cuando el token es de servicio puro (sin usuario). Si no,
+  relajar `TutorGatewayAuthorization` (y evaluar lo mismo en `RagGatewayAuthorization`) para no exigirlo
+  y tomar el `learnerId` del body. No cambia el contrato.
+- [ ] **Alta de `practice-service`** como cliente en `users-service` con el scope `llm.tutor.interact`.
+- [ ] **`GATEWAY_ALLOWLIST`:** agregar `llm-service` y recrear el Gateway (figura como acción pendiente en el
+  [reporte de integración](../../09-epicas-historias-tareas-sprints/reporte-integracion-gateway.md)).
+- [ ] **Host de la plataforma fuera de la red (2026-09-20):** `tpi-plataforma.tail767776.ts.net` no resuelve ni
+  aparece entre los nodos de la tailnet `kron0800.github` (nuestro nodo entra como `tag:tpi`); el registro en
+  Eureka falla. Pedir a quien administra la tailnet que verifique que el nodo exista y la ACL de `tag:tpi`.
+  Se re-verifica con `scripts/verificar-mesh.sh`.
+- [ ] **`APP_CLIENT_SECRET` de `llm-service`** (vacío en nuestro `.env`): hace falta solo si `llm-service` llama a
+  otros servicios por el Gateway (p. ej. las notificaciones de moderación).
+
+## 🔴 Pedido al responsable del broker Kafka (infraestructura, no contrato)
+
+Sin esto no podemos publicar ni consumir fuera de nuestro compose local (`kafka:9092`). No hay
+ningún responsable nombrado en los docs; hay que averiguar quién es.
+
+- [ ] **Bootstrap servers** y alcance de red desde el contenedor de `llm-service` (red `tpi-platform`);
+  se configuran con `KAFKA_BOOTSTRAP_SERVERS`.
+- [ ] **Seguridad:** si el broker exige TLS o SASL, y las credenciales. Nuestra configuración no tiene
+  nada de seguridad hoy (PLAINTEXT), hay que sumarlo.
+- [ ] **Creación de topics:** nosotros no los creamos (no hay `KafkaAdmin`). Si el broker no tiene
+  autocreación, hay que crearlos: `practice-events`, `evaluation-events`, `moderation-events`,
+  `calibration-events` y las colas de fallos `<topic>.dlt` (p. ej. `practice-events.dlt`), con su
+  cantidad de particiones, replicación y retención.
+- [ ] **Permisos (ACL), si hay:** escribir en nuestros topics, leer `practice-events`, escribir
+  `practice-events.dlt` y usar el consumer group `llm-service`.
+- [ ] **Ambientes:** cuál es el de pruebas de Tema 05 y cuál el de producción.
+
+## 🟢 Integración en modo test — disponible hoy
+
+Tema 05 puede integrar el tutor (HTTP) y el evaluador (Kafka) contra el `fake` (sin modelo real) sin
+cambios de contrato.
+Alcance y límites en la sección "Modo de prueba" de
+[`tema-05-desafios-practicos.md`](../../../contracts/equipos/tema-05-desafios-practicos.md#modo-de-prueba--integrar-contra-el-tutor-sin-modelo-real-2026-09-19).
+Falta que ellos confirmen que les sirve arrancar así.

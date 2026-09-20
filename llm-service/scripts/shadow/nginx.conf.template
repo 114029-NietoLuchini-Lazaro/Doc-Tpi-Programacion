@@ -1,0 +1,47 @@
+# Proxy con mirror para shadow deploy de llm-service.
+#
+# Cada request se sirve desde el servicio REAL (PRIMARY) y se duplica hacia la SOMBRA (SHADOW).
+# La respuesta de la sombra se descarta: el cliente solo ve la del real.
+#
+# Variables (las sustituye la imagen nginx con envsubst al arrancar):
+#   PRIMARY_UPSTREAM  host:puerto del servicio real      ej. llm-service.tail767776.ts.net:8086
+#   SHADOW_UPSTREAM   host:puerto de la sombra           ej. llm-service-shadow.tail767776.ts.net:8086
+#   NGINX_RESOLVER    DNS para resolver la sombra en runtime (docker: 127.0.0.11, tailscale: 100.100.100.100)
+
+log_format shadow '$remote_addr "$request" status=$status rt=$request_time '
+                  'upstream=$upstream_addr ustatus=$upstream_status shadow=$http_x_shadow_request';
+
+server {
+    listen 8080;
+    access_log /dev/stdout shadow;
+
+    resolver ${NGINX_RESOLVER} valid=10s ipv6=off;
+
+    location / {
+        mirror /_shadow;
+        mirror_request_body on;
+
+        proxy_pass http://${PRIMARY_UPSTREAM};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # Subrequest interna: no es alcanzable desde afuera.
+    location = /_shadow {
+        internal;
+
+        # proxy_pass con variable => la sombra se resuelve en runtime.
+        # Si está caída, nginx igual arranca y el mirror falla en silencio.
+        set $shadow_upstream ${SHADOW_UPSTREAM};
+        proxy_pass http://$shadow_upstream$request_uri;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Shadow-Request "1";
+        proxy_pass_request_body on;
+
+        # Acotar el impacto de una sombra lenta o caída sobre el tráfico real.
+        proxy_connect_timeout 1s;
+        proxy_read_timeout 2s;
+        proxy_send_timeout 2s;
+    }
+}

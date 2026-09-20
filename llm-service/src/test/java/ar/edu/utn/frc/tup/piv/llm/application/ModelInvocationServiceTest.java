@@ -105,6 +105,23 @@ class ModelInvocationServiceTest {
   }
 
   @Test
+  void theModelAssignedInTheDatabaseReachesTheAdapter() {
+    var received = new java.util.concurrent.atomic.AtomicReference<String>();
+    Adapter adapter = request -> {
+      received.set(request.modelId());
+      return new ModelInvocationResult("ok", "fake", "fake-socratic-v1");
+    };
+    var configs = mock(FunctionModelConfigRepository.class);
+    when(configs.find(ModelFunction.TUTOR))
+        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("fake", "modelo-asignado", "1", true)));
+    var service = new ModelInvocationService(configs, adapter);
+
+    service.invoke(ModelFunction.TUTOR, "system", "pregunta", Duration.ofSeconds(1));
+
+    assertThat(received.get()).isEqualTo("modelo-asignado");
+  }
+
+  @Test
   void throwsExceptionWhenProviderIsNotRegistered() {
     Adapter fakeAdapter = request -> new ModelInvocationResult("pista", "fake", "fake-socratic-v1");
     var configs = mock(FunctionModelConfigRepository.class);

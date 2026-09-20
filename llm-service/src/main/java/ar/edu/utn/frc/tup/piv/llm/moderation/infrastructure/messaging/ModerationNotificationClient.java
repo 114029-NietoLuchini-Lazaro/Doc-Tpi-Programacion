@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -23,13 +24,21 @@ public class ModerationNotificationClient {
 
     private final RestClient gatewayRestClient;
     private final String moderationEventsPath;
+    private final boolean enabled;
 
+    public ModerationNotificationClient(RestClient gatewayRestClient, String moderationEventsPath) {
+        this(gatewayRestClient, moderationEventsPath, true);
+    }
+
+    @Autowired
     public ModerationNotificationClient(
             RestClient gatewayRestClient,
             @Value("${app.notifications.moderation-events-path:/api/notifications/v1/moderation-events}")
-            String moderationEventsPath) {
+            String moderationEventsPath,
+            @Value("${app.notifications.enabled:true}") boolean enabled) {
         this.gatewayRestClient = gatewayRestClient;
         this.moderationEventsPath = moderationEventsPath;
+        this.enabled = enabled;
     }
 
     /**
@@ -38,6 +47,12 @@ public class ModerationNotificationClient {
      * sí queda registrado en el log para su seguimiento/alerta operativa.
      */
     public void notifyMessageUnblocked(ModerationResolutionDomainEvent event) {
+        if (!enabled) {
+            log.info("[MOCK] app.notifications.enabled=false: notificación NO enviada "
+                            + "[eventId={}, messageId={}, userId={}, resolution={}]",
+                    event.getEventId(), event.getMessageId(), event.getUserId(), event.getResolution());
+            return;
+        }
         Map<String, Object> payload = Map.ofEntries(
                 Map.entry("eventId", event.getEventId()),
                 Map.entry("eventType", event.getEventType()),

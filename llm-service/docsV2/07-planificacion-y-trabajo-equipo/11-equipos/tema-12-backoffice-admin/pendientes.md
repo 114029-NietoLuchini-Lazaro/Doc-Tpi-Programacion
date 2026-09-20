@@ -44,3 +44,19 @@ Son dos recursos distintos (uno agregado y de solo lectura, el otro puntual y de
 falta que **Product Owner + DPO** confirmen: quién puede ver/limitar a qué alumno, si hace falta
 un registro de auditoría adicional por tratarse de un dato que identifica a un alumno, y si esto
 cambia algo del contrato de datos ya cerrado en doc 07.
+
+**Estado real en el código (revisado 2026-09-20):** hoy no hay nada del lado de `llm-service` que
+esta pantalla pueda configurar para el tutor. Que el endpoint sea propuesta no es el único
+bloqueo:
+
+- `POST /tutor/interactions` no consume ninguna cuota por alumno; solo lo frena el presupuesto
+  global por función (`GatewayBudget`, valores fijos y en memoria). Detalle en
+  [`ep-05/README.md`](../../../06-operacion-calidad-y-pruebas/04-estado-de-implementacion/ep-05/README.md).
+- `QuotaRegistry` ya sabe fijar un límite por alumno (`setLimit`), pero solo cuenta usos, no
+  tokens, vive en memoria y ningún endpoint lo expone.
+- Un límite de tokens por alumno necesita medir tokens por `learnerId`, y `GatewayUsageLog` hoy
+  estima tokens solo agregados por función.
+
+Si el contrato con Tema 12 se confirma, el trabajo de `llm-service` es: persistir los límites,
+aplicarlos en el tutor antes de invocar al modelo y contar tokens por alumno. Mientras tanto,
+Tema 12 no debería mostrar como funcional una pantalla que no tiene efecto sobre el tutor.

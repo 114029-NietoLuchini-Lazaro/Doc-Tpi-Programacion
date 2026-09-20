@@ -1,0 +1,46 @@
+# Entorno de prueba del mirror: nginx + dos mocks (real y sombra). No usa llm-service real.
+# Lo levanta scripts/shadow/test-shadow-mirror.sh; a mano:
+#   docker compose -p llm-shadow-test -f scripts/shadow/compose.test.yaml up -d --build --wait
+
+services:
+  mock-primary:
+    image: python:3.12-alpine
+    command: ["python", "/app/server.py"]
+    environment:
+      MOCK_NAME: primary
+    volumes:
+      - ./mock/server.py:/app/server.py:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8086/__stats >/dev/null"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  mock-shadow:
+    image: python:3.12-alpine
+    command: ["python", "/app/server.py"]
+    environment:
+      MOCK_NAME: shadow
+    volumes:
+      - ./mock/server.py:/app/server.py:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8086/__stats >/dev/null"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  nginx:
+    image: nginx:1.27-alpine
+    environment:
+      PRIMARY_UPSTREAM: mock-primary:8086
+      SHADOW_UPSTREAM: mock-shadow:8086
+      NGINX_RESOLVER: 127.0.0.11
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+    ports:
+      - "18080:8080"
+    depends_on:
+      mock-primary:
+        condition: service_healthy
+      mock-shadow:
+        condition: service_healthy
