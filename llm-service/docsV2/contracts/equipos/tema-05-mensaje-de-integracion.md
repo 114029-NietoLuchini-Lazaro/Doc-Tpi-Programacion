@@ -1,39 +1,28 @@
 # Mensaje para Tema 05 — integración con `llm-service` (2026-09-20)
 
-> Texto listo para pegar en el canal de Tema 05 (Desafíos Prácticos). La fuente de verdad sigue siendo la guía
-> [`llm-service-contrato-para-desafios-practicos.md`](llm-service-contrato-para-desafios-practicos.md) (v2) y, para su
-> asistente de IA, el skill [`tema-05-skill-integrar-llm-service/SKILL.md`](tema-05-skill-integrar-llm-service/SKILL.md).
-> El Skill Hub ya tiene las dos entradas actualizadas (contrato Kafka v5 y skill v4, con esta guía adjunta;
-> [`../skillhub/README.md`](../skillhub/README.md)), así que su asistente de IA también puede encontrarlas ahí. Si difieren, manda la guía.
+> Texto listo para pegar en el canal de Tema 05 (Desafíos Prácticos). Todo lo que necesitan está en el Skill Hub
+> (skill `building-the-practice-service-tutor-client-and-score-consumer` v4 con la guía v2 adjunta, y los contratos
+> `llm-service-http-contract` y `llm-service-kafka-contract` v5); si difieren, manda la guía
+> [`llm-service-contrato-para-desafios-practicos.md`](llm-service-contrato-para-desafios-practicos.md). Estado de las
+> entradas: [`../skillhub/README.md`](../skillhub/README.md).
 
 ---
 
-Hola equipo de Desafíos Prácticos 👋 Ya pueden integrar `practice-service` con `llm-service`. Con esto se conectan al **tutor de IA** y al **evaluador**. Hoy responde un **bot de prueba** (sin modelo real): sirve para probar la conexión, los errores y los eventos. Cuando pasemos al modelo real **no tienen que cambiar código**; solo cambia el contenido de las respuestas.
+Hola equipo de Desafíos Prácticos. Todo lo que necesitan para integrarse con llm-service (tutor de IA y evaluador de intentos) está en el Skill Hub, no hace falta que les pasemos archivos.
 
-**Qué necesitan (2 archivos, en español; también están en el Skill Hub como `building-the-practice-service-tutor-client-and-score-consumer`):**
-1. **Guía `llm-service-contrato-para-desafios-practicos.md` (v2).** Es el único documento que hace falta: trae el paso a paso, el contrato completo y los dos contratos ejecutables (OpenAPI del tutor y AsyncAPI de los eventos).
-2. **Skill `integrar-llm-service`** (`SKILL.md`), para que su asistente de IA arme el cliente del tutor, el publicador de `ATTEMPT_CLOSED` y el consumidor de scores. Tiene que estar en la misma carpeta que la guía.
+**Cómo encontrarlo.** Busquen llm-service (las búsquedas funcionan mejor en inglés). Empiecen por el skill `building-the-practice-service-tutor-client-and-score-consumer`: trae el orden de armado, los casos de prueba y adjunta la guía completa (`llm-service-contrato-para-desafios-practicos.md`, **v2**, en español), con el plan, la receta del token, el contrato y los puntos abiertos. Después miren los dos contratos: `llm-service-http-contract` (OpenAPI del tutor) y `llm-service-kafka-contract` (AsyncAPI de los eventos, **v5**). Si algo difiere, manda la guía.
 
-**Cómo se conectan:**
-- **Tutor (HTTP):** `POST /api/llm/tutor/interactions` por el **API Gateway**, con un token `client_credentials` (`audience: llm-service`, scope `llm.tutor.interact`) y una `Idempotency-Key` nueva por mensaje. Responde siempre `200`; si el modelo no puede, viene `state: unavailable`.
-- **Evaluador (Kafka):** cuando cierran un intento, publican **`ATTEMPT_CLOSED`** con la conversación completa; nosotros les devolvemos **`SCORE_CALCULATED`** (o **`SCORE_DEFERRED`**) con un puntaje de 0 a 100 y su desglose. Nunca otorgamos XP: el score llega a ustedes y ustedes se lo reenvían a Tema 03.
+**El plan.** Primero responde un bot de prueba, sin modelo real, para que verifiquen la conexión, los errores y los eventos. Después pasamos al modelo real y el contrato no cambia.
 
-**Los eventos siguen el estándar Kafka de la cátedra (`KAFKA.pdf`)**, así que ojo con esto:
-- El envelope tiene **5 campos**: `eventId`, `eventType`, `timestamp`, `producer`, `payload`. **No hay `eventVersion`.** Todo en inglés.
-- Los `eventType` van en `MAYÚSCULAS_CON_GUION_BAJO`: `ATTEMPT_CLOSED`, `SCORE_CALCULATED`, `SCORE_DEFERRED`.
-- El bus es **`event-bus:29092`** (variable `KAFKA_BOOTSTRAP`); el `group-id` es el nombre de su servicio (por ejemplo `practice-service`).
-- **Los tópicos no se crean**: los asigna el grupo de Notificaciones. Hoy usamos `practice-events` (ustedes publican) y `evaluation-events` (ustedes leen) como nombres **provisorios**: déjenlos como propiedad configurable.
-- No hay tópico de dead-letter: los eventos inválidos los guardamos nosotros en una tabla y no generan score.
+**Los eventos siguen el estándar Kafka de la cátedra (`KAFKA.pdf`).** Si ya leyeron una versión anterior de la guía, cambió esto (el HTTP del tutor no cambió):
+- El envelope tiene **5 campos**: `eventId`, `eventType`, `timestamp`, `producer`, `payload`. **Ya no hay `eventVersion`.**
+- Los tipos son `ATTEMPT_CLOSED`, `SCORE_CALCULATED` y `SCORE_DEFERRED` (con guion bajo).
+- El bus es `event-bus:29092` (`KAFKA_BOOTSTRAP`) y el `group-id` es el nombre de su servicio.
+- **Los tópicos no se crean, los asigna Notificaciones.** Usen `practice-events` y `evaluation-events` como nombres provisorios y configurables. Ya no hay tópico dead-letter.
+- Ojo con tres cosas: `evaluation-events` mezcla dos payloads, así que ramifiquen por `eventType`. Nosotros no mandamos el header `__TypeId__`, así que con `JsonDeserializer` de Spring usen `spring.json.use.type.headers: false`. Y `JsonSerializer` escribe un `Instant` como número: usen `@JsonFormat(shape = STRING)` para publicar el texto ISO-8601.
 
-**Tres cosas que suelen romper la integración:**
-1. `evaluation-events` mezcla **dos tipos de payload**, así que un consumidor tipado por un solo payload no alcanza: consuman `Event<?>` (o el JSON) y **ramifiquen por `eventType`**.
-2. Nosotros mandamos JSON como texto y **sin el header `__TypeId__`**. Si usan `JsonDeserializer` de Spring, pongan `spring.json.use.type.headers: false` y un tipo por defecto (`spring.json.value.default.type`).
-3. El `JsonSerializer` de Spring escribe un `Instant` como **número**, no como el `"2026-09-20T15:00:00Z"` del ejemplo del PDF. Para publicar texto ISO-8601: `@JsonFormat(shape = STRING)` en el campo. Nosotros publicamos texto y no leemos el `timestamp` de su evento.
+**Lo que hoy bloquea las pruebas, y no depende de nosotros:** el alta de `practice-service` en la plataforma (scope `llm.tutor.interact`, allowlist del Gateway) y que Notificaciones asigne los tópicos definitivos.
 
-**Para probar:** con el bot, un `ATTEMPT_CLOSED` válido devuelve un `SCORE_CALCULATED` en unos segundos; repetir el mismo `eventId` no duplica el score. El bot **no** produce `unavailable` ni `SCORE_DEFERRED`: pídannos que forcemos el fallo para probar esas pantallas. En local pueden usar el compose de `llm-service` (broker `kafka-local:29092`); el detalle está en la sección 11 de la guía.
+**Lo que necesitamos de ustedes:** confirmar los puntos de la sección 10 de la guía. Son los nombres de tópico provisorios, qué `producer` usan y si su `timestamp` sale como texto o número, el payload del score, cómo arman el transcript, si mandan la solución esperada en `expectedSolution`, quién genera el evento del IDE y qué muestran cuando el tutor no está disponible.
 
-**Qué necesitamos que nos confirmen** (sección 10 de la guía; ninguno cambia el contrato): (1) si `practice-events` y `evaluation-events` les sirven como nombres mientras Notificaciones asigna los definitivos; (2) qué `producer` van a usar y si su `timestamp` sale como texto o número; (3) la Message Key de `practice-events`; (4) que pueden armar el `transcript` como `{role, content}`; (5) si aceptan mandar la solución esperada en `expectedSolution`; (6) quién genera el evento de ediciones del IDE (ustedes o Tema 06); (7) qué muestran cuando llega `state: unavailable`.
-
-**Todavía no está verificado** (lo decimos para que no les sorprenda): el ruteo real por el API Gateway (si agrega la identidad delegada con un token de servicio), el bus `event-bus:29092` con tópicos definitivos, y la calidad del evaluador con el modelo real. Si les llega un `403` "Identidad delegada ausente" con un token correcto, es lo primero y no un error de ustedes.
-
-Cualquier duda, en este canal. ¡Gracias!
+**Dos cosas a confirmar con la plataforma:** la ruta del pedido del token y si el Gateway agrega la identidad delegada con un token de servicio.
