@@ -284,8 +284,9 @@ redeploy) el contrato que ustedes consumen es el mismo.
 
 ### Evaluador por Kafka en modo test (2026-09-19)
 
-Está conectado de punta a punta contra el fake. Ustedes publican `ATTEMPT-CLOSED` en
-`practice-events` y reciben `SCORE-CALCULATED` (o `SCORE-DEFERRED`) en `evaluation-events`, con
+Está conectado de punta a punta contra el fake. Ustedes publican `ATTEMPT_CLOSED` en
+`practice-events` y reciben `SCORE_CALCULATED` (o `SCORE_DEFERRED`) en `evaluation-events` (nombres de tópico
+**provisorios**: los asigna Notificaciones), con
 `courseCohortId` como Message Key. El schema de los dos eventos de salida está en el
 [AsyncAPI](../llm-service.asyncapi.yaml) y es **provisorio**: es nuestra propuesta, ustedes tienen
 que validarla como consumidores.
@@ -295,8 +296,7 @@ Ejemplo de lo que nos mandan (los cuatro campos del payload son los únicos que 
 ```json
 {
   "eventId": "9f0c6c1e-6d0b-4c53-9a3e-0b1f6c8f2a11",
-  "eventType": "ATTEMPT-CLOSED",
-  "eventVersion": 1,
+  "eventType": "ATTEMPT_CLOSED",
   "timestamp": "2026-09-19T15:00:00Z",
   "producer": "practice-service",
   "payload": {
@@ -308,7 +308,7 @@ Ejemplo de lo que nos mandan (los cuatro campos del payload son los únicos que 
 }
 ```
 
-Lo que recibirían (el `payload` de `SCORE-CALCULATED`):
+Lo que recibirían (el `payload` de `SCORE_CALCULATED`):
 
 ```json
 {
@@ -327,9 +327,9 @@ Comportamiento a tener en cuenta:
 | Caso | Qué pasa |
 |---|---|
 | `eventId` repetido | Se ignora (idempotencia por `eventId`), no se vuelve a publicar el score |
-| `eventType` distinto de `ATTEMPT-CLOSED` en el mismo topic | Se registra y se ignora |
-| Falta `attemptId`, `courseCohortId` o `learnerId`, no son UUID, o `transcript` no es un array | Va a `practice-events.dlt`, no se evalúa |
-| El evaluador no responde o responde algo inválido | Se publica `SCORE-DEFERRED` con `reason` (`MODEL_UNAVAILABLE`, `INVALID_MODEL_RESPONSE` o `RUBRIC_UNAVAILABLE`) y `retryFrom` |
+| `eventType` distinto de `ATTEMPT_CLOSED` en el mismo topic | Se registra y se ignora |
+| Falta `attemptId`, `courseCohortId` o `learnerId`, no son UUID, o `transcript` no es un array | Queda en la tabla `event_dead_letter` (no hay tópico `.dlt`), no se evalúa |
+| El evaluador no responde o responde algo inválido | Se publica `SCORE_DEFERRED` con `reason` (`MODEL_UNAVAILABLE`, `INVALID_MODEL_RESPONSE` o `RUBRIC_UNAVAILABLE`) y `retryFrom` |
 
 ### Cómo probar la conexión
 
@@ -341,8 +341,9 @@ Nada de esto necesita un proveedor de modelo ni credenciales. Con el servicio le
   `X-Service-Scopes: llm.tutor.interact` y `X-Delegated-User: <uuid>` a partir del JWT M2M. Para pegarle
   directo desde el host, el overlay `compose.debug.yaml` publica el puerto 8086; y con
   `compose.workbench.yaml` se saltea la autenticación por completo.
-- **Evaluador (Kafka):** publicar el `ATTEMPT-CLOSED` de arriba en `practice-events` y leer
-  `evaluation-events`. Broker `kafka:9092` dentro de la red de compose.
+- **Evaluador (Kafka):** publicar el `ATTEMPT_CLOSED` de arriba en `practice-events` y leer
+  `evaluation-events`. Broker local `kafka-local:29092` dentro de la red de compose (el bus de la plataforma
+  es `event-bus:29092`).
 
 > **Scope del tutor: `llm.tutor.interact`.** Es el que está dado de alta en el Gateway, el que exige
 > el código y el que declara el [OpenAPI](../llm-service.openapi.yaml). Hasta 2026-09-19 varios
@@ -365,10 +366,10 @@ Registro vivo de lo que hay que acordar con Tema 05 sobre eventos. Detalle y che
 | Tema | Estado |
 |---|---|
 | Message Key de `practice-events` | 🔴 sin confirmar (AsyncAPI dice "Pendiente") |
-| Campos y `eventVersion` de `AttemptClosed` (incl. forma del `transcript`) | 🟡 schema publicado, falta que lo validen |
-| Topic/`eventType` de `SCORE-CALCULATED` / `SCORE-DEFERRED` en `evaluation-events` | 🟡 a confirmar como consumidores |
+| Campos de `AttemptClosed` (incl. forma del `transcript`); sin `eventVersion` en el estándar del PDF | 🟡 schema publicado, falta que lo validen |
+| Nombres de tópico (`practice-events`, `evaluation-events`) y `eventType` de `SCORE_CALCULATED` / `SCORE_DEFERRED` | 🔴 provisorios: los asigna Notificaciones; 🟡 `eventType` a confirmar como consumidores |
 | Fuente del evento de ediciones/tests del IDE (Tema 05 vs Tema 06) | 🔴 sin decidir |
-| Reintentos / DLQ ante `AttemptClosed` inválido o duplicado | 🟡 a acordar |
-| Payload de `SCORE-CALCULATED` / `SCORE-DEFERRED` | 🟡 implementado y publicado en el AsyncAPI como provisorio, falta que lo validen |
+| Reintentos / dead-letter ante `AttemptClosed` inválido o duplicado (tabla `event_dead_letter`, sin tópico `.dlt`) | 🟡 a acordar |
+| Payload de `SCORE_CALCULATED` / `SCORE_DEFERRED` | 🟡 implementado y publicado en el AsyncAPI como provisorio, falta que lo validen |
 | Cohorte → curso → rúbrica activa | 🔴 hoy se usa siempre la plantilla institucional; hace falta un mapa de cohorte a curso |
 | _(nuevos temas)_ | agregar acá |
