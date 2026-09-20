@@ -37,6 +37,7 @@
   </dependencyManagement>
   <modules>
     <module>provider-spi</module>
+    <module>provider-fake</module>
     <module>provider-openai-compatible</module>
     <module>provider-anthropic</module>
     <module>provider-gemini</module>

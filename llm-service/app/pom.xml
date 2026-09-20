@@ -13,6 +13,7 @@
     <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-database-postgresql</artifactId></dependency>
     <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>runtime</scope></dependency>
     <dependency><groupId>ar.edu.utn.frc.tup.piv</groupId><artifactId>llm-provider-spi</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>ar.edu.utn.frc.tup.piv</groupId><artifactId>llm-provider-fake</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>ar.edu.utn.frc.tup.piv</groupId><artifactId>llm-provider-openai-compatible</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>ar.edu.utn.frc.tup.piv</groupId><artifactId>llm-provider-anthropic</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>ar.edu.utn.frc.tup.piv</groupId><artifactId>llm-provider-gemini</artifactId><version>${project.version}</version></dependency>
