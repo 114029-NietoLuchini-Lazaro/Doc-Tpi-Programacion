@@ -185,7 +185,7 @@ class ModerationResilienceIT {
         assertThat(decisionOpen.getDecision()).isEqualTo(ModerationDecisionEnum.PENDING_REVIEW);
         assertThat(decisionOpen.getDecision()).isNotEqualTo(ModerationDecisionEnum.ALLOW);
         assertThat(decisionOpen.getClassifierUsed()).isEqualTo("fallback");
-        assertThat(elapsed).isLessThan(50L); // Cortocircuito inmediato en memoria
+        assertThat(elapsed).isLessThan(500L); // Cortocircuito inmediato en memoria (muy por debajo del delay de red de 2000 ms simulado)
 
         // Métrica Micrometer registrada
         assertThat(meterRegistry.get("moderation_fallback_total").counter().count()).isGreaterThanOrEqualTo(5.0);

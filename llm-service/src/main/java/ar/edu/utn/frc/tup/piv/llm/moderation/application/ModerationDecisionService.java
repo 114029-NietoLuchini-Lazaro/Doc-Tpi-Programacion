@@ -10,6 +10,7 @@ import ar.edu.utn.frc.tup.piv.llm.moderation.domain.port.ModerationIncidentRepos
 import ar.edu.utn.frc.tup.piv.llm.moderation.domain.ModerationReasonCode;
 import ar.edu.utn.frc.tup.piv.llm.moderation.domain.port.DeterministicModerationPort;
 import ar.edu.utn.frc.tup.piv.llm.moderation.domain.port.ModerationDecisionRepositoryPort;
+import ar.edu.utn.frc.tup.piv.llm.moderation.domain.port.ModerationResolutionRepositoryPort;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -22,7 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Servicio orquestador de moderación de chat:
@@ -40,15 +43,18 @@ public class ModerationDecisionService implements ModerationDecisionUseCase {
     private final ExecutorService virtualExecutor;
     private final Function<ModerationDecisionCommand, ModerationDecision> classifierEngine;
     private ModerationIncidentRepositoryPort incidentRepository;
+    private ModerationResolutionRepositoryPort resolutionRepository;
 
     @Autowired
     public ModerationDecisionService(
             ModerationDecisionRepositoryPort repository,
             @Value("${llm.moderation.timeout-ms:800}") long timeoutMs,
             ModerationDegradationService degradationService,
-            ModerationIncidentRepositoryPort incidentRepository) {
+            ModerationIncidentRepositoryPort incidentRepository,
+            ModerationResolutionRepositoryPort resolutionRepository) {
         this(repository, timeoutMs, (Function<ModerationDecisionCommand, ModerationDecision>) degradationService);
         this.incidentRepository = incidentRepository;
+        this.resolutionRepository = resolutionRepository;
     }
 
     public ModerationDecisionService(
@@ -89,6 +95,17 @@ public class ModerationDecisionService implements ModerationDecisionUseCase {
             ModerationIncidentRepositoryPort incidentRepository) {
         this(repository, timeoutMs, customEngine);
         this.incidentRepository = incidentRepository;
+    }
+
+    public ModerationDecisionService(
+            ModerationDecisionRepositoryPort repository,
+            long timeoutMs,
+            Function<ModerationDecisionCommand, ModerationDecision> customEngine,
+            ModerationIncidentRepositoryPort incidentRepository,
+            ModerationResolutionRepositoryPort resolutionRepository) {
+        this(repository, timeoutMs, customEngine);
+        this.incidentRepository = incidentRepository;
+        this.resolutionRepository = resolutionRepository;
     }
 
     @Override
@@ -154,6 +171,48 @@ public class ModerationDecisionService implements ModerationDecisionUseCase {
         repository.save(decision, command.courseId(), command.senderRole(), command.text());
 
         return decision;
+    }
+
+    /**
+     * CA_negativo_1 (LLM-S11-H01): retira una decisión de moderación previamente emitida.
+     * Un mensaje ALLOW nunca genera incidente (ver {@link #openIncidentIfNeeded}), por lo tanto
+     * jamás pudo pasar por revisión explícita de un docente; retirarlo violaría el contrato de
+     * moderación. Cualquier decisión (ALLOW, BLOCK o PENDING) que no cuente con una resolución
+     * explícita registrada se rechaza como error de protocolo, se audita en el log y se propaga
+     * como 409 Conflict.
+     */
+    @Override
+    public void retireDecision(String messageId, String requestedBy) {
+        if (messageId == null || messageId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "message_id es obligatorio");
+        }
+
+        ModerationDecision decision = repository.findByMessageId(messageId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No existe decisión de moderación para message_id: " + messageId));
+
+        if (decision.getDecision() == ModerationDecisionEnum.ALLOW) {
+            log.error("PROTOCOL_VIOLATION: intento de retirar un mensaje ALLOW ('{}') sin revisión explícita de moderación. "
+                            + "Un ALLOW jamás abre incidente, por lo que este flujo no debe existir (requestedBy={})",
+                    messageId, requestedBy);
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "PROTOCOL_VIOLATION: un mensaje ALLOW no puede retirarse sin pasar por una revisión explícita de moderación");
+        }
+
+        boolean hasExplicitReview = decision.getIncidentId() != null
+                && resolutionRepository != null
+                && resolutionRepository.existsByIncidentId(decision.getIncidentId());
+
+        if (!hasExplicitReview) {
+            log.error("PROTOCOL_VIOLATION: intento de retirar la decisión '{}' sin una revisión explícita registrada "
+                            + "(incidentId={}, requestedBy={})",
+                    messageId, decision.getIncidentId(), requestedBy);
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "PROTOCOL_VIOLATION: no existe revisión explícita (resolución docente) para este mensaje");
+        }
+
+        log.info("Retiro de decisión '{}' autorizado tras revisión explícita registrada (requestedBy={})",
+                messageId, requestedBy);
     }
 
     private static final int PREVIEW_MAX_CHARS = 200;

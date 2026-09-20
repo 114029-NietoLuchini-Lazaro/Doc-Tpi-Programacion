@@ -154,6 +154,8 @@ app:
   jwks-url: ${JWKS_URL:http://users-service:8082/.well-known/jwks.json}
   jwks-refresh-ms: ${JWKS_REFRESH_MS:300000}
   notifications:
+    # false = mock (solo log) hasta que notifications-service acuerde el contrato; true = POST real vía Gateway.
+    enabled: ${NOTIFICATIONS_ENABLED:true}
     # Ruta del Gateway hacia notifications-service para eventos de moderación (LLM-S12-H02 / CA5).
     moderation-events-path: ${NOTIFICATIONS_MODERATION_EVENTS_PATH:/api/notifications/v1/moderation-events}
   security:
