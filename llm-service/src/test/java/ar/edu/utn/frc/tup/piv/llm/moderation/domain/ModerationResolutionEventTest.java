@@ -86,7 +86,7 @@ class ModerationResolutionEventTest {
         assertThat(event.getEventId()).isNotNull();
         assertThat(event.getVersion()).isEqualTo("1.0");
         assertThat(event.getProducer()).isEqualTo("llm-service");
-        assertThat(event.getEventType()).isEqualTo("MESSAGE-UNBLOCKED");
+        assertThat(event.getEventType()).isEqualTo("MESSAGE_UNBLOCKED");
         assertThat(event.getMessageId()).isEqualTo(messageId);
         assertThat(event.getIncidentId()).isEqualTo(incidentId);
         assertThat(event.getCourseId()).isEqualTo(courseId);
@@ -176,8 +176,7 @@ class ModerationResolutionEventTest {
         verify(kafkaEventProducer).enqueue(
                 org.mockito.ArgumentMatchers.eq(KafkaTopics.MODERATION_EVENTS),
                 org.mockito.ArgumentMatchers.eq("curso-42"),
-                org.mockito.ArgumentMatchers.eq("MESSAGE-UNBLOCKED"),
-                org.mockito.ArgumentMatchers.eq(1),
+                org.mockito.ArgumentMatchers.eq("MESSAGE_UNBLOCKED"),
                 payloadCaptor.capture());
 
         Map<String, Object> payload = payloadCaptor.getValue();

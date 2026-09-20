@@ -27,16 +27,16 @@ public class EventOutboxRepository {
   public void insert(EventEnvelope<?> envelope, String topic, String messageKey, String requestId, String traceparent) {
     jdbc.update(
         "insert into llm.event_outbox "
-            + "(event_id, topic, message_key, event_type, event_version, producer, occurred_at, payload, request_id, traceparent) "
-            + "values (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?)",
-        envelope.eventId(), topic, messageKey, envelope.eventType(), envelope.eventVersion(),
+            + "(event_id, topic, message_key, event_type, producer, occurred_at, payload, request_id, traceparent) "
+            + "values (?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?)",
+        envelope.eventId(), topic, messageKey, envelope.eventType(),
         envelope.producer(), Timestamp.from(envelope.timestamp().toInstant()), toJson(envelope.payload()),
         requestId, traceparent);
   }
 
   public List<OutboxRow> findUnpublished(int limit) {
     return jdbc.query(
-        "select event_id, topic, message_key, event_type, event_version, producer, occurred_at, payload, "
+        "select event_id, topic, message_key, event_type, producer, occurred_at, payload, "
             + "request_id, traceparent, attempts "
             + "from llm.event_outbox where published_at is null order by created_at asc limit ?",
         (rs, rowNum) -> new OutboxRow(
@@ -44,7 +44,6 @@ public class EventOutboxRepository {
             rs.getString("topic"),
             rs.getString("message_key"),
             rs.getString("event_type"),
-            rs.getInt("event_version"),
             rs.getString("producer"),
             rs.getTimestamp("occurred_at").toInstant().atOffset(java.time.ZoneOffset.UTC),
             rs.getString("payload"),
@@ -71,7 +70,7 @@ public class EventOutboxRepository {
   }
 
   /** Fila cruda del outbox, ya lista para que el relay arme el {@link EventEnvelope} y publique. */
-  public record OutboxRow(UUID eventId, String topic, String messageKey, String eventType, int eventVersion,
+  public record OutboxRow(UUID eventId, String topic, String messageKey, String eventType,
       String producer, OffsetDateTime occurredAt, String payloadJson, String requestId, String traceparent,
       int attempts) {
   }

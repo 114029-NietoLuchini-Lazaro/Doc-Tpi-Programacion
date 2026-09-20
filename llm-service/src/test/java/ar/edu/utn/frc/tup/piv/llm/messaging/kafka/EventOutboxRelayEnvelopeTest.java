@@ -20,11 +20,10 @@ class EventOutboxRelayEnvelopeTest {
     var body = mapper.readTree(EventOutboxRelay.envelopeJson(row, mapper));
 
     assertThat(body.fieldNames()).toIterable()
-        .containsExactlyInAnyOrder("eventId", "eventType", "eventVersion", "timestamp", "producer", "payload");
+        .containsExactlyInAnyOrder("eventId", "eventType", "timestamp", "producer", "payload");
     assertThat(body.get("eventId").asText()).isEqualTo(eventId.toString());
-    assertThat(body.get("eventType").asText()).isEqualTo("SCORE-CALCULATED");
-    assertThat(body.get("eventVersion").isInt()).isTrue();
-    assertThat(body.get("eventVersion").asInt()).isEqualTo(1);
+    assertThat(body.get("eventType").asText()).isEqualTo("SCORE_CALCULATED");
+    assertThat(body.has("eventVersion")).as("el estándar del PDF no tiene eventVersion").isFalse();
     assertThat(body.get("timestamp").asText()).isEqualTo("2026-09-19T15:00:00Z");
     assertThat(body.get("producer").asText()).isEqualTo("llm-service");
   }
@@ -44,7 +43,7 @@ class EventOutboxRelayEnvelopeTest {
   }
 
   private EventOutboxRepository.OutboxRow row(String payloadJson) {
-    return new EventOutboxRepository.OutboxRow(eventId, "evaluation-events", "cohorte-1", "SCORE-CALCULATED", 1,
+    return new EventOutboxRepository.OutboxRow(eventId, "evaluation-events", "cohorte-1", "SCORE_CALCULATED",
         "llm-service", OffsetDateTime.of(2026, 9, 19, 15, 0, 0, 0, ZoneOffset.UTC), payloadJson, null, null, 0);
   }
 }

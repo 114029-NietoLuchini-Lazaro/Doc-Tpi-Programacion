@@ -25,7 +25,7 @@ spring:
   jackson:
     default-property-inclusion: non_null
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:event-bus:29092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -71,7 +71,7 @@ llm:
       base-url: ${GROQ_BASE_URL:https://api.groq.com/openai/v1}
       model: ${GROQ_MODEL:openai/gpt-oss-20b}
   evaluation:
-    # Evaluación de intentos cerrados (ATTEMPT-CLOSED de practice-events → SCORE-* en evaluation-events).
+    # Evaluación de intentos cerrados (ATTEMPT_CLOSED de practice-events → SCORE_* en evaluation-events).
     # Sin mapa cohorte→curso, la rúbrica sale de acá: por defecto la plantilla institucional sembrada (V14).
     rubric-version-id: ${LLM_EVALUATION_RUBRIC_VERSION_ID:10000000-0000-0000-0000-000000000002}
     timeout-ms: ${LLM_EVALUATION_TIMEOUT_MS:8000}
@@ -109,9 +109,9 @@ llm:
       unresolved-timeout-days: ${MODERATION_RETENTION_UNRESOLVED_TIMEOUT_DAYS:90}
       cron: ${MODERATION_RETENTION_CRON:0 0 3 * * *}
   kafka:
-    # Desactivado por defecto: todavía no hay un broker Kafka operado por la cátedra para S1.
+    # Desactivado por defecto hasta que Notificaciones asigne los tópicos definitivos (KAFKA_EVENT_STANDARD.md §4).
     # El outbox (KafkaEventProducer) siempre escribe; el relay y los @KafkaListener solo se activan
-    # con LLM_KAFKA_ENABLED=true (ver compose.yaml, servicio "kafka").
+    # con LLM_KAFKA_ENABLED=true (ver compose.yaml, servicio "kafka-local"; bus real: event-bus:29092).
     enabled: ${LLM_KAFKA_ENABLED:false}
     outbox-poll-ms: ${LLM_KAFKA_OUTBOX_POLL_MS:2000}
 resilience4j:

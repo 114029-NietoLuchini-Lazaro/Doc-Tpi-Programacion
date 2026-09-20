@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
  * ({@link KafkaEventProducer} / {@code EventOutboxRelay}).
  *
  * <p>Message Key Kafka: {@code courseId} — preserva el orden relativo de los eventos de moderación
- * dentro de un mismo curso (KAFKA_EVENT_STANDARD.md §14).
+ * dentro de un mismo curso (KAFKA_EVENT_STANDARD.md §6).
  */
 @Component
 public class ModerationEventPublisher implements ModerationEventPublisherPort {
@@ -66,12 +66,10 @@ public class ModerationEventPublisher implements ModerationEventPublisherPort {
         payload.put("resolution", event.getResolution());
         payload.put("resolutionReason", event.getResolutionReason());
 
-        int eventVersion = Integer.parseInt(event.getVersion().split("\\.")[0]);
         kafkaEventProducer.enqueue(
                 KafkaTopics.MODERATION_EVENTS,
                 event.getCourseId(),
                 event.getEventType(),
-                eventVersion,
                 payload);
     }
 }

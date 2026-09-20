@@ -31,9 +31,9 @@ class PracticeAttemptClosedListenerTest {
 
   @Test
   void aClosedAttemptIsEvaluatedOnceWithTheFieldsOfTheContract() {
-    when(consumed.tryReserve(eq(eventId), eq(KafkaTopics.PRACTICE_EVENTS), eq("ATTEMPT-CLOSED"), anyString())).thenReturn(true);
+    when(consumed.tryReserve(eq(eventId), eq(KafkaTopics.PRACTICE_EVENTS), eq("ATTEMPT_CLOSED"), anyString())).thenReturn(true);
 
-    listener.onMessage(attemptClosed("ATTEMPT-CLOSED", validPayload()), "key");
+    listener.onMessage(attemptClosed("ATTEMPT_CLOSED", validPayload()), "key");
 
     var attempt = ArgumentCaptor.forClass(ClosedAttempt.class);
     verify(evaluation).evaluate(attempt.capture());
@@ -48,16 +48,16 @@ class PracticeAttemptClosedListenerTest {
   void aDuplicatedEventIsNotEvaluatedAgain() {
     when(consumed.tryReserve(eq(eventId), anyString(), anyString(), anyString())).thenReturn(false);
 
-    listener.onMessage(attemptClosed("ATTEMPT-CLOSED", validPayload()), "key");
+    listener.onMessage(attemptClosed("ATTEMPT_CLOSED", validPayload()), "key");
 
     verify(evaluation, never()).evaluate(any());
   }
 
   @Test
   void otherEventTypesOnTheSameTopicAreReservedButNotEvaluated() {
-    when(consumed.tryReserve(eq(eventId), anyString(), eq("ATTEMPT-STARTED"), anyString())).thenReturn(true);
+    when(consumed.tryReserve(eq(eventId), anyString(), eq("ATTEMPT_STARTED"), anyString())).thenReturn(true);
 
-    listener.onMessage(attemptClosed("ATTEMPT-STARTED", validPayload()), "key");
+    listener.onMessage(attemptClosed("ATTEMPT_STARTED", validPayload()), "key");
 
     verify(evaluation, never()).evaluate(any());
     verify(deadLetter, never()).send(anyString(), any(), anyString(), anyString());
@@ -67,7 +67,7 @@ class PracticeAttemptClosedListenerTest {
   void anAttemptClosedWithoutTheContractFieldsGoesToDeadLetterInsteadOfBeingEvaluated() {
     when(consumed.tryReserve(eq(eventId), anyString(), anyString(), anyString())).thenReturn(true);
 
-    listener.onMessage(attemptClosed("ATTEMPT-CLOSED", "{}"), "key");
+    listener.onMessage(attemptClosed("ATTEMPT_CLOSED", "{}"), "key");
 
     verify(evaluation, never()).evaluate(any());
     verify(deadLetter).send(eq(KafkaTopics.PRACTICE_EVENTS), eq("key"), anyString(), anyString());
@@ -77,8 +77,8 @@ class PracticeAttemptClosedListenerTest {
   void aPayloadWithANonUuidIdOrANonArrayTranscriptGoesToDeadLetter() {
     when(consumed.tryReserve(eq(eventId), anyString(), anyString(), anyString())).thenReturn(true);
 
-    listener.onMessage(attemptClosed("ATTEMPT-CLOSED", validPayload().replace(attemptId.toString(), "no-es-uuid")), "key");
-    listener.onMessage(attemptClosed("ATTEMPT-CLOSED", validPayload().replace("[{\"role\":\"student\"}]", "\"texto\"")), "key");
+    listener.onMessage(attemptClosed("ATTEMPT_CLOSED", validPayload().replace(attemptId.toString(), "no-es-uuid")), "key");
+    listener.onMessage(attemptClosed("ATTEMPT_CLOSED", validPayload().replace("[{\"role\":\"student\"}]", "\"texto\"")), "key");
 
     verify(evaluation, never()).evaluate(any());
     verify(deadLetter, org.mockito.Mockito.times(2)).send(eq(KafkaTopics.PRACTICE_EVENTS), eq("key"), anyString(), anyString());
@@ -95,7 +95,7 @@ class PracticeAttemptClosedListenerTest {
   }
 
   private String attemptClosed(String eventType, String payload) {
-    return "{\"eventId\":\"" + eventId + "\",\"eventType\":\"" + eventType + "\",\"eventVersion\":1,"
+    return "{\"eventId\":\"" + eventId + "\",\"eventType\":\"" + eventType + "\","
         + "\"producer\":\"practice-service\",\"payload\":" + payload + "}";
   }
 
