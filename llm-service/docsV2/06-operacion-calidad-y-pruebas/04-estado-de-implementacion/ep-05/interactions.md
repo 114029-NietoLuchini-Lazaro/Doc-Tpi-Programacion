@@ -19,7 +19,12 @@ Portado (adaptado) de `codigo-ejemplo/ms-evaluacion-llm`
    `state=completed`.
 3. **Prompt** — `prompts/tutor/system-v1.txt`/`user-v1.txt` (portados tal cual), cargados una vez
    por instancia del service.
-4. **Invocación** — vía [`ModelInvocationService`](../ep-02/h10.md) (hoy siempre el fake).
+4. **Invocación** — vía [`ModelInvocationService`](../ep-02/h10.md). Si el modelo no puede responder (timeout,
+   respuesta inválida, proveedor caído o con breaker abierto, presupuesto agotado, función sin modelo
+   asignado) el servicio responde `200` con `state=unavailable` y un aviso fijo, en vez de un error HTTP:
+   así la `Idempotency-Key` queda completada y no reservada sin respuesta (que hacía responder "sigue en
+   curso" a todo reintento). Una respuesta `unavailable` queda guardada bajo esa clave: para reintentar hay
+   que usar una nueva.
 5. **Guardarraíl de salida** — `OutputAntiLeakGuard.containsLeak` corre cuando `riskLevel` es
    `high`/`medium` (no en `low`, según la propia adenda SSE); si detecta fuga (bloque de código
    largo, o el `expectedSolution` opcional que manda Tema 05, solo en memoria), reemplaza el

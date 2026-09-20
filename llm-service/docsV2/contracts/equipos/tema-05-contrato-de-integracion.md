@@ -1,36 +1,201 @@
-# Contrato de integración llm-service ↔ Tema 05 (Desafíos Prácticos) — v1
+# Integración llm-service ↔ Tema 05 (Desafíos Prácticos) — guía y contrato v1
 
-> **Para quién:** el equipo de Tema 05. **Estado:** vigente y probable hoy contra el modo test (bot
-> `fake`, sin modelo real). **Garantía:** este contrato **no cambia** cuando pasemos al modelo real.
-> Este documento se entiende solo. Lo ejecutable, para validar contra un cliente o un consumidor,
-> está en el [OpenAPI](../llm-service.openapi.yaml) (`/tutor/interactions`) y el
-> [AsyncAPI](../llm-service.asyncapi.yaml) (`practice-events`, `evaluation-events`); si lo reciben
-> como archivos sueltos, los dos acompañan a este.
+> **Para quién:** el equipo de Tema 05 (`practice-service`). **Cómo leerlo:** la sección 1 explica de qué
+> se trata, la 2 es el paso a paso para empezar a probar, y de la 5 en adelante está el contrato
+> completo. Este documento se entiende solo. Para validar contra un cliente o un consumidor, lo
+> ejecutable está en `llm-service.openapi.yaml` (tutor) y `llm-service.asyncapi.yaml` (eventos Kafka),
+> que acompañan a este archivo.
 
-## Por qué no cambia al pasar al servicio real
+## 1. En una página
 
-El bot y el modelo real se conectan al mismo endpoint, al mismo circuito de eventos y a los mismos
-guardarraíles. Pasar de uno al otro es una asignación de modelo por función
-(`PUT /api/llm/model-assignments/{function}`), sin redeploy ni cambios de código de ustedes.
-Lo único que cambia es el **contenido** de lo que devolvemos, nunca su forma:
+### Qué hace llm-service por ustedes
+
+Le ofrece a Tema 05 dos cosas:
+
+1. **Tutor.** Un alumno escribe en el chat de un desafío, ustedes nos mandan el mensaje por HTTP y
+   devolvemos la respuesta del tutor (una guía socrática, sin entregar la solución).
+2. **Evaluador.** Cuando un intento se cierra, ustedes publican un evento en Kafka con la conversación
+   completa y nosotros devolvemos, también por Kafka, un puntaje de 0 a 100 con su desglose.
+
+### El plan: primero con un bot de prueba, después con el modelo real
+
+| Fase | Qué responde | Para qué sirve |
+|---|---|---|
+| **1 · Hoy** | Un **bot de prueba** (`fake`), sin modelo de IA real: respuestas de plantilla y puntajes arbitrarios pero con la forma correcta | Que ustedes integren y prueben ya la conexión, los errores y los eventos, sin esperar al proveedor real |
+| **2 · Después** | El **modelo real** | La calidad de las respuestas y de los puntajes |
+
+**El contrato es el mismo en las dos fases.** El bot y el modelo real usan el mismo endpoint, el mismo
+circuito de eventos y los mismos guardarraíles; pasar de uno al otro lo hacemos nosotros asignando el
+modelo (`PUT /api/llm/model-assignments/{function}`), sin redeploy y sin que ustedes cambien código.
+Lo único que cambia es el **contenido** de lo que devolvemos, nunca su forma (ver sección 4).
+
+### Cómo se conectan
+
+```mermaid
+flowchart LR
+    subgraph T05["Tema 05 · practice-service"]
+        A["Chat del desafío"]
+        B["Cierre de intento"]
+        C["Recibe el score"]
+    end
+    GW["API Gateway"]
+    subgraph LLM["llm-service"]
+        T["Tutor (bot de prueba)"]
+        V["Evaluador (bot de prueba)"]
+    end
+    K1[("Kafka · practice-events")]
+    K2[("Kafka · evaluation-events")]
+    A -->|"POST /api/llm/tutor/interactions + token"| GW
+    GW --> T
+    T -->|"respuesta"| A
+    B -->|"ATTEMPT-CLOSED"| K1
+    K1 --> V
+    V -->|"SCORE-CALCULATED o SCORE-DEFERRED"| K2
+    K2 --> C
+```
+
+- **El tutor es síncrono y va por el API Gateway**, con un token de servicio. Nunca se le pega directo al servicio.
+- **El evaluador es asíncrono y va por Kafka.** Nadie espera la respuesta en pantalla.
+- Nosotros nunca otorgamos XP y nunca hablamos con Tema 03: el score llega a ustedes y ustedes se lo
+  reenvían a Tema 03.
+
+### Qué se puede probar hoy
+
+| | Estado | Qué hace falta |
+|---|---|---|
+| **Tutor (HTTP)** | Listo, con el bot | El alta en la plataforma y el token (sección 2) |
+| **Evaluador (Kafka)** | Listo de nuestro lado, con el bot | Que exista un broker Kafka compartido y acordar los nombres de topic |
+
+## 2. Cómo arrancar, paso a paso
+
+**Paso 1 · Alta en la plataforma** (lo gestiona el equipo de la plataforma, no nosotros).
+`practice-service` tiene que estar dado de alta como cliente en `users-service` con el scope
+`llm.tutor.interact`; `llm-service` tiene que estar en la `GATEWAY_ALLOWLIST` del Gateway; y ustedes
+registrados en Eureka.
+
+**Paso 2 · Pedir un token de servicio.** Es el patrón de la plataforma para llamadas entre
+microservicios (el mismo que usa `echo-service`): un token `client_credentials`, y la llamada
+**siempre por el Gateway**. El `audience` es obligatorio y debe ser `llm-service`; si no coincide, el
+Gateway responde `403`.
+
+```json
+POST {gateway}/api/users/public/auth/token
+{
+  "clientId": "practice-service",
+  "clientSecret": "<de una variable de entorno, nunca del repo>",
+  "grantType": "client_credentials",
+  "scope": "llm.tutor.interact",
+  "audience": "llm-service"
+}
+```
+
+La respuesta trae `accessToken`. Reutilícenlo mientras sea válido en vez de pedir uno por llamada.
+
+**Paso 3 · Llamar al tutor con ese token**, contra el Gateway:
+
+```text
+POST {gateway}/api/llm/tutor/interactions
+Authorization: Bearer <accessToken>
+Idempotency-Key: <uuid nuevo por cada mensaje>
+Content-Type: application/json
+```
+
+Ejemplo en Java (Spring `RestClient`, con la base URL apuntando siempre al Gateway):
+
+```java
+RestClient http = RestClient.builder().baseUrl(gatewayUrl).build();
+
+Map<String, String> tokenRequest = Map.of(
+    "clientId", "practice-service",
+    "clientSecret", secret,               // de una variable de entorno
+    "grantType", "client_credentials",
+    "scope", "llm.tutor.interact",
+    "audience", "llm-service");
+Map<?, ?> tokenResponse = http.post().uri("/api/users/public/auth/token")
+    .contentType(MediaType.APPLICATION_JSON).body(tokenRequest)
+    .retrieve().body(Map.class);
+String token = (String) tokenResponse.get("accessToken");
+
+Map<?, ?> tutor = http.post().uri("/api/llm/tutor/interactions")
+    .header("Authorization", "Bearer " + token)
+    .header("Idempotency-Key", UUID.randomUUID().toString())
+    .contentType(MediaType.APPLICATION_JSON).body(request)   // el cuerpo de la sección 5
+    .retrieve().body(Map.class);
+```
+
+Configuración de su lado:
+
+```yaml
+practice-service:
+  gateway-url: ${GATEWAY_URL:http://api-gateway:8080}
+  client-id: ${PRACTICE_CLIENT_ID:practice-service}
+  client-secret: ${PRACTICE_CLIENT_SECRET:}
+```
+
+> **Identidad delegada, a confirmar.** Nuestro tutor exige el header `X-Delegated-User` y responde
+> `403` ("Identidad delegada ausente") si no llega. La receta de la plataforma describe un token de
+> servicio sin usuario, y todavía no confirmamos con el equipo del Gateway si en ese caso agrega el
+> header. Si les llega ese `403` con un token correcto, es esto y no un error de ustedes. Lo estamos
+> resolviendo; si el Gateway no lo agrega, cambiamos el tutor para no exigirlo, sin tocar el contrato.
+
+**Paso 4 · Probar los casos.** Con el bot, esto es lo que tienen que ver (detalle en las secciones 3 y 5):
+una respuesta `200` normal, la misma respuesta al repetir la `Idempotency-Key`, y los errores `401`,
+`403` y `422`.
+
+**Paso 5 · Evaluador (cuando haya broker).** Publiquen un `ATTEMPT-CLOSED` en `practice-events` y lean
+`evaluation-events` (sección 6).
+
+**Paso 6 · Confirmarnos los puntos de la sección 10.** Ninguno cambia el contrato, pero algunos hay que
+cerrarlos antes de integrar en serio (broker, nombres de topic y solución esperada).
+
+## 3. Qué va a hacer el bot de prueba
+
+El texto del tutor es **de plantilla y no tiene relación con lo que escribe el alumno**: cita palabras
+del prompt que armamos por dentro, así que puede leerse raro. Lo que se valida en esta fase es la
+**forma** de la conversación, no su contenido. Una respuesta real del bot:
+
+```json
+{
+  "message": "¿Qué estructura o patrón te ayudaría a resolver \"TEMA DE LA CONVERSACIÓN: Desafío b1e2c3d4-0002-4a00-8000-000000000002 HISTÓRICO DE CHAT: PREGUNTA ACTUAL DEL\" sin escribir todavía el código completo? Contame qué probaste hasta ahora.",
+  "state": "completed",
+  "conversacionId": "ee5345bc-c945-4425-a33d-81496d4d785b"
+}
+```
+
+| Caso | Qué van a ver |
+|---|---|
+| Mensaje normal | `200`, `state: completed`, pregunta de plantilla, `conversacionId` nuevo (o el que mandaron) |
+| Repetir la `Idempotency-Key` con el mismo cuerpo | `200`, exactamente la misma respuesta, sin volver a invocar al bot |
+| Mensaje de jailbreak ("ignorá tus instrucciones…") | `200`, `state: completed`, un mensaje fijo de redirección; el bot ni se entera |
+| Sin el scope correcto, o desde otro servicio | `401` |
+| Sin identidad delegada | `403` |
+| Campo obligatorio ausente o `riskLevel` inválido | `422` |
+| `state: unavailable` | El bot **no** lo produce. Para probar su pantalla de "tutor no disponible", pídannos que forcemos el fallo |
+| Guardarraíl de salida | No se dispara con el bot (su texto nunca trae código) |
+
+**Evaluador con el bot:** devuelve puntajes arbitrarios entre 55 y 95 derivados del texto de la
+conversación, con `evaluator: { provider: "fake", model: "fake-evaluator-v1" }`. Sirve para probar el
+circuito, no la nota.
+
+## 4. Qué cambia al pasar al modelo real
 
 | Cambia con el modelo real | No cambia |
 |---|---|
 | El texto del tutor (hoy una pregunta de plantilla, sin relación real con el mensaje) | Rutas, verbos, headers, scope |
-| Los puntajes (hoy 55-95 por hash del prompt) | Campos y tipos de request, response y eventos |
-| `evaluator.provider` / `evaluator.model` (hoy `fake` / `fake-evaluator-v1`); tratarlos como texto opaco | Códigos HTTP y forma del error |
-| La latencia y la posibilidad real de `state: unavailable` / `SCORE-DEFERRED` | Topics (una vez acordados), `eventType`, Message Key, `eventVersion` |
+| Los puntajes (hoy arbitrarios) | Campos y tipos de request, response y eventos |
+| `evaluator.provider` / `evaluator.model` (hoy `fake` / `fake-evaluator-v1`); trátenlos como texto opaco | Códigos HTTP y forma del error |
+| La latencia y la frecuencia real de `state: unavailable` y de `SCORE-DEFERRED` | Topics (una vez acordados), `eventType`, Message Key, `eventVersion` |
 
-## 1. Tutor (HTTP)
+## 5. Tutor (HTTP) — contrato
 
 `POST /api/llm/tutor/interactions` — siempre por el API Gateway.
 
-**Identidad.** Servicio `practice-service`, scope M2M **`llm.tutor.interact`**, con usuario delegado. El Gateway
-agrega `X-Principal-Type: service`, `X-Service-Id`, `X-Service-Scopes` y `X-Delegated-User` a partir
-del JWT, y propaga `traceparent` y `X-Request-Id`. Ustedes no los mandan; solo hacen falta si le
-pegan directo al servicio en una prueba local.
+**Identidad.** Servicio `practice-service`, scope de servicio **`llm.tutor.interact`**, con usuario delegado.
+El Gateway agrega `X-Principal-Type: service`, `X-Service-Id`, `X-Service-Scopes` y `X-Delegated-User`
+a partir del token, y propaga `traceparent` y `X-Request-Id`. Ustedes no los mandan; solo hacen falta
+si le pegan directo al servicio en una prueba local (sección 11).
 
-**Headers de ustedes:** `Idempotency-Key` (UUID, obligatorio) y `Content-Type: application/json`.
+**Headers de ustedes:** `Authorization: Bearer <token>`, `Idempotency-Key` (UUID, obligatorio) y `Content-Type: application/json`.
 
 ### Request
 
@@ -90,16 +255,20 @@ Cuerpo `application/problem+json` (RFC 7807), con `requestId`:
 |---|---|
 | `401` | Servicio distinto de `practice-service` o falta el scope `llm.tutor.interact` |
 | `403` | Falta la identidad delegada o no es un UUID |
-| `422` | Campo obligatorio ausente, `message` en blanco o `riskLevel` fuera del enum |
+| `409` | Repitieron una `Idempotency-Key` cuya primera solicitud todavía sigue en curso |
+| `422` | Campo obligatorio ausente, `message` en blanco, `riskLevel` fuera del enum, o una `Idempotency-Key` ya usada con otro cuerpo |
 
-**Un fallo del modelo no es un error HTTP:** responde `200` con `state: unavailable`. No hay
-cuota por alumno hoy. Cualquier otro `4xx`/`5xx` que aparezca (por ejemplo `429` si se agrega una
-cuota) trátenlo como fallo.
+**Que el modelo no pueda responder no es un error HTTP:** sea por demora, respuesta inválida, proveedor
+caído o presupuesto agotado, el resultado es siempre `200` con `state: unavailable`. No hay cuota por
+alumno hoy. Cualquier otro `4xx`/`5xx` que aparezca (por ejemplo `429` si se agrega una cuota) trátenlo
+como fallo.
 
 ### Comportamiento que pueden usar
 
 - **Idempotencia.** Mismo `Idempotency-Key` y mismo cuerpo → misma respuesta, sin volver a invocar al
-  modelo. Es seguro reintentar ante un timeout. El `expectedSolution` no entra en la comparación.
+  modelo; es seguro reintentar ante un corte de red. `expectedSolution` no entra en la comparación.
+  **Una respuesta `unavailable` también queda guardada bajo esa clave:** para reintentar el mismo mensaje
+  después de un `unavailable`, usen una `Idempotency-Key` nueva.
 - **Guardarraíl de entrada.** Un intento de jailbreak devuelve un mensaje fijo con `state: completed`,
   sin llamar al modelo.
 - **Guardarraíl de salida** (solo `riskLevel` `medium`/`high`). Si la respuesta trae un bloque de
@@ -110,15 +279,17 @@ cuota) trátenlo como fallo.
   real que no responde, la respuesta puede tardar unos 25 s antes de llegar como `unavailable`. Con el
   bot es inmediata. Recomendamos un timeout de cliente de 30 s.
 
-## 2. Evaluador (Kafka)
+## 6. Evaluador (Kafka) — contrato
 
 Ustedes publican el cierre del intento y nosotros devolvemos el score. Envelope estándar de la
-plataforma (`eventId`, `eventType`, `eventVersion`, `timestamp`, `producer`, `payload`).
+plataforma (`eventId`, `eventType`, `eventVersion`, `timestamp`, `producer`, `payload`) en el cuerpo
+del mensaje.
 
 > **Los nombres de topic son una propuesta nuestra.** `practice-events` y `evaluation-events` no
-> figuran todavía en la tabla de dominios del [estándar de Kafka](../KAFKA_EVENT_STANDARD.md) (§17), que
-> hoy lista `challenge-events` y otros. Hay que acordarlos con ustedes y registrarlos ahí. Si
-> ustedes ya publican en otro topic, lo cambiamos en nuestra configuración sin tocar los campos.
+> figuran todavía en la tabla de dominios del estándar de Kafka de la plataforma
+> (`KAFKA_EVENT_STANDARD.md`, §17), que hoy lista `challenge-events` y otros. Hay que acordarlos con
+> ustedes y registrarlos ahí. Si ustedes ya publican en otro topic, lo cambiamos en nuestra
+> configuración sin tocar los campos.
 
 ### Entrada: `ATTEMPT-CLOSED` en `practice-events`
 
@@ -168,13 +339,20 @@ completo, mejor puntúa. Si algún día validáramos la forma, sería con un `ev
 
 ```json
 {
-  "attemptId": "b1e2c3d4-0001-4a00-8000-000000000001",
-  "courseCohortId": "b1e2c3d4-0003-4a00-8000-000000000003",
-  "learnerId": "b1e2c3d4-0004-4a00-8000-000000000004",
-  "rubricVersionId": "10000000-0000-0000-0000-000000000002",
-  "score": 77,
-  "dimensions": { "autonomy": 80, "clarity": 71, "progression": 68, "compliance": 90, "efficiency": 74 },
-  "evaluator": { "provider": "fake", "model": "fake-evaluator-v1" }
+  "eventId": "3f1a7c52-8b0e-4d19-a6c4-1d2e9b7f5a30",
+  "eventType": "SCORE-CALCULATED",
+  "eventVersion": 1,
+  "timestamp": "2026-09-19T15:00:04.512Z",
+  "producer": "llm-service",
+  "payload": {
+    "attemptId": "b1e2c3d4-0001-4a00-8000-000000000001",
+    "courseCohortId": "b1e2c3d4-0003-4a00-8000-000000000003",
+    "learnerId": "b1e2c3d4-0004-4a00-8000-000000000004",
+    "rubricVersionId": "10000000-0000-0000-0000-000000000002",
+    "score": 77,
+    "dimensions": { "autonomy": 80, "clarity": 71, "progression": 68, "compliance": 90, "efficiency": 74 },
+    "evaluator": { "provider": "fake", "model": "fake-evaluator-v1" }
+  }
 }
 ```
 
@@ -192,27 +370,26 @@ completo, mejor puntúa. Si algún día validáramos la forma, sería con un `ev
 | Evaluación fallida | `SCORE-DEFERRED` con el `reason` |
 | Reevaluar un intento | Publicar de nuevo `ATTEMPT-CLOSED` con un `eventId` nuevo; llega otro score. Hoy **no reintentamos solos** un diferido |
 
-Consuman los eventos de score de forma idempotente por `eventId`. Nuestros mensajes llevan como
-headers `eventId`, `eventType`, `eventVersion` y, si los hay, `traceparent` y `X-Request-Id`.
-Nunca otorgamos XP: el score se lo reenvían ustedes a Tema 03.
+Consuman los eventos de score de forma idempotente por `eventId`. Nuestros mensajes llevan además
+como headers `eventId`, `eventType`, `eventVersion` y, si los hay, `traceparent` y `X-Request-Id`.
 
-## 3. Decisiones tomadas
+## 7. Decisiones tomadas
 
 Cada decisión se puede cambiar sin tocar el contrato salvo donde se indica.
 
 | # | Decisión | Por qué |
 |---|---|---|
-| D1 | Un fallo del modelo es `200` + `state: unavailable`, no un `5xx` | El alumno tiene que ver algo en la pantalla del desafío; el error HTTP queda para fallas de integración |
+| D1 | Que el modelo no pueda responder (demora, respuesta inválida, proveedor caído, presupuesto agotado) es `200` + `state: unavailable`, no un `5xx` | El alumno tiene que ver algo en la pantalla del desafío; el error HTTP queda para fallas de integración |
 | D2 | La solución esperada la mandan ustedes en `expectedSolution`, opcional | Ustedes controlan cuándo y cuánto exponen; no necesitamos un cliente ni credenciales hacia ustedes |
-| D3 | El guardarraíl de salida compara por coincidencia literal y por bloques largos de código | Es lo implementado y probado. Una comparación por similitud (el umbral del 70%) mejora la detección sin cambiar el contrato |
+| D3 | El guardarraíl de salida compara por coincidencia literal y por bloques largos de código | Es lo implementado y probado. Una comparación por similitud (umbral del 70%) mejora la detección sin cambiar el contrato |
 | D4 | `blocked` queda reservado en el enum, hoy sin uso | Evita cambiar el contrato cuando se agregue el streaming |
-| D5 | El score sale por Kafka a ustedes; nunca hablamos directo con Tema 03 | Decisión del 2026-09-13 |
+| D5 | El score sale por Kafka a ustedes; nunca hablamos directo con Tema 03 | Un único camino de vuelta; ustedes se lo reenvían a Tema 03 |
 | D6 | Message Key de `evaluation-events`: `courseCohortId` | Ordena los scores de una cohorte |
-| D7 | Rúbrica única (la plantilla institucional) para todas las cohortes hasta que exista un mapa cohorte → curso | Es interno; lo único visible es `rubricVersionId` en la respuesta, que ya viaja |
+| D7 | Rúbrica única (la plantilla institucional) para todas las cohortes hasta que exista un mapa cohorte → curso | Es interno; lo único visible es `rubricVersionId` en el evento, que ya viaja |
 | D8 | Campos, tipos, `eventType` y `eventVersion: 1` de los eventos como figuran en el AsyncAPI | Un cambio incompatible sería `eventVersion: 2`, con aviso previo |
 | D9 | Los nombres de topic (`practice-events`, `evaluation-events`) son una propuesta a acordar | Cambiarlos es configuración nuestra y de ustedes; no altera los campos de los eventos |
 
-## 4. Cómo va a evolucionar (sin romper)
+## 8. Cómo va a evolucionar (sin romper)
 
 - **Solo cambios aditivos** dentro de una versión: campos opcionales nuevos, valores nuevos en el
   contenido de un campo abierto, códigos de error nuevos. Ignoren los campos que no conozcan.
@@ -222,14 +399,14 @@ Cada decisión se puede cambiar sin tocar el contrato salvo donde se indica.
 - **Evento de ediciones y tests del IDE** (alimenta la dimensión autonomía): será un `eventType`
   nuevo. No modifica `ATTEMPT-CLOSED` ni `SCORE-CALCULATED`.
 
-## 5. Qué no valida el modo test
+## 9. Qué no valida el modo test
 
-- La calidad del tutor y de los puntajes, la latencia real y el estado `unavailable`.
+- La calidad del tutor y de los puntajes, la latencia real y la frecuencia real de `unavailable`.
 - La calificación por curso: hoy usamos siempre la rúbrica institucional.
 - Que el evaluador tenga contexto del desafío: el evento no lo trae. Un campo opcional
   (por ejemplo `challengeContext`) se puede sumar al `payload` sin cambiar la versión.
 
-## 6. Qué necesitamos que nos confirmen (ninguno cambia el contrato)
+## 10. Qué necesitamos que nos confirmen (ninguno cambia el contrato)
 
 1. **Topics.** Que `practice-events` (entrada) y `evaluation-events` (salida) les sirven como nombre, o
    en qué topic publican hoy. Los registramos juntos en el estándar.
@@ -243,13 +420,16 @@ Cada decisión se puede cambiar sin tocar el contrato salvo donde se indica.
 7. **Evento del IDE.** Quién lo genera, ustedes o Tema 06.
 8. **Pantalla de tutor no disponible.** Qué muestran cuando llega `state: unavailable`.
 
-## 7. Cómo probar la conexión
+## 11. Cómo probar la conexión
 
-Con el servicio levantado (`docker compose up`; Kafka viene activo):
+**Contra un ambiente donde `llm-service` esté desplegado:** por el Gateway, con el token del paso 2.
 
-- **Tutor.** `POST /api/llm/tutor/interactions` por el Gateway. Para pegarle directo desde el host,
-  el overlay `compose.debug.yaml` publica el puerto 8086 y hay que mandar a mano los headers de
-  identidad que en la plataforma pone el Gateway:
+**En local, con el compose de `llm-service`** (necesitan el repo de `llm-service`; requiere
+`LLM_CREDENTIALS_MASTER_KEY`, una clave base64 de 32 bytes, y que exista la red `tpi-platform`;
+para pruebas locales sirve cualquiera, por ejemplo la que genera `openssl rand -base64 32`):
+
+- **Tutor.** El overlay `compose.debug.yaml` publica el puerto 8086. Como no pasan por el Gateway,
+  hay que mandar a mano los headers de identidad que en la plataforma pone él:
 
   ```bash
   curl -s -X POST http://localhost:8086/api/llm/tutor/interactions \
@@ -263,5 +443,6 @@ Con el servicio levantado (`docker compose up`; Kafka viene activo):
   ```
 
   El perfil `workbench` (`compose.workbench.yaml`) saltea la autenticación por completo.
-- **Evaluador.** Publicar el `ATTEMPT-CLOSED` de arriba en `practice-events` y leer `evaluation-events`.
-  Dentro de la red de compose el broker es `kafka:9092`.
+- **Evaluador.** Con el Kafka del mismo compose (`kafka:9092` dentro de su red): publicar el
+  `ATTEMPT-CLOSED` de la sección 6 en `practice-events` (con `kafka-console-producer.sh` dentro del
+  contenedor de Kafka) y leer `evaluation-events`.

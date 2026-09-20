@@ -103,6 +103,25 @@ se agregan acá todos los temas nuevos que salgan de la charla.
   Acordarlos con Tema 05 y registrarlos en esa tabla.
 - [ ] _(agregar acá lo que surja)_
 
+## 🔴 Pedido al equipo del Gateway y de users-service (identidad y enrutamiento)
+
+Tema 05 nos llama con un token de servicio `client_credentials` por el Gateway (receta en
+[`tema-05-contrato-de-integracion.md`](../../../contracts/equipos/tema-05-contrato-de-integracion.md#cómo-obtener-el-token-y-llamar-por-el-gateway)).
+
+- [ ] **Identidad delegada (riesgo de 403 total):** el tutor exige `X-Delegated-User` y devuelve `403` sin
+  él. Preguntar si el Gateway lo agrega cuando el token es de servicio puro (sin usuario). Si no,
+  relajar `TutorGatewayAuthorization` (y evaluar lo mismo en `RagGatewayAuthorization`) para no exigirlo
+  y tomar el `learnerId` del body. No cambia el contrato.
+- [ ] **Alta de `practice-service`** como cliente en `users-service` con el scope `llm.tutor.interact`.
+- [ ] **`GATEWAY_ALLOWLIST`:** agregar `llm-service` y recrear el Gateway (figura como acción pendiente en el
+  [reporte de integración](../../09-epicas-historias-tareas-sprints/reporte-integracion-gateway.md)).
+- [ ] **Host de la plataforma fuera de la red (2026-09-20):** `tpi-plataforma.tail767776.ts.net` no resuelve ni
+  aparece entre los nodos de la tailnet `kron0800.github` (nuestro nodo entra como `tag:tpi`); el registro en
+  Eureka falla. Pedir a quien administra la tailnet que verifique que el nodo exista y la ACL de `tag:tpi`.
+  Se re-verifica con `scripts/verificar-mesh.sh`.
+- [ ] **`APP_CLIENT_SECRET` de `llm-service`** (vacío en nuestro `.env`): hace falta solo si `llm-service` llama a
+  otros servicios por el Gateway (p. ej. las notificaciones de moderación).
+
 ## 🔴 Pedido al responsable del broker Kafka (infraestructura, no contrato)
 
 Sin esto no podemos publicar ni consumir fuera de nuestro compose local (`kafka:9092`). No hay
