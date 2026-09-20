@@ -91,6 +91,32 @@ class TutorInteractionServiceTest {
   }
 
   @Test
+  void anyReasonTheModelCannotAnswerIsPresentedAsUnavailableNotAsAnHttpError() {
+    java.util.List<RuntimeException> failures = java.util.List.of(
+        new ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelTimeoutException("lento"),
+        new ar.edu.utn.frc.tup.piv.llm.domain.ai.InvalidModelResponseException("vacía"),
+        new ar.edu.utn.frc.tup.piv.llm.domain.ai.ProviderUnavailableException("breaker abierto"),
+        new ar.edu.utn.frc.tup.piv.llm.domain.ai.BudgetExceededException(ModelFunction.TUTOR, "presupuesto agotado"),
+        new IllegalStateException("Fallo en la comunicación con el proveedor 'groq': 429"),
+        new IllegalStateException("La función tutor no tiene modelo asignado"));
+    for (RuntimeException failure : failures) {
+      var models = mock(ModelInvocationService.class);
+      when(models.invoke(eq(ModelFunction.TUTOR), anyString(), anyString(), any())).thenThrow(failure);
+      var idempotency = idempotencyThatAlwaysProceeds();
+      var service = new TutorInteractionService(models, idempotency, mock(AuditRepository.class),
+          conversationsMock(), messagesMock(), mapper, 1000);
+
+      var response = service.respond(request("¿cómo ordeno una lista?", "medium"), UUID.randomUUID(), actor);
+
+      assertThat(response.state()).as(failure.getClass().getSimpleName()).isEqualTo("unavailable");
+      assertThat(response.message()).isNotBlank();
+      assertThat(response.conversacionId()).isNotNull();
+      // La clave de idempotencia queda completada: no puede quedar reservada sin respuesta.
+      verify(idempotency).complete(eq("tutor.interaction"), any(), any(), any(), any());
+    }
+  }
+
+  @Test
   void aLowRiskResponseIsNotFilteredByTheOutputGuard() {
     var models = mock(ModelInvocationService.class);
     String longButLowRisk = "```java\n" + "line;\n".repeat(9) + "```";

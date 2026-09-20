@@ -1,10 +1,12 @@
 package ar.edu.utn.frc.tup.piv.llm.application;
 
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.BudgetExceededException;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.InputGuard;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.InvalidModelResponseException;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelFunction;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelTimeoutException;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.OutputAntiLeakGuard;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ProviderUnavailableException;
 import ar.edu.utn.frc.tup.piv.llm.domain.tutor.Conversation;
 import ar.edu.utn.frc.tup.piv.llm.domain.tutor.ConversationRepository;
 import ar.edu.utn.frc.tup.piv.llm.domain.tutor.Message;
@@ -21,6 +23,8 @@ import java.time.Duration;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -42,6 +46,7 @@ import org.springframework.stereotype.Service;
  * (Buffer Interceptor, `llm-service-v1-tutor-sse-adenda.md`) sigue fuera de esta pasada. */
 @Service
 public class TutorInteractionService {
+  private static final Logger log = LoggerFactory.getLogger(TutorInteractionService.class);
   private static final String OPERATION = "tutor.interaction";
   private static final int HISTORY_WINDOW = 4; // últimos 2 turnos, mismo criterio que RagChatService
 
@@ -148,7 +153,14 @@ public class TutorInteractionService {
     try {
       var result = models.invoke(ModelFunction.TUTOR, system, userPrompt, timeout);
       return new Response(result.text(), "completed", conversation.id());
-    } catch (ModelTimeoutException | InvalidModelResponseException exception) {
+    } catch (ModelTimeoutException | InvalidModelResponseException | ProviderUnavailableException
+        | BudgetExceededException | IllegalStateException exception) {
+      // Cualquier motivo por el que el modelo no pudo responder (timeout, respuesta inválida, proveedor
+      // caído o con breaker abierto, tope de presupuesto, función sin modelo asignado) se le presenta a
+      // Tema 05 igual: 200 + unavailable. Un error HTTP dejaría además la Idempotency-Key reservada sin
+      // respuesta, y todo reintento con la misma clave respondería "sigue en curso".
+      log.warn("Tutor no disponible [attemptId={}, motivo={}]: {}", request.attemptId(),
+          exception.getClass().getSimpleName(), exception.getMessage());
       return new Response(
           "El tutor no está disponible en este momento. Podés seguir intentando el desafío mientras se restablece.",
           "unavailable", conversation.id());
