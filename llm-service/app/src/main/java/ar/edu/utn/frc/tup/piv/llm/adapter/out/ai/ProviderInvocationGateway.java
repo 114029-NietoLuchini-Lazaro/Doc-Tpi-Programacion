@@ -1,6 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.adapter.out.ai;
 
 import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.ProviderCredentialRepository;
+import ar.edu.utn.frc.tup.piv.llm.provider.spi.AiProviderAdapter;
 import ar.edu.utn.frc.tup.piv.llm.provider.spi.InferenceSettings;
 import ar.edu.utn.frc.tup.piv.llm.provider.spi.ProviderCredentialMaterial;
 import ar.edu.utn.frc.tup.piv.llm.provider.spi.ProviderException;
@@ -33,7 +34,7 @@ public class ProviderInvocationGateway {
   public ProviderReply invoke(ProviderCredentialRepository.Credential credential, String modelId,
       String prompt, InferenceSettings settings, Duration timeout) {
     var adapter = registry.required(credential.providerKey());
-    var material = material(credential);
+    var material = material(credential, adapter);
     adapter.validate(material);
     return adapter.invoke(material, new ProviderInvocation(modelId, prompt, settings, timeout));
   }
@@ -41,12 +42,20 @@ public class ProviderInvocationGateway {
   public ProviderReply stream(ProviderCredentialRepository.Credential credential, String modelId,
       String prompt, InferenceSettings settings, Duration timeout, Consumer<String> onDelta) {
     var adapter = registry.required(credential.providerKey());
-    var material = material(credential);
+    var material = material(credential, adapter);
     adapter.validate(material);
     return adapter.stream(material, new ProviderInvocation(modelId, prompt, settings, timeout), onDelta);
   }
 
   public ProviderCredentialMaterial material(ProviderCredentialRepository.Credential credential) {
+    return material(credential, registry.required(credential.providerKey()));
+  }
+
+  private ProviderCredentialMaterial material(ProviderCredentialRepository.Credential credential,
+      AiProviderAdapter adapter) {
+    if (adapter.descriptor().credentialFields().isEmpty()) {
+      return new ProviderCredentialMaterial(credential.providerKey(), credential.configuration(), Map.of());
+    }
     if (credential.encryptedSecrets() == null || credential.nonce() == null) {
       throw invalidCredential(new IllegalArgumentException("La credencial no contiene material cifrado"));
     }
