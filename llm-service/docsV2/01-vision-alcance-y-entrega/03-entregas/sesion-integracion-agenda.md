@@ -23,7 +23,7 @@
 
 > ⚠️ **I-04 cambió el 2026-09-13, un día después de esta agenda.** Ya no se negocia en sesión con
 > Tema 03: `llm-service` resolvió su lado con **Tema 05** como interlocutor directo del evaluador
-> (publica `intento_cerrado.v1`, recibe `score_de_ia_calculado.v1`). Cómo Tema 05 le reenvía el
+> (publica `ATTEMPT_CLOSED`, recibe `SCORE_CALCULATED`). Cómo Tema 05 le reenvía el
 > resultado a Tema 03 queda fuera del contrato de `llm-service` — es una definición entre esos dos
 > equipos. Las menciones a Tema 03 en I-04 más abajo quedan como registro de cómo se planteó el
 > ítem antes de la decisión; el contrato vigente está en
@@ -59,7 +59,7 @@ después no se renegocian, I-08 porque el dato no capturado hoy no se recupera n
 
 - **El problema:** hay cuatro mecanismos escritos (evento Kafka, callback HTTP, polling,
   consulta directa a base) y ninguno tiene payload definido.
-- **Nuestra propuesta de apertura:** evento Kafka `score_de_ia_calculado.v1` (ya en
+- **Nuestra propuesta de apertura:** evento Kafka `SCORE_CALCULATED` (ya en
   [`contracts/llm-service-v1.asyncapi.yaml`](../../contracts/historicos-y-contratos-v1/llm-service-v1.asyncapi.yaml)),
   payload de doc 18 §2.1. Un solo mecanismo, el que ya es contrato ejecutable.
 - **Lo que no se puede resolver hoy:** si Tema 03 insiste en callback síncrono, tiene que

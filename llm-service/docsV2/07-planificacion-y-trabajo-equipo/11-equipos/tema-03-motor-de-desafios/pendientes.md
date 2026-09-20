@@ -7,7 +7,7 @@
 ## ⚠️ Actualización (2026-09-13): I-04 se resuelve, pero cambia el destinatario
 
 Decisión de diseño: `llm-service` deja de hablar directo con el Motor de Desafíos. El mecanismo
-de I-04 queda cerrado de nuestro lado — **evento Kafka `score_de_ia_calculado.v1`, como ya
+de I-04 queda cerrado de nuestro lado — **evento Kafka `SCORE_CALCULATED`, como ya
 proponíamos abajo** — pero el consumidor pasa a ser Tema 05 (`practice-service`), no ustedes. Ver
 [`contracts/equipos/tema-05-desafios-practicos.md`](../../../contracts/equipos/tema-05-desafios-practicos.md) para el
 contrato vigente.
@@ -29,7 +29,7 @@ polling a `GET /ai/jobs/:id`, y un `POST` del worker al backend Spring sin contr
 
 **El Tema 03 no puede empezar su lado hasta que se elija uno.**
 
-**Nuestra propuesta de apertura:** el evento Kafka `score_de_ia_calculado.v1`, que ya es
+**Nuestra propuesta de apertura:** el evento Kafka `SCORE_CALCULATED`, que ya es
 contrato ejecutable en [`llm-service-v1.asyncapi.yaml`](../../../contracts/historicos-y-contratos-v1/llm-service-v1.asyncapi.yaml).
 Un solo mecanismo, no cuatro.
 

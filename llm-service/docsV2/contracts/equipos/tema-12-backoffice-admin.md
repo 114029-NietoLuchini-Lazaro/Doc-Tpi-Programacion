@@ -30,7 +30,7 @@ schema `Job`, no trae el resultado de la calibración, solo el `state`).
 
 ## Qué nos da
 
-- Evento `modelo_llm_cambiado.v1` — dispara recalibración automática (RF-IA-32).
+- Evento `MODEL_CHANGED` — dispara recalibración automática (RF-IA-32).
 
 ### Cuerpo del evento 🟡 (propuesta — el schema ejecutable (`ModelChanged`) no define campos)
 
@@ -55,9 +55,9 @@ de lo que falta definir con ellos.
 
 ## Qué le damos
 
-- Eventos `calibracion_aprobada.v1` / `calibracion_fuera_de_tolerancia.v1` (consumidores:
+- Eventos `CALIBRATION_APPROVED` / `CALIBRATION_OUT_OF_TOLERANCE` (consumidores:
   Tema 12).
-- Evento `incidente_de_jailbreak.v1` (consumidores: Tema 12 + equipo de seguridad).
+- Evento `JAILBREAK_INCIDENT_DETECTED` (consumidores: Tema 12 + equipo de seguridad).
 - Sin estos endpoints/eventos, Tema 12 "no tiene nada demostrable" (17 §7.3).
 
 ### Cuerpo de los eventos que publicamos

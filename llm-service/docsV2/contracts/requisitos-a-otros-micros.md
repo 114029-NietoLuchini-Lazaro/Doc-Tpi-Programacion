@@ -32,29 +32,31 @@ sequenceDiagram
     participant K as Kafka
     participant L as llm-service
 
-    P->>K: practica_publicada.v1
+    P->>K: PRACTICE_PUBLISHED
     K->>L: asignar calibración activa a challengeId
-    P->>K: intento_iniciado.v1
+    P->>K: ATTEMPT_STARTED
     K->>L: inmovilizar calibración del primer intento
-    P->>K: intento_cerrado.v1
+    P->>K: ATTEMPT_CLOSED
     K->>L: encolar evaluación de uso de IA
 ```
 
 ## Reglas aplicables a los tres eventos
 
-- Topic con formato `<evento>.v1`; el nombre definitivo lo aprueba `practice-service`.
-- Envelope común: `eventId` UUID, `version`, `occurredAt`, `producer` y `data`.
-- `traceparent` y `X-Request-Id` viajan en headers Kafka, nunca dentro de `data`.
+- Estándar del PDF `KAFKA.pdf` ([`KAFKA_EVENT_STANDARD.md`](KAFKA_EVENT_STANDARD.md)): envelope de cinco campos,
+  `eventId` UUID, `eventType`, `timestamp`, `producer` y `payload`. **Sin `eventVersion`.** Todo en inglés.
+- El nombre del tópico lo **asigna Notificaciones** (los grupos no crean tópicos); hoy se usa `practice-events`
+  como nombre provisorio para los tres eventos. Los `eventType` van en `MAYÚSCULAS_CON_GUION_BAJO`.
+- `traceparent` y `X-Request-Id` viajan en headers Kafka, nunca dentro del `payload`.
 - La key de partición recomendada es `challengeId` para preservar el orden de publicación,
   inicio y cierre de una misma práctica.
 - Kafka entrega al menos una vez. Tema 07 deduplica por `eventId`; `practice-service` puede
   reenviar sin provocar una segunda asignación, bloqueo o evaluación.
-- Un evento inválido no se procesa parcialmente: se rechaza y se aplica la política de DLQ/alerta
-  de plataforma con su `eventId` y `X-Request-Id`.
+- Un evento inválido no se procesa parcialmente: se rechaza y queda en la tabla `event_dead_letter` de
+  `llm-service` (no hay tópico `.dlt`: los grupos no pueden crear tópicos), con su `eventId` y `X-Request-Id`.
 
 ## RQ-PS-01 — Práctica publicada
 
-**Evento solicitado:** `practica_publicada.v1`.
+**Evento solicitado:** `PRACTICE_PUBLISHED`.
 
 **Cuándo publicarlo:** cuando una práctica pasa a estado publicado y puede recibir intentos. No se
 publica por cada edición de borrador ni por una visualización.
@@ -63,7 +65,7 @@ publica por cada edición de borrador ni por una visualización.
 asignación `challengeId → calibrationRunId`. Si no hay calibración activa, registra que la práctica
 no tiene evaluación disponible; no bloquea ni altera la publicación de la práctica.
 
-| Campo en `data` | Tipo | Obligatorio | Motivo |
+| Campo en `payload` | Tipo | Obligatorio | Motivo |
 |---|---|---:|---|
 | `challengeId` | UUID | Sí | Identifica la práctica/desafío al que se asigna la calibración. |
 | `courseCohortId` | UUID | Sí | Ubica la práctica en la cohorte cuya calibración aplica. |
@@ -74,7 +76,7 @@ no tiene evaluación disponible; no bloquea ni altera la publicación de la prá
 
 ## RQ-PS-02 — Primer intento iniciado
 
-**Evento solicitado:** `intento_iniciado.v1`.
+**Evento solicitado:** `ATTEMPT_STARTED`.
 
 **Cuándo publicarlo:** exactamente al crear o iniciar el primer intento real del alumno. No se
 repite para reintentos de guardado dentro del mismo intento.
@@ -83,7 +85,7 @@ repite para reintentos de guardado dentro del mismo intento.
 recalibración posterior podrá aplicarse a prácticas sin intentos, pero no modifica la regla usada
 por este intento ni por la práctica ya bloqueada.
 
-| Campo en `data` | Tipo | Obligatorio | Motivo |
+| Campo en `payload` | Tipo | Obligatorio | Motivo |
 |---|---|---:|---|
 | `attemptId` | UUID | Sí | Identifica el primer intento que bloqueó la asignación. |
 | `challengeId` | UUID | Sí | Encuentra la asignación de calibración a inmovilizar. |
@@ -93,16 +95,16 @@ por este intento ni por la práctica ya bloqueada.
 
 ## RQ-PS-03 — Intento cerrado
 
-**Evento solicitado:** `intento_cerrado.v1`.
+**Evento solicitado:** `ATTEMPT_CLOSED`.
 
 **Cuándo publicarlo:** una vez que el intento ya no admite cambios. Es el disparador de la
 evaluación asíncrona. El alumno no espera el score para recibir el resultado normal de su entrega.
 
 **Qué hace Tema 07 al recibirlo:** recupera la calibración inmovilizada, encola la evaluación del
-uso del tutor y posteriormente publica `score_de_ia_calculado.v1` o
-`score_pendiente_diferido.v1` para `practice-service`.
+uso del tutor y posteriormente publica `SCORE_CALCULATED` o
+`SCORE_DEFERRED` para `practice-service`.
 
-| Campo en `data` | Tipo | Obligatorio | Motivo |
+| Campo en `payload` | Tipo | Obligatorio | Motivo |
 |---|---|---:|---|
 | `attemptId` | UUID | Sí | Idempotencia y vínculo con el resultado emitido. |
 | `challengeId` | UUID | Sí | Recupera asignación y calibración inmovilizada. |
@@ -176,8 +178,8 @@ el cierre se bloquea o se rechaza son decisiones pendientes de `courses-service`
 3. ¿Existe `intento_iniciado`? Si no, ¿qué evento confiable ocurre antes de que un intento pueda
    quedar cerrado?
 4. ¿Qué formato normalizado usa `tutorTranscript` y qué límite de tamaño admite Kafka?
-5. ¿La práctica puede cambiar de cohorte o republicarse? Si sí, ¿cómo se versiona el evento?
-6. ¿Qué DLQ, retención y reintento rigen para estos tres topics?
+5. ¿La práctica puede cambiar de cohorte o republicarse? Si sí, ¿cómo se distingue una versión de otra, ahora que el estándar no tiene `eventVersion`?
+6. ¿Qué retención y reintento rigen para estos tres eventos? (No hay tópico dead-letter: los rechazos quedan en `event_dead_letter`.)
 7. Courses: ¿cuál es el endpoint, scope y semántica definitiva para validar membresía docente?
 8. Courses: ¿qué evento representa archivo/cierre de cohorte y cómo deben resolverse los
    pendientes de evaluación?

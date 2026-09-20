@@ -105,7 +105,7 @@
   en la lista de disparadores de vencimiento**. Falta agregarlo como CA/escenario o confirmar que
   se cubre en otro lado.
 - [ ] **[EP-04·H04]** ¿Qué canal usa el evento de "curso con evaluaciones frenadas" — el mismo bus
-  de `calibracion_fuera_de_tolerancia.v1` u otro propio? La ficha lo deja explícitamente abierto.
+  de `CALIBRATION_OUT_OF_TOLERANCE` u otro propio? La ficha lo deja explícitamente abierto.
 - [ ] **[EP-04] — hallazgo nuevo:** el KPI de épica *"toda habilitación o cambio de modelo queda
   registrada de forma permanente"* no tiene ningún CA dedicado en H01/H02 que verifique el
   registro de auditoría de habilitación/cambio de modelo en sí (más allá del audit log genérico
@@ -160,8 +160,8 @@
 - [ ] **[EP-06·H01]** Decisión de diseño abierta: ¿la evaluación "pendiente por intento recién
   cerrado, no arrancada" (EP-06) es un estado distinto o el mismo que "pendiente por falta de
   calibración" (EP-04, `pending_evaluations`)? Ya señalada en la propia ficha como riesgo.
-- [ ] **[EP-06·H02/H03]** El schema de `data` de `score_de_ia_calculado.v1` y
-  `score_pendiente_diferido.v1` sigue siendo un `Envelope` vacío en el AsyncAPI — falta acordarlo
+- [ ] **[EP-06·H02/H03]** El schema de `data` de `SCORE_CALCULATED` y
+  `SCORE_DEFERRED` sigue siendo un `Envelope` vacío en el AsyncAPI — falta acordarlo
   con quien consume esos eventos (probablemente el servicio de cálculo académico) antes de
   implementar la publicación. Ya señalado en ambas fichas, no inventado por ellas — correcto.
 - [ ] **[EP-06·H03]** Intervalo entre reintentos y límite antes de escalar a "pendiente

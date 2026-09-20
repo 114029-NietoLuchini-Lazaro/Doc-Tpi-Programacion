@@ -15,8 +15,10 @@ Los schemas exactos vivirán en `contracts/`. Este documento no los duplica.
 - HTTP pasa por API Gateway, con JWT M2M `aud=llm-service`, scope mínimo, identidad delegada y
   `traceparent` + `X-Request-Id`.
 - Cada escritura HTTP requiere `Idempotency-Key` UUID y responde errores RFC 7807.
-- Kafka usa topics `<evento>.v<major>`, envelope `eventId`, `version`, `occurredAt`, `producer`
-  y `data`; correlación en headers; entrega at-least-once, deduplicación por `eventId` y outbox.
+- Kafka sigue el estándar del PDF [`KAFKA_EVENT_STANDARD.md`](KAFKA_EVENT_STANDARD.md): envelope `eventId`,
+  `eventType` (`MAYÚSCULAS_CON_GUION_BAJO`), `timestamp`, `producer` y `payload` (sin `eventVersion`), bus
+  `event-bus:29092`, tópicos asignados por Notificaciones; correlación en headers; entrega at-least-once,
+  deduplicación por `eventId` y outbox.
 - Los datos de un servicio pertenecen a su dueño. Tema 07 no escribe en bases ajenas ni inventa
   respuestas para reemplazar otro microservicio.
 
@@ -27,7 +29,7 @@ Los schemas exactos vivirán en `contracts/`. Este documento no los duplica.
 | `practice-service` | hacia Tema 07 | Kafka | Informar que una práctica fue publicada para asignarle la calibración activa de su cohorte. | Solicitado: ver INT-000. |
 | `practice-service` | hacia Tema 07 | Kafka | Informar el inicio del primer intento para inmovilizar la calibración asignada. | Solicitado: ver INT-001. |
 | `practice-service` | hacia Tema 07 | HTTP | Invocar tutor con contexto pedagógico validado. | Propuesto: schema y tratamiento seguro en OpenAPI; requiere aprobación de Practice. |
-| `practice-service` | hacia Tema 07 | Kafka | Publicar el cierre de un intento para disparar su evaluación. | Bloqueado: falta schema completo de `intento_cerrado.v1`. |
+| `practice-service` | hacia Tema 07 | Kafka | Publicar el cierre de un intento para disparar su evaluación. | Bloqueado: falta schema completo de `ATTEMPT_CLOSED`. |
 | Tema 07 | hacia `practice-service` | Kafka | Publicar score calculado o evaluación diferida; Practice reenvía el resultado a Challenges. | Propuesto: schema en AsyncAPI; requiere aprobación de Practice. |
 | `courses-service` | hacia Tema 07 | HTTP | Consultar calibración activa y evaluaciones pendientes antes de activar/cerrar una cohorte. | Propuesto: schema en OpenAPI; requiere aprobación de Courses. |
 | Tema 07 | hacia `courses-service` | HTTP | Validar pertenencia docente activa para operaciones de cohorte. Ruta propuesta: `GET /api/courses/{courseCohortId}/members/{userId}`. | Pendiente de aprobación del dueño de Courses. |
@@ -42,15 +44,15 @@ Los schemas exactos vivirán en `contracts/`. Este documento no los duplica.
 
 Tema 07 necesita conocer que una práctica quedó publicada y disponible para alumnos. Ese hecho
 permite asociar a su `challengeId` la calibración activa vigente en ese instante. Se solicita el
-evento propuesto `practica_publicada.v1`; el nombre final lo confirma el dueño. Ver el detalle en
+evento propuesto `PRACTICE_PUBLISHED`; el nombre final lo confirma el dueño. Ver el detalle en
 [requisitos a otros micros](requisitos-a-otros-micros.md).
 
 ### INT-001 — Cierre de intento
 
 **Dueño:** `practice-service`.
 
-Antes del cierre, Tema 07 debe recibir `intento_iniciado.v1` para inmovilizar la calibración en el
-primer intento. Luego `intento_cerrado.v1` debe declarar como mínimo `attemptId`, `challengeId`,
+Antes del cierre, Tema 07 debe recibir `ATTEMPT_STARTED` para inmovilizar la calibración en el
+primer intento. Luego `ATTEMPT_CLOSED` debe declarar como mínimo `attemptId`, `challengeId`,
 `courseCohortId`, `learnerId` y la información necesaria para evaluar el uso del tutor. Si falta
 un campo obligatorio, el consumidor rechaza el evento y debe alertar/direccionarlo a DLQ según la
 política de plataforma.
@@ -59,7 +61,7 @@ política de plataforma.
 
 **Dueños:** Tema 07 y `practice-service`.
 
-Se debe acordar el payload de `score_de_ia_calculado.v1`: identificación del intento y cohorte,
+Se debe acordar el payload de `SCORE_CALCULATED`: identificación del intento y cohorte,
 estado, score agregado, cinco dimensiones, versiones de rúbrica y calibración aplicadas, y motivo
 tipado en caso de fallo o diferimiento. Tema 07 no emite XP ni nota académica.
 

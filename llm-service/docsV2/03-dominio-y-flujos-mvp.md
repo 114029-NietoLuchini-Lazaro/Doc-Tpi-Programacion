@@ -16,7 +16,7 @@ Una nueva versión de rúbrica o Golden Set no altera versiones publicadas ni re
 1. Back Office invoca a `admin-service`, que cruza Gateway hacia Tema 07 con identidad docente.
 2. El docente crea o modifica una rúbrica y un Golden Set en estado borrador.
 3. Publica ambos, selecciona un modelo candidato e inicia una corrida asíncrona.
-4. Tema 07 publica `calibracion_aprobada.v1` o `calibracion_fuera_de_tolerancia.v1`.
+4. Tema 07 publica `CALIBRATION_APPROVED` o `CALIBRATION_OUT_OF_TOLERANCE`.
 5. Una calibración aprobada queda disponible para nuevas prácticas de esa cohorte.
 
 ## Flujo: práctica, intento y evaluación
@@ -27,7 +27,7 @@ Una nueva versión de rúbrica o Golden Set no altera versiones publicadas ni re
 3. Practice llama al tutor cuando el alumno lo necesita. La solución esperada, si existe, se usa
    únicamente para impedir una fuga.
 4. Al cerrar el intento, Practice publica la evidencia mínima y Tema 07 encola la evaluación.
-5. Tema 07 publica `score_de_ia_calculado.v1` o `score_pendiente_diferido.v1`. Practice es quien
+5. Tema 07 publica `SCORE_CALCULATED` o `SCORE_DEFERRED`. Practice es quien
    integra el resultado con su flujo y, si corresponde, con Challenges.
 
 Los nombres, schemas y condiciones exactas de los hechos que entran están pendientes de acuerdo en

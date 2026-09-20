@@ -100,7 +100,7 @@ flowchart TB
     BUS --> T12
 ```
 
-> ⚠️ **Cambió el 2026-09-13.** El bus le entrega `score_de_ia_calculado.v1` a **Tema 05**, no a
+> ⚠️ **Cambió el 2026-09-13.** El bus le entrega `SCORE_CALCULATED` a **Tema 05**, no a
 > Tema 03 — Tema 03 ya no tiene conexión directa con nosotros; recibe el resultado reenviado por
 > Tema 05. Detalle en [17](../contracts/90-mapa-de-integracion-historico.md)d)
 

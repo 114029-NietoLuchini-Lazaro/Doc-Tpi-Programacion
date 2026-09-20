@@ -27,7 +27,7 @@ original."*
 | Consumir el aviso de cierre de intento (`intento_cerrado`) | No hay ningún `@KafkaListener` ni consumidor de eventos en todo el repo | 🔴 |
 | Calcular las 5 dimensiones para un intento real (evaluador) | El único "evaluador" que existe es `CalibrationMetrics`, y compara **casos del golden set contra referencia humana** — no evalúa intentos de alumnos reales | 🔴 |
 | Persistir la evaluación (dimensiones, justificación, versión de modelo/rúbrica) | No existe ninguna tabla ni entidad `evaluation`/`evaluacion` fuera del contexto de calibración | 🔴 |
-| Publicar `score_de_ia_calculado.v1` (outbox) | No existe ningún productor de eventos ni patrón outbox en el repo | 🔴 |
+| Publicar `SCORE_CALCULATED` (outbox) | No existe ningún productor de eventos ni patrón outbox en el repo | 🔴 |
 | Diferir el cálculo si el evaluador está caído, sin perderlo ni duplicarlo | Existe la mitad: la compuerta de EP-04 encola si **falta calibración** — no si el **modelo/proveedor** está caído, que es el caso que pide esta épica | 🟡 (cubre un caso distinto y más fácil) |
 | Bloquear el cierre de un curso con puntajes pendientes | No hay ningún endpoint ni regla de este tipo | 🔴 |
 | Apelación (alumno apela, docente ve evidencia, resuelve) | No existe ningún controller, servicio ni tabla de apelación | 🔴 |

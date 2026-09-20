@@ -11,7 +11,7 @@
 > **Fuente de verdad.** Épica: [`../../epicas/ep-06.md`](../../epicas/ep-06.md). Requisitos:
 > RF-IA-12 a 18/25/27/34. Contrato de eventos:
 > [`../../contracts/llm-service-v1.asyncapi.yaml`](../../../../contracts/historicos-y-contratos-v1/llm-service-v1.asyncapi.yaml)
-> (`intento_cerrado.v1` consumido, `score_de_ia_calculado.v1` y `score_pendiente_diferido.v1`
+> (`ATTEMPT_CLOSED` consumido, `SCORE_CALCULATED` y `SCORE_DEFERRED`
 > publicados — **el `data` de estos dos últimos todavía es un `Envelope` vacío en el contrato: sin
 > schema de campos acordado**, no inventar de qué se compone en ninguna ficha). DoR/DoD:
 > [23 · §9.2](../../../03-plan-de-construccion-del-producto.md).

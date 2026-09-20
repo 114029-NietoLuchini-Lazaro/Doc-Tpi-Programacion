@@ -32,7 +32,7 @@ adaptada a respuesta síncrona:
 
 - Confirmación del modelo `curso_template_id` vs `curso_cohorte_id` — ver
   [`pendientes.md`](../../07-planificacion-y-trabajo-equipo/11-equipos/tema-02-cursos-y-matricula/pendientes.md) (I-09).
-- Evento `curso_archivado.v1` — frena todos los trabajos pendientes de ese curso-cohorte.
+- Evento `COURSE_ARCHIVED` — frena todos los trabajos pendientes de ese curso-cohorte.
 
 ### Cuerpo del evento 🟡 (propuesta — el schema ejecutable hoy no define campos)
 
@@ -43,8 +43,7 @@ sí tiene campos formalizados):
 ```json
 {
   "eventId": "6d1f7a10-0000-4000-8000-000000000099",
-  "eventType": "COURSE-ARCHIVED",
-  "eventVersion": 1,
+  "eventType": "COURSE_ARCHIVED",
   "timestamp": "2026-09-12T14:00:00Z",
   "producer": "courses-service",
   "payload": {
@@ -64,7 +63,7 @@ redacción. Ver [`pendientes.md`](../../07-planificacion-y-trabajo-equipo/11-equ
 ## Qué le damos
 
 - Estado de calibración vía `GET /course-cohorts/{courseCohortId}/calibration` (ejemplo arriba).
-- Eventos `calibracion_aprobada.v1` / `calibracion_fuera_de_tolerancia.v1`, con el mismo
+- Eventos `CALIBRATION_APPROVED` / `CALIBRATION_OUT_OF_TOLERANCE`, con el mismo
   contenido propuesto (`rubric_version`, `kappa`, `muestras`) — ver
   [`tema-12-backoffice-admin.md`](tema-12-backoffice-admin.md), que
   detalla ese payload porque Tema 12 es el otro consumidor.
@@ -86,6 +85,6 @@ Registro vivo de lo que hay que acordar con Tema 02 sobre eventos. Detalle y che
 | Message Key de `course-events` | 🔴 sin confirmar (AsyncAPI dice "Pendiente") |
 | Otros eventos de curso (alta, clonado, matrícula/baja) | 🔴 sin definir si existen ni si los necesitamos |
 | Semántica de archivado (qué frenamos, qué pasa con lo ya generado) | 🟡 a confirmar |
-| `producer` y `eventType` (`COURSE-ARCHIVED`) | 🟡 a confirmar |
+| `producer` y `eventType` (`COURSE_ARCHIVED`) | 🟡 a confirmar |
 | Consumidor en `llm-service` | 🔴 no implementado todavía |
 | _(nuevos temas)_ | agregar acá |
