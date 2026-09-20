@@ -14,4 +14,4 @@
 | [H03](h03.md) | Esqueleto transversal del servicio | 🟡 | Cliente Eureka configurado; 401/403 separados con Problem Details; eco de X-Request-Id verificado |
 | [H04](h04.md) | Esquema inicial versionado con auditoría | 🟢 | Migración `V1` cumple lo que pide la ficha |
 | [H08](h08.md) | Contrato OpenAPI y mock del golden set publicados | 🟡 | Contratos publicados; no hay mock levantable con un comando |
-| [H09](h09.md) | Suite de pruebas y guía de demo de S1 | 🔴 | 32 clases de test, pero sin JaCoCo no hay gate de cobertura; sin guía de demo |
+| [H09](h09.md) | Suite de pruebas y guía de demo de S1 | 🟢 | `mvn test` 604 tests en verde (2026-09-19), JaCoCo con gate activo; cobertura total del servicio 76 % de líneas (69 % instrucciones), dominio 94–100 %; guía de demo y script de reinicio listos |

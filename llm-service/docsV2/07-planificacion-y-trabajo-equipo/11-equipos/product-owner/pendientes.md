@@ -47,3 +47,11 @@ verificada por escrito.
   menciones cuentan contra los límites de cuota, y cuántos agentes puede haber (Fase 3, baja
   prioridad hoy).
 - Dónde corta el umbral entre severidad baja y media del moderador — se afina con datos reales.
+
+## 🟡 EP-08 (moderación) — retención y umbrales (2026-09-19)
+
+Decisiones de producto/seguridad que hoy son valores sembrados, no aprobados
+([`h06`](../../09-epicas-historias-tareas-sprints/historias/ep-08/h06.md), [`h02`](../../09-epicas-historias-tareas-sprints/historias/ep-08/h02.md)):
+
+- **Períodos de retención 30/90 días** de la evidencia de moderación: hardcodeados en la migración `V27`. Falta aprobar cuánto se guarda cada dato, por qué, y qué se borra o anonimiza al vencer.
+- **Umbrales de los detectores** (spam/ofensivo/ofuscación): valores por defecto sin calibrar; definir la tasa de falsos positivos tolerable y calibrar con mensajes reales.

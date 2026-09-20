@@ -29,3 +29,22 @@ El runbook de alta de curso (`06-operacion-e-ingenieria.md`) marca como fallo t�
 "el Tema 02 no implementó la consulta" de calibración — por eso el endpoint se entrega
 temprano aunque devuelva un mock, para no quedar bloqueados esperando que el otro lado
 integre.
+
+## 🔴 Kafka — contrato de `course-events` a cerrar (2026-09-19)
+
+Pendientes surgidos al revisar [`llm-service.asyncapi.yaml`](../../../contracts/llm-service.asyncapi.yaml) v2.0.0.
+El código **todavía no consume** `course-events`; el contrato existe pero es un `Envelope` vacío.
+Se agregan acá todos los temas nuevos que salgan de la charla.
+
+- [ ] **`CourseArchived` — campos:** hoy sin campos declarados. Propuesta mínima en
+  [`contratos/equipos/tema-02-cursos-y-matricula.md`](../../../contracts/equipos/tema-02-cursos-y-matricula.md)
+  (`courseCohortId`); confirmar si les alcanza o falta `courseId` / `courseTemplateId` / `archivedAt`.
+- [ ] **Message Key de `course-events`:** la define el productor; figura "Pendiente". Confirmar cuál usan.
+- [ ] **Otros eventos de curso que necesitemos:** ¿alta/clonado de curso, cambio de cohorte,
+  matrícula/baja de alumno? Definir cuáles publican y si los necesitamos (p. ej. clonado → calibración
+  "se copia pero se reaprueba").
+- [ ] **Semántica de archivado:** confirmar que al archivar frenamos trabajos pendientes de esa
+  cohorte (evaluaciones en cola, diferidos) y qué pasa con datos ya generados.
+- [ ] **Productor y nombre:** confirmar `producer` (¿`courses-service`?) y `eventType` en formato
+  estándar (`COURSE-ARCHIVED`).
+- [ ] _(agregar acá lo que surja)_

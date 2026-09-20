@@ -58,11 +58,16 @@ JSON viejo (`veredicto` + `categorias` como booleanos) y ya se corrigieron a la 
 `presentacion-integracion-servicios.html` usa la palabra "veredicto" en prosa suelta, sin
 afirmar un campo — no hacía falta tocarla.
 
-## 🟡 Interno — EP-08 (moderación) sin código todavía
+## 🟡 EP-08 (moderación) implementada — pendientes para Tema 11 (2026-09-19)
 
-El contrato está escrito ([`llm-service-v1-moderacion-borrador.yaml`](../../../contracts/historicos-y-contratos-v1/llm-service-v1-moderacion-borrador.yaml))
-pero **ningún controller de `llm-service` lo implementa hoy**. Es contexto para la
-conversación, no algo que dependa de Tema 11 resolver.
+`llm-service` ya implementa el contrato v1.1.0 (`POST /moderation/v1/decisions`, reemplaza al
+borrador `POST /ai/moderador`, que quedó obsoleto). Lo que **Tema 11 tiene que cerrar** está en
+[`moderacion-pendientes-chat-service.md`](../../../contracts/moderacion-pendientes-chat-service.md):
+
+- **C1:** enviar `sender_id` real (obligatorio, breaking; hoy probamos con un valor mockeado).
+- **C2/C3/C4:** manejo en UI de `PENDING`/`PENDING_REVIEW`, timeout propio y política de reintentos (siempre con el mismo `message_id`).
+- **C5:** si consumen el evento Kafka `MESSAGE-UNBLOCKED` para publicar tras una reversión docente.
+- **C6:** si necesitan retirar mensajes ya publicados (`DELETE /moderation/v1/decisions/{message_id}`; un `ALLOW` responde `409`).
 
 ## Colisión de vocabulario
 

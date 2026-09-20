@@ -43,10 +43,11 @@ sí tiene campos formalizados):
 ```json
 {
   "eventId": "6d1f7a10-0000-4000-8000-000000000099",
-  "version": "1.0",
-  "occurredAt": "2026-09-12T14:00:00Z",
+  "eventType": "COURSE-ARCHIVED",
+  "eventVersion": 1,
+  "timestamp": "2026-09-12T14:00:00Z",
   "producer": "courses-service",
-  "data": {
+  "payload": {
     "courseCohortId": "b1e2c3d4-0003-4a00-8000-000000000003"
   }
 }
@@ -73,3 +74,18 @@ redacción. Ver [`pendientes.md`](../../07-planificacion-y-trabajo-equipo/11-equ
 El **golden set** (muestras del docente para calibrar la rúbrica). Sin esto ningún curso puede
 activarse — es la dependencia con el plazo más largo del proyecto, y no es trabajo de
 desarrollo de ningún equipo. Ver [`product-owner/pendientes.md`](../../07-planificacion-y-trabajo-equipo/11-equipos/product-owner/pendientes.md).
+
+## 🔴 Pendientes de contrato Kafka con Tema 02 (2026-09-19)
+
+Registro vivo de lo que hay que acordar con Tema 02 sobre eventos. Detalle y checklist en
+[`pendientes.md`](../../07-planificacion-y-trabajo-equipo/11-equipos/tema-02-cursos-y-matricula/pendientes.md).
+
+| Tema | Estado |
+|---|---|
+| Campos de `CourseArchived` (hoy `Envelope` vacío) | 🔴 propuesta mínima abajo, sin acordar |
+| Message Key de `course-events` | 🔴 sin confirmar (AsyncAPI dice "Pendiente") |
+| Otros eventos de curso (alta, clonado, matrícula/baja) | 🔴 sin definir si existen ni si los necesitamos |
+| Semántica de archivado (qué frenamos, qué pasa con lo ya generado) | 🟡 a confirmar |
+| `producer` y `eventType` (`COURSE-ARCHIVED`) | 🟡 a confirmar |
+| Consumidor en `llm-service` | 🔴 no implementado todavía |
+| _(nuevos temas)_ | agregar acá |
