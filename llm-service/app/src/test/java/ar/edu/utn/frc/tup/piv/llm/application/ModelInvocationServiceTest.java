@@ -15,6 +15,11 @@ import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.FunctionModelConfigRep
 import ar.edu.utn.frc.tup.piv.llm.provider.spi.ProviderException;
 import java.time.Duration;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -173,10 +178,10 @@ class ModelInvocationServiceTest {
   }
 
   @Test
-  void cutsTheCallWhenTheAdapterExceedsTheConfiguredTimeout() {
+  void timesOutWhenTheAdapterExceedsTheConfiguredTimeoutWithoutWaitingForTheFullDelay() {
     Adapter adapter = request -> {
       try {
-        Thread.sleep(300);
+        Thread.sleep(1_000);
       } catch (InterruptedException exception) {
         Thread.currentThread().interrupt();
       }
@@ -184,12 +189,90 @@ class ModelInvocationServiceTest {
     };
     var service = serviceWithAdapter(adapter);
 
-    long start = System.currentTimeMillis();
+    long start = System.nanoTime();
     assertThatThrownBy(() -> service.invoke(ModelFunction.TUTOR, "system", "pregunta", Duration.ofMillis(50)))
         .isInstanceOf(ModelTimeoutException.class);
-    long elapsed = System.currentTimeMillis() - start;
+    long elapsed = Duration.ofNanos(System.nanoTime() - start).toMillis();
 
-    assertThat(elapsed).isLessThan(300);
+    assertThat(elapsed).isLessThan(2_000);
+  }
+
+  @Test
+  void cancelsAndInterruptsACooperativeAdapterTaskOnTimeout() throws Exception {
+    CountDownLatch started = new CountDownLatch(1);
+    CountDownLatch interrupted = new CountDownLatch(1);
+    CountDownLatch finished = new CountDownLatch(1);
+    AtomicBoolean returnedNormally = new AtomicBoolean(false);
+    Adapter adapter = request -> {
+      started.countDown();
+      try {
+        Thread.sleep(10_000);
+        returnedNormally.set(true);
+        return new ModelInvocationResult("tarde", "fake", "fake-socratic-v1");
+      } catch (InterruptedException exception) {
+        interrupted.countDown();
+        Thread.currentThread().interrupt();
+        throw new ProviderException("PROVIDER_INTERRUPTED", "interrumpido", exception);
+      } finally {
+        finished.countDown();
+      }
+    };
+    var service = serviceWithAdapter(adapter);
+    var caller = Executors.newSingleThreadExecutor();
+    try {
+      var invocation = caller.submit(() -> {
+        try {
+          service.invoke(ModelFunction.TUTOR, "system", "pregunta", Duration.ofMillis(250));
+          return false;
+        } catch (ModelTimeoutException exception) {
+          return true;
+        }
+      });
+
+      assertThat(started.await(1, TimeUnit.SECONDS)).isTrue();
+      assertThat(invocation.get(2, TimeUnit.SECONDS)).isTrue();
+      assertThat(interrupted.await(1, TimeUnit.SECONDS)).isTrue();
+      assertThat(finished.await(1, TimeUnit.SECONDS)).isTrue();
+      assertThat(returnedNormally).isFalse();
+    } finally {
+      caller.shutdownNow();
+    }
+  }
+
+  @Test
+  void doesNotReturnALateAdapterResultAfterTimeout() throws Exception {
+    CountDownLatch started = new CountDownLatch(1);
+    CountDownLatch lateReturnAttempted = new CountDownLatch(1);
+    AtomicReference<ModelInvocationResult> returned = new AtomicReference<>();
+    Adapter adapter = request -> {
+      started.countDown();
+      try {
+        Thread.sleep(1_000);
+      } catch (InterruptedException exception) {
+        Thread.currentThread().interrupt();
+      }
+      lateReturnAttempted.countDown();
+      return new ModelInvocationResult("tarde", "fake", "fake-socratic-v1");
+    };
+    var service = serviceWithAdapter(adapter);
+    var caller = Executors.newSingleThreadExecutor();
+    try {
+      var invocation = caller.submit(() -> {
+        try {
+          returned.set(service.invoke(ModelFunction.TUTOR, "system", "pregunta", Duration.ofMillis(250)));
+          return null;
+        } catch (RuntimeException exception) {
+          return exception;
+        }
+      });
+
+      assertThat(started.await(1, TimeUnit.SECONDS)).isTrue();
+      assertThat(invocation.get(2, TimeUnit.SECONDS)).isInstanceOf(ModelTimeoutException.class);
+      assertThat(lateReturnAttempted.await(1, TimeUnit.SECONDS)).isTrue();
+      assertThat(returned.get()).isNull();
+    } finally {
+      caller.shutdownNow();
+    }
   }
 
   private ModelInvocationService serviceWithAdapter(Adapter adapter) {

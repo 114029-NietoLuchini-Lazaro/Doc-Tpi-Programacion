@@ -15,6 +15,7 @@ import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.ProviderCredentialRepo
 import ar.edu.utn.frc.tup.piv.llm.application.service.ModelInvocationService;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.InvalidModelResponseException;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelFunction;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelTimeoutException;
 import ar.edu.utn.frc.tup.piv.llm.provider.fake.FakeAutoConfiguration;
 import ar.edu.utn.frc.tup.piv.llm.provider.spi.AiProviderAdapter;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -53,6 +54,16 @@ class FakeProviderRuntimeIntegrationTest {
 
       assertThatThrownBy(() -> service.invoke(ModelFunction.TUTOR, "system", "pregunta", Duration.ofSeconds(1)))
           .isInstanceOf(InvalidModelResponseException.class);
+    });
+  }
+
+  @Test
+  void slowFakeModelTimesOutThroughTheRuntimeInvocationChain() {
+    runner.run(context -> {
+      var service = serviceFor(context.getBean(AiProviderAdapter.class), "fake-slow-v1");
+
+      assertThatThrownBy(() -> service.invoke(ModelFunction.TUTOR, "system", "pregunta", Duration.ofMillis(50)))
+          .isInstanceOf(ModelTimeoutException.class);
     });
   }
 

@@ -12,12 +12,13 @@ import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.FunctionModelConfigRep
 import ar.edu.utn.frc.tup.piv.llm.provider.spi.ProviderException;
 import java.time.Duration;
 import java.util.Locale;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.springframework.stereotype.Service;
 
 /** El caso de uso de `LLM-S01-H10`: resuelve la función contra
@@ -45,15 +46,18 @@ public class ModelInvocationService {
 
     var request = new ModelInvocationRequest(function, systemPrompt, userPrompt, timeout);
     ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+    Future<ModelInvocationResult> future = null;
     try {
-      ModelInvocationResult result = CompletableFuture.supplyAsync(() -> adapter.invoke(request), executor)
-          .get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+      future = executor.submit(() -> adapter.invoke(request));
+      ModelInvocationResult result = future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
       schema.validate(function, result.text());
       return result;
-    } catch (java.util.concurrent.TimeoutException exception) {
+    } catch (TimeoutException exception) {
+      cancel(future);
       throw new ModelTimeoutException(
           "El adaptador de " + name(function) + " superó el timeout de " + timeout.toMillis() + "ms");
     } catch (InterruptedException exception) {
+      cancel(future);
       Thread.currentThread().interrupt();
       throw new IllegalStateException("Invocación de " + name(function) + " interrumpida", exception);
     } catch (ExecutionException exception) {
@@ -61,6 +65,10 @@ public class ModelInvocationService {
     } finally {
       executor.shutdownNow();
     }
+  }
+
+  private void cancel(Future<?> future) {
+    if (future != null) future.cancel(true);
   }
 
   private RuntimeException invocationFailure(ModelFunction function, Throwable cause) {
