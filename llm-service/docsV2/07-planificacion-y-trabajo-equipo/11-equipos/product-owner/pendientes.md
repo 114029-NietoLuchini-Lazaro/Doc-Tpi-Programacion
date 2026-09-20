@@ -28,6 +28,12 @@ Tres números circulando: 15 (decisión), 10 (inventario), 8 (presupuesto). El p
 cuatrimestre depende de cuál se confirme. Recomendación de doc 08 (P-05): 15 mensajes/desafío,
 60/día, para empezar y calibrar con datos reales.
 
+**Nota (2026-09-20):** ninguno de esos números está aplicado hoy en el tutor. El código trae un
+default de 50 usos/día para `tutor` que nadie consume, y el único freno real es un presupuesto
+global por función. Confirmar el techo (y si es por alumno, ver P-12) es lo que permite después
+implementarlo. Detalle en
+[`ep-05/README.md`](../../../06-operacion-calidad-y-pruebas/04-estado-de-implementacion/ep-05/README.md).
+
 ## 🟡 C-2 — ¿el free tier puede tocar datos de alumnos?
 
 Consulta legal, no técnica — define el modelo de costos entero. Recomendación: free tier solo
