@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelFunction;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationRequest;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelResponseSchema;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.output.Response;
@@ -58,6 +59,32 @@ class GroqModelAdapterTest {
     assertThat(result.text()).isEqualTo("Respuesta real socrática generada por LLaMA");
     assertThat(result.provider()).isEqualTo("groq");
     assertThat(result.model()).isEqualTo("llama-3.3-70b-versatile");
+  }
+
+  @Test
+  void theEvaluatorResponseWrappedInACodeFenceReachesTheSchemaAsBareJson() {
+    String scores = "{\"autonomy\":80,\"clarity\":70,\"progression\":60,\"compliance\":90,\"efficiency\":50}";
+    ChatLanguageModel mockModel = mock(ChatLanguageModel.class);
+    when(mockModel.generate(anyList()))
+        .thenReturn(Response.from(AiMessage.from("Esta es mi evaluación:\n```json\n" + scores + "\n```")));
+    var adapter = new GroqModelAdapter("gsk_test_key", null, "openai/gpt-oss-20b", mockModel);
+    var request = new ModelInvocationRequest(ModelFunction.EVALUATOR, "rúbrica", "transcripción", Duration.ofSeconds(5));
+
+    var result = adapter.invoke(request);
+
+    assertThat(result.text()).isEqualTo(scores);
+    new ModelResponseSchema().validate(ModelFunction.EVALUATOR, result.text());
+  }
+
+  @Test
+  void theTutorResponseIsNeverRewrittenEvenIfItContainsBracesOrFences() {
+    String reply = "Probá pensar el caso base:\n```java\nif (n == 0) { return 1; }\n```";
+    ChatLanguageModel mockModel = mock(ChatLanguageModel.class);
+    when(mockModel.generate(anyList())).thenReturn(Response.from(AiMessage.from(reply)));
+    var adapter = new GroqModelAdapter("gsk_test_key", null, "openai/gpt-oss-20b", mockModel);
+    var request = new ModelInvocationRequest(ModelFunction.TUTOR, "system", "pregunta", Duration.ofSeconds(5));
+
+    assertThat(adapter.invoke(request).text()).isEqualTo(reply);
   }
 
   @Test

@@ -1,5 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.infrastructure.ai;
 
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.JsonObjectExtractor;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelFunction;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationPort;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationRequest;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationResult;
@@ -67,6 +69,10 @@ public class GroqModelAdapter implements ModelInvocationPort {
     try {
       Response<AiMessage> response = chatModel.generate(messages);
       String responseText = response != null && response.content() != null ? response.content().text() : "";
+      if (request.function() == ModelFunction.EVALUATOR) {
+        // El evaluador espera un JSON pelado; los modelos reales suelen envolverlo en ```json o en texto.
+        responseText = JsonObjectExtractor.extract(responseText);
+      }
       var usage = response != null ? response.tokenUsage() : null;
       return new ModelInvocationResult(responseText, PROVIDER, modelName,
           usage != null ? usage.inputTokenCount() : null, usage != null ? usage.outputTokenCount() : null);

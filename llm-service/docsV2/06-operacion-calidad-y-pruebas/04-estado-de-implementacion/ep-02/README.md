@@ -11,7 +11,7 @@
 | ID | Título | Estado | Nota en una línea |
 |---|---|---|---|
 | [H10](h10.md) | Puerto del proveedor de modelos (AI Gateway) y fake para pruebas | 🟢 | 6 de 6 tareas — portado de `codigo-ejemplo/ms-evaluacion-llm` |
-| H02 | Proveedor real (Groq) detrás del puerto | 🟢 | `GroqModelAdapter` (langchain4j) seleccionado por `function_model_config`; verificado solo con test *live* opcional, sin `GROQ_API_KEY` en CI |
+| H02 | Proveedor real (Groq) detrás del puerto | 🟢 | `GroqModelAdapter` (langchain4j) seleccionado por `function_model_config`; verificado solo con test *live* opcional, sin `GROQ_API_KEY` en CI. Para el evaluador, el adaptador saca el JSON de respuestas envueltas en ```json o con texto alrededor (`JsonObjectExtractor`); el tutor no se toca. Sin verificar contra el proveedor real: que acepte lo que pedimos y que el evaluador devuelva solo las cinco claves (el schema descarta una sexta) |
 | [H03](h03.md) | Resiliencia síncrona: reintentos, circuit breaker, presupuesto, uso | 🟡 | Construida **con mocks/hardcodeo** (2026-09-19): reintentos + breaker por proveedor reales; presupuesto y registro de uso en memoria — detalle en [`h03.md`](h03.md) |
 | [model-deployments](model-deployments.md) | Catálogo de despliegues de modelo (sin ficha) | 🔴 | `ModelDeploymentController.listAdapters` devuelve proveedores hardcodeados — **sin tocar**, es otro catálogo (por curso), no el `function_model_config` de H10 |
 
