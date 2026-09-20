@@ -24,6 +24,35 @@ class RagGatewayAuthorizationTest {
   }
 
   @Test
+  void inWorkbenchModeStillValidatesRequestsThatCarryGatewayIdentity() {
+    var authorization = new RagGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE, true, UUID.randomUUID());
+    var headers = new HttpHeaders();
+    headers.set("X-Service-Id", "another-service");
+    headers.set("X-Service-Scopes", REQUIRED_SCOPE);
+    headers.set("X-Delegated-User", UUID.randomUUID().toString());
+
+    assertThatThrownBy(() -> authorization.require(headers))
+        .isInstanceOf(ResponseStatusException.class)
+        .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+            .isEqualTo(org.springframework.http.HttpStatus.UNAUTHORIZED));
+  }
+
+  @Test
+  void inWorkbenchModeAcceptsATrustedServiceThatCarriesItsScope() {
+    var authorization = new RagGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE, true, UUID.randomUUID());
+    UUID delegatedUser = UUID.randomUUID();
+    var headers = new HttpHeaders();
+    headers.set("X-Service-Id", TRUSTED_SERVICE);
+    headers.set("X-Service-Scopes", REQUIRED_SCOPE);
+    headers.set("X-Delegated-User", delegatedUser.toString());
+
+    var actor = authorization.require(headers);
+
+    assertThat(actor.serviceId()).isEqualTo(TRUSTED_SERVICE);
+    assertThat(actor.delegatedUserId()).isEqualTo(delegatedUser);
+  }
+
+  @Test
   void acceptsATrustedServiceWithTheRequiredScope() {
     var authorization = new RagGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE, false, UUID.randomUUID());
     UUID delegatedUser = UUID.randomUUID();

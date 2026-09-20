@@ -68,33 +68,38 @@ public class RagController {
   public ResponseEntity<RagDocument> uploadSample(@RequestParam UUID courseCohortId,
       @RequestHeader("Idempotency-Key") UUID idempotencyKey, @RequestHeader HttpHeaders headers) throws IOException {
     CallerIdentity actor = authorization.require(headers);
+    courseAuthorization.requireTeacher(courseCohortId, actor, headers);
     RagDocument document = ingestion.uploadSample(courseCohortId, idempotencyKey, actor);
     return ResponseEntity.status(HttpStatus.CREATED).body(document);
   }
 
   @DeleteMapping("/documents/{id}")
   public ResponseEntity<Void> deleteDocument(@PathVariable UUID id, @RequestHeader HttpHeaders headers) {
-    authorization.require(headers);
+    CallerIdentity actor = authorization.require(headers);
+    authorizeDocument(id, actor, headers);
     ingestion.deactivate(id);
     return ResponseEntity.noContent().build();
   }
 
   @GetMapping("/documents/{id}/chunks")
   public List<DocumentChunk> chunks(@PathVariable UUID id, @RequestHeader HttpHeaders headers) {
-    authorization.require(headers);
+    CallerIdentity actor = authorization.require(headers);
+    authorizeDocument(id, actor, headers);
     return ingestion.getChunks(id);
   }
 
   @GetMapping("/documents/{id}/images")
   public List<ImageDetection> images(@PathVariable UUID id, @RequestHeader HttpHeaders headers) {
-    authorization.require(headers);
+    CallerIdentity actor = authorization.require(headers);
+    authorizeDocument(id, actor, headers);
     byte[] bytes = resolvePdfBytesOrThrow(id);
     return ingestion.detectImages(bytes);
   }
 
   @PostMapping("/documents/{id}/images/{imageIndex}/decode")
   public DiagramDecodeResult decodeImage(@PathVariable UUID id, @PathVariable int imageIndex, @RequestHeader HttpHeaders headers) {
-    authorization.require(headers);
+    CallerIdentity actor = authorization.require(headers);
+    authorizeDocument(id, actor, headers);
     byte[] bytes = resolvePdfBytesOrThrow(id);
     return ingestion.decodeImage(bytes, imageIndex);
   }
@@ -102,7 +107,8 @@ public class RagController {
   @PostMapping("/documents/{id}/diagrams")
   public ResponseEntity<Void> indexDiagram(@PathVariable UUID id, @RequestBody DiagramDecodeResult result,
       @RequestHeader HttpHeaders headers) {
-    authorization.require(headers);
+    CallerIdentity actor = authorization.require(headers);
+    authorizeDocument(id, actor, headers);
     ingestion.indexDiagram(id, result);
     return ResponseEntity.status(HttpStatus.CREATED).build();
   }
@@ -111,9 +117,18 @@ public class RagController {
   public RagChatService.Response chat(@RequestBody ChatRequest body,
       @RequestHeader("Idempotency-Key") UUID idempotencyKey, @RequestHeader HttpHeaders headers) {
     var actor = authorization.require(headers);
+    courseAuthorization.requireTeacher(body.courseCohortId(), actor, headers);
     var request = new RagChatService.Request(body.courseCohortId(), body.learnerId(), body.documentIds(),
         body.pregunta(), body.conversacionId());
     return chat.responder(request, idempotencyKey, actor);
+  }
+
+  /** Resuelve la fuente por id y exige que el actor sea docente del curso dueno de esa fuente:
+   * sin esto cualquier docente autenticado podia operar sobre documentos de otro curso (IDOR). */
+  private void authorizeDocument(UUID id, CallerIdentity actor, HttpHeaders headers) {
+    RagDocument document = ingestion.get(id)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Fuente no encontrada: " + id));
+    courseAuthorization.requireTeacher(document.courseCohortId(), actor, headers);
   }
 
   private byte[] resolvePdfBytesOrThrow(UUID id) {

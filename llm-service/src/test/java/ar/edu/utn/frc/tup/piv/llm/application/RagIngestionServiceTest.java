@@ -24,11 +24,13 @@ import ar.edu.utn.frc.tup.piv.llm.infrastructure.persistence.RagDocumentReposito
 import ar.edu.utn.frc.tup.piv.llm.security.CallerIdentity;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.server.ResponseStatusException;
 
 class RagIngestionServiceTest {
   private final CallerIdentity actor = new CallerIdentity("practice-service", UUID.randomUUID(), null, null);
@@ -56,11 +58,17 @@ class RagIngestionServiceTest {
     var embeddings = mock(EmbeddingInvocationService.class);
     when(embeddings.embedBatch(anyList(), any())).thenReturn(List.of(new EmbeddingResult(new float[768], "fake", "fake-embedding-768")));
 
-    var service = buildService(extractor, diagrams, vectorStore, documents, embeddings);
-    RagDocument result = service.upload(UUID.randomUUID(), "docker.pdf", "contenido pdf simulado".getBytes(), UUID.randomUUID(), actor);
+    UUID courseCohortId = UUID.randomUUID();
+    RagIngestionService service = buildService(extractor, diagrams, vectorStore, documents, embeddings);
+    RagDocument result = service.upload(courseCohortId, "docker.pdf", "contenido pdf simulado".getBytes(),
+        UUID.randomUUID(), actor);
 
     assertThat(result.fileName()).isEqualTo("docker.pdf");
+    assertThat(result.courseCohortId()).isEqualTo(courseCohortId);
+    assertThat(result.pageCount()).isEqualTo(1);
     assertThat(result.chunkCount()).isEqualTo(1);
+    assertThat(result.previewText()).isNotBlank();
+    assertThat(result.active()).isTrue();
     verify(vectorStore).indexChunks(any(), anyList(), anyList());
   }
 
@@ -84,6 +92,32 @@ class RagIngestionServiceTest {
     org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(documents, vectorStore);
     inOrder.verify(documents).save(any(), any());
     inOrder.verify(vectorStore).indexChunks(any(), anyList(), anyList());
+  }
+
+  @Test
+  void uploadDoesNotAbortIndexingWhenAnIndividualChunkEmbeddingIsNull() throws Exception {
+    String pageText = "Contenido de la página uno, con longitud suficiente (más de 100 caracteres) para "
+        + "que TextChunker no descarte el fragmento por ser demasiado corto.";
+    PdfTextExtractionPort extractor = mock(PdfTextExtractionPort.class);
+    when(extractor.extractTextWithPages(any()))
+        .thenReturn(new ExtractedPdf(2, List.of(new ExtractedPage(1, pageText), new ExtractedPage(2, pageText)), pageText));
+    DiagramDetectionPort diagrams = mock(DiagramDetectionPort.class);
+    when(diagrams.detectImages(any())).thenReturn(List.of());
+    VectorStorePort vectorStore = mock(VectorStorePort.class);
+    RagDocumentRepository documents = mock(RagDocumentRepository.class);
+    when(documents.save(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
+    EmbeddingInvocationService embeddings = mock(EmbeddingInvocationService.class);
+    when(embeddings.embedBatch(anyList(), any())).thenReturn(List.of(
+        new EmbeddingResult(new float[768], "fake", "fake-embedding-768"),
+        new EmbeddingResult(null, "fake", "fake-embedding-768")));
+
+    RagIngestionService service = buildService(extractor, diagrams, vectorStore, documents, embeddings);
+    RagDocument result = service.upload(UUID.randomUUID(), "docker.pdf", "contenido pdf simulado".getBytes(), UUID.randomUUID(), actor);
+
+    // Un vector nulo en un chunk individual no aborta el resto de la indexación.
+    assertThat(result.chunkCount()).isEqualTo(2);
+    verify(vectorStore).indexChunks(any(), anyList(), anyList());
+    verify(documents).save(any(), any());
   }
 
   @Test
@@ -186,16 +220,45 @@ class RagIngestionServiceTest {
   }
 
   @Test
-  void deactivateMarksAnExistingDocumentAsInactive() {
+  void getPdfBytesIsEmptyWhenTheStoredBytesAreNull() {
+    // CA3/robustez: un pdf_bytes NULL en la fila no debe provocar un NPE en Optional.map.
     var documents = mock(RagDocumentRepository.class);
     UUID id = UUID.randomUUID();
     when(documents.findById(id)).thenReturn(Optional.of(sampleDocument(id)));
+    when(documents.getPdfBytes(id)).thenReturn(null);
     var service = buildService(mock(PdfTextExtractionPort.class), mock(DiagramDetectionPort.class),
+        mock(VectorStorePort.class), documents, mock(EmbeddingInvocationService.class));
+
+    assertThat(service.getPdfBytes(id)).isEmpty();
+  }
+
+  @Test
+  void uploadRejectsANonPdfFileWithUnprocessableEntity() throws Exception {
+    var extractor = mock(PdfTextExtractionPort.class);
+    when(extractor.extractTextWithPages(any())).thenThrow(new IOException("Not a PDF"));
+    var service = buildService(extractor, mock(DiagramDetectionPort.class), mock(VectorStorePort.class),
+        mock(RagDocumentRepository.class), mock(EmbeddingInvocationService.class));
+
+    assertThatThrownBy(() -> service.upload(UUID.randomUUID(), "fake.pdf", "no soy un pdf".getBytes(),
+        UUID.randomUUID(), actor))
+        .isInstanceOf(ResponseStatusException.class)
+        .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode().value()).isEqualTo(422));
+  }
+
+  @Test
+  void deactivateMarksAnExistingDocumentAsInactive() {
+    RagDocumentRepository documents = mock(RagDocumentRepository.class);
+    UUID id = UUID.randomUUID();
+    RagDocument document = sampleDocument(id);
+    when(documents.findById(id)).thenReturn(Optional.of(document));
+    RagIngestionService service = buildService(mock(PdfTextExtractionPort.class), mock(DiagramDetectionPort.class),
         mock(VectorStorePort.class), documents, mock(EmbeddingInvocationService.class));
 
     service.deactivate(id);
 
+    // Borrado lógico: se marca inactiva para excluirla de búsquedas nuevas, pero el registro se conserva.
     verify(documents).deactivate(id);
+    assertThat(documents.findById(id)).isPresent();
   }
 
   @Test

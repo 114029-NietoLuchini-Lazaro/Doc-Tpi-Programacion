@@ -31,10 +31,14 @@ public class RagGatewayAuthorization {
   }
 
   public CallerIdentity require(HttpHeaders headers) {
-    if (workbench) {
+    String serviceId = headers.getFirst("X-Service-Id");
+    // Defensa en profundidad: el modo workbench solo se confia para peticiones locales que NO
+    // traen identidad M2M del gateway. Si la peticion si trae `X-Service-Id`, se valida como
+    // cualquier otra: un workbench habilitado por error en un despliegue no abre /rag/** a un
+    // servicio que no presente el scope requerido.
+    if (workbench && serviceId == null) {
       return new CallerIdentity("workbench", workbenchUser, headers.getFirst("X-Request-Id"), headers.getFirst("traceparent"));
     }
-    String serviceId = headers.getFirst("X-Service-Id");
     String scopes = headers.getFirst("X-Service-Scopes");
     String delegated = headers.getFirst("X-Delegated-User");
     if (!trustedService.equals(serviceId) || scopes == null

@@ -97,6 +97,7 @@ class RagControllerTest {
     assertThat(response.getStatusCode().value()).isEqualTo(201);
     assertThat(response.getBody()).isEqualTo(expected);
     verify(authorization).require(headers);
+    verify(courses).requireTeacher(courseCohortId, actor, headers);
     verify(ingestion).uploadSample(courseCohortId, idempotencyKey, actor);
   }
 
@@ -132,17 +133,56 @@ class RagControllerTest {
   void authorizesBeforeDeletingADocument() {
     var ingestion = mock(RagIngestionService.class);
     var authorization = mock(RagGatewayAuthorization.class);
+    var courses = mock(CourseAuthorization.class);
     var headers = new HttpHeaders();
     when(authorization.require(headers)).thenReturn(actor);
     UUID id = UUID.randomUUID();
-    RagController controller = new RagController(ingestion, mock(RagChatService.class), authorization, mock(CourseAuthorization.class));
+    var document = document(id);
+    when(ingestion.get(id)).thenReturn(Optional.of(document));
+    RagController controller = new RagController(ingestion, mock(RagChatService.class), authorization, courses);
 
     var response = controller.deleteDocument(id, headers);
 
     assertThat(response.getStatusCode().value()).isEqualTo(204);
-    var order = Mockito.inOrder(authorization, ingestion);
+    var order = Mockito.inOrder(authorization, courses, ingestion);
     order.verify(authorization).require(headers);
+    order.verify(courses).requireTeacher(document.courseCohortId(), actor, headers);
     order.verify(ingestion).deactivate(id);
+  }
+
+  @Test
+  void deleteRejectsADocumentFromAnotherCourseAndDoesNotDeactivateIt() {
+    var ingestion = mock(RagIngestionService.class);
+    var authorization = mock(RagGatewayAuthorization.class);
+    var courses = mock(CourseAuthorization.class);
+    var headers = new HttpHeaders();
+    when(authorization.require(headers)).thenReturn(actor);
+    UUID id = UUID.randomUUID();
+    when(ingestion.get(id)).thenReturn(Optional.of(document(id)));
+    org.mockito.Mockito.doThrow(new ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN))
+        .when(courses).requireTeacher(any(UUID.class), any(CallerIdentity.class), any(HttpHeaders.class));
+    RagController controller = new RagController(ingestion, mock(RagChatService.class), authorization, courses);
+
+    assertThatThrownBy(() -> controller.deleteDocument(id, headers))
+        .isInstanceOf(ResponseStatusException.class);
+    verify(ingestion, never()).deactivate(any());
+  }
+
+  @Test
+  void documentScopedEndpointsReturn404WhenTheDocumentDoesNotExist() {
+    var ingestion = mock(RagIngestionService.class);
+    var authorization = mock(RagGatewayAuthorization.class);
+    var headers = new HttpHeaders();
+    when(authorization.require(headers)).thenReturn(actor);
+    UUID id = UUID.randomUUID();
+    when(ingestion.get(id)).thenReturn(Optional.empty());
+    RagController controller = new RagController(ingestion, mock(RagChatService.class), authorization, mock(CourseAuthorization.class));
+
+    assertThatThrownBy(() -> controller.chunks(id, headers)).isInstanceOf(ResponseStatusException.class);
+    assertThatThrownBy(() -> controller.images(id, headers)).isInstanceOf(ResponseStatusException.class);
+    assertThatThrownBy(() -> controller.decodeImage(id, 0, headers)).isInstanceOf(ResponseStatusException.class);
+    assertThatThrownBy(() -> controller.indexDiagram(id, DiagramDecodeResult.vacio(0), headers))
+        .isInstanceOf(ResponseStatusException.class);
   }
 
   @Test
@@ -152,6 +192,7 @@ class RagControllerTest {
     var headers = new HttpHeaders();
     when(authorization.require(headers)).thenReturn(actor);
     UUID id = UUID.randomUUID();
+    when(ingestion.get(id)).thenReturn(Optional.of(document(id)));
     var expected = List.of(new DocumentChunk(UUID.randomUUID(), id, "doc.pdf", 1, 0, "contenido", 0.0));
     when(ingestion.getChunks(id)).thenReturn(expected);
     RagController controller = new RagController(ingestion, mock(RagChatService.class), authorization, mock(CourseAuthorization.class));
@@ -166,6 +207,7 @@ class RagControllerTest {
     var headers = new HttpHeaders();
     when(authorization.require(headers)).thenReturn(actor);
     UUID id = UUID.randomUUID();
+    when(ingestion.get(id)).thenReturn(Optional.of(document(id)));
     byte[] bytes = "pdf".getBytes();
     when(ingestion.getPdfBytes(id)).thenReturn(Optional.of(bytes));
     var expected = List.of(new ImageDetection(0, 1, 200, 200, "png", "data:...", "Figura 1"));
@@ -182,6 +224,7 @@ class RagControllerTest {
     var headers = new HttpHeaders();
     when(authorization.require(headers)).thenReturn(actor);
     UUID id = UUID.randomUUID();
+    when(ingestion.get(id)).thenReturn(Optional.of(document(id)));
     when(ingestion.getPdfBytes(id)).thenReturn(Optional.empty());
     RagController controller = new RagController(ingestion, mock(RagChatService.class), authorization, mock(CourseAuthorization.class));
 
@@ -198,6 +241,7 @@ class RagControllerTest {
     var headers = new HttpHeaders();
     when(authorization.require(headers)).thenReturn(actor);
     UUID id = UUID.randomUUID();
+    when(ingestion.get(id)).thenReturn(Optional.of(document(id)));
     byte[] bytes = "pdf".getBytes();
     when(ingestion.getPdfBytes(id)).thenReturn(Optional.of(bytes));
     var expected = DiagramDecodeResult.vacio(0);
@@ -214,6 +258,7 @@ class RagControllerTest {
     var headers = new HttpHeaders();
     when(authorization.require(headers)).thenReturn(actor);
     UUID id = UUID.randomUUID();
+    when(ingestion.get(id)).thenReturn(Optional.of(document(id)));
     var result = DiagramDecodeResult.vacio(0);
     RagController controller = new RagController(ingestion, mock(RagChatService.class), authorization, mock(CourseAuthorization.class));
 
@@ -227,20 +272,26 @@ class RagControllerTest {
   void authorizesBeforeChatting() {
     var chat = mock(RagChatService.class);
     var authorization = mock(RagGatewayAuthorization.class);
+    var courses = mock(CourseAuthorization.class);
     var headers = new HttpHeaders();
     when(authorization.require(headers)).thenReturn(actor);
     var idempotencyKey = UUID.randomUUID();
     var body = new RagController.ChatRequest(UUID.randomUUID(), UUID.randomUUID(), List.of(UUID.randomUUID()), "¿qué es Docker?", null);
     var expected = new RagChatService.Response("respuesta", "OK", null, 5, false, "Profesor Tutor Pedagógico", List.of(), UUID.randomUUID());
     when(chat.responder(any(), org.mockito.ArgumentMatchers.eq(idempotencyKey), org.mockito.ArgumentMatchers.eq(actor))).thenReturn(expected);
-    RagController controller = new RagController(mock(RagIngestionService.class), chat, authorization, mock(CourseAuthorization.class));
+    RagController controller = new RagController(mock(RagIngestionService.class), chat, authorization, courses);
 
     var response = controller.chat(body, idempotencyKey, headers);
 
     assertThat(response).isEqualTo(expected);
-    var order = Mockito.inOrder(authorization, chat);
+    var order = Mockito.inOrder(authorization, courses, chat);
     order.verify(authorization).require(headers);
+    order.verify(courses).requireTeacher(body.courseCohortId(), actor, headers);
     order.verify(chat).responder(any(), org.mockito.ArgumentMatchers.eq(idempotencyKey), org.mockito.ArgumentMatchers.eq(actor));
+  }
+
+  private RagDocument document(UUID id) {
+    return new RagDocument(id, UUID.randomUUID(), "doc.pdf", 100, 1, 1, OffsetDateTime.now(), "preview", true);
   }
 
   private RagDocument sampleDocument() {
