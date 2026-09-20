@@ -2,10 +2,10 @@
 
 > **Para quién:** el equipo de Tema 05. **Estado:** vigente y probable hoy contra el modo test (bot
 > `fake`, sin modelo real). **Garantía:** este contrato **no cambia** cuando pasemos al modelo real.
-> El detalle histórico (diagramas, presupuestos, decisiones de diseño) sigue en
-> [`tema-05-desafios-practicos.md`](tema-05-desafios-practicos.md); lo ejecutable está en el
-> [OpenAPI](../llm-service.openapi.yaml) (`/tutor/interactions`) y el
-> [AsyncAPI](../llm-service.asyncapi.yaml) (`practice-events`, `evaluation-events`).
+> Este documento se entiende solo. Lo ejecutable, para validar contra un cliente o un consumidor,
+> está en el [OpenAPI](../llm-service.openapi.yaml) (`/tutor/interactions`) y el
+> [AsyncAPI](../llm-service.asyncapi.yaml) (`practice-events`, `evaluation-events`); si lo reciben
+> como archivos sueltos, los dos acompañan a este.
 
 ## Por qué no cambia al pasar al servicio real
 
@@ -19,7 +19,7 @@ Lo único que cambia es el **contenido** de lo que devolvemos, nunca su forma:
 | El texto del tutor (hoy una pregunta socrática fija) | Rutas, verbos, headers, scope |
 | Los puntajes (hoy 55-95 por hash del prompt) | Campos y tipos de request, response y eventos |
 | `evaluator.provider` / `evaluator.model` (hoy `fake` / `fake-evaluator-v1`); tratarlos como texto opaco | Códigos HTTP y forma del error |
-| La latencia y la posibilidad real de `state: unavailable` / `SCORE-DEFERRED` | Topics, `eventType`, Message Key, `eventVersion` |
+| La latencia y la posibilidad real de `state: unavailable` / `SCORE-DEFERRED` | Topics (una vez acordados), `eventType`, Message Key, `eventVersion` |
 
 ## 1. Tutor (HTTP)
 
@@ -107,6 +107,11 @@ cuota) trátenlo como fallo.
 
 Ustedes publican el cierre del intento y nosotros devolvemos el score. Envelope estándar de la
 plataforma (`eventId`, `eventType`, `eventVersion`, `timestamp`, `producer`, `payload`).
+
+> **Los nombres de topic son una propuesta nuestra.** `practice-events` y `evaluation-events` no
+> figuran todavía en la tabla de dominios del [estándar de Kafka](../KAFKA_EVENT_STANDARD.md) (§17), que
+> hoy lista `challenge-events` y otros. Hay que acordarlos con ustedes y registrarlos ahí. Si
+> ustedes ya publican en otro topic, lo cambiamos en nuestra configuración sin tocar los campos.
 
 ### Entrada: `ATTEMPT-CLOSED` en `practice-events`
 
@@ -197,7 +202,8 @@ Cada decisión se puede cambiar sin tocar el contrato salvo donde se indica.
 | D5 | El score sale por Kafka a ustedes; nunca hablamos directo con Tema 03 | Decisión del 2026-09-13 |
 | D6 | Message Key de `evaluation-events`: `courseCohortId` | Ordena los scores de una cohorte |
 | D7 | Rúbrica única (la plantilla institucional) para todas las cohortes hasta que exista un mapa cohorte → curso | Es interno; lo único visible es `rubricVersionId` en la respuesta, que ya viaja |
-| D8 | Nombres, tipos y `eventVersion: 1` de los eventos como figuran en el AsyncAPI | Un cambio incompatible sería `eventVersion: 2`, con aviso previo |
+| D8 | Campos, tipos, `eventType` y `eventVersion: 1` de los eventos como figuran en el AsyncAPI | Un cambio incompatible sería `eventVersion: 2`, con aviso previo |
+| D9 | Los nombres de topic (`practice-events`, `evaluation-events`) son una propuesta a acordar | Cambiarlos es configuración nuestra y de ustedes; no altera los campos de los eventos |
 
 ## 4. Cómo va a evolucionar (sin romper)
 
@@ -218,14 +224,17 @@ Cada decisión se puede cambiar sin tocar el contrato salvo donde se indica.
 
 ## 6. Qué necesitamos que nos confirmen (ninguno cambia el contrato)
 
-1. **Broker.** A qué Kafka y en qué ambiente se conectan; el del compose de `llm-service` es solo local.
-2. **Payload de score.** Que `SCORE-CALCULATED` y `SCORE-DEFERRED` les sirven tal cual están.
-3. **Transcript.** Que pueden armar `{role, content}` como se recomienda arriba.
-4. **Message Key** de `practice-events`, si tienen una preferencia de orden.
-5. **Solución esperada.** Que aceptan mandarla en `expectedSolution` (o avisan si prefieren otro camino;
+1. **Topics.** Que `practice-events` (entrada) y `evaluation-events` (salida) les sirven como nombre, o
+   en qué topic publican hoy. Los registramos juntos en el estándar.
+2. **Broker.** A qué Kafka y en qué ambiente se conectan; el del compose de `llm-service` es solo
+   local. Nosotros y ustedes tenemos que usar el mismo.
+3. **Payload de score.** Que `SCORE-CALCULATED` y `SCORE-DEFERRED` les sirven tal cual están.
+4. **Transcript.** Que pueden armar `{role, content}` como se recomienda arriba.
+5. **Message Key** de `practice-events`, si tienen una preferencia de orden.
+6. **Solución esperada.** Que aceptan mandarla en `expectedSolution` (o avisan si prefieren otro camino;
    sería un cambio de contrato y hay que decidirlo antes de integrar).
-6. **Evento del IDE.** Quién lo genera, ustedes o Tema 06.
-7. **Pantalla de tutor no disponible.** Qué muestran cuando llega `state: unavailable`.
+7. **Evento del IDE.** Quién lo genera, ustedes o Tema 06.
+8. **Pantalla de tutor no disponible.** Qué muestran cuando llega `state: unavailable`.
 
 ## 7. Cómo probar la conexión
 

@@ -98,7 +98,27 @@ se agregan acá todos los temas nuevos que salgan de la charla.
   (`AttemptEvaluationService`, con IT sobre Kafka embebido). Queda que Tema 05 valide el payload.
 - [ ] **Cohorte → curso → rúbrica:** el evento trae `courseCohortId` y no hay mapa a curso, así que se
   evalúa siempre con la plantilla institucional. Definir de dónde sale la rúbrica activa del curso.
+- [ ] **Nombres de topic:** `practice-events` y `evaluation-events` son nuestros; el estándar
+  ([KAFKA_EVENT_STANDARD §17](../../../contracts/KAFKA_EVENT_STANDARD.md)) lista `challenge-events` y otros, sin ellos.
+  Acordarlos con Tema 05 y registrarlos en esa tabla.
 - [ ] _(agregar acá lo que surja)_
+
+## 🔴 Pedido al responsable del broker Kafka (infraestructura, no contrato)
+
+Sin esto no podemos publicar ni consumir fuera de nuestro compose local (`kafka:9092`). No hay
+ningún responsable nombrado en los docs; hay que averiguar quién es.
+
+- [ ] **Bootstrap servers** y alcance de red desde el contenedor de `llm-service` (red `tpi-platform`);
+  se configuran con `KAFKA_BOOTSTRAP_SERVERS`.
+- [ ] **Seguridad:** si el broker exige TLS o SASL, y las credenciales. Nuestra configuración no tiene
+  nada de seguridad hoy (PLAINTEXT), hay que sumarlo.
+- [ ] **Creación de topics:** nosotros no los creamos (no hay `KafkaAdmin`). Si el broker no tiene
+  autocreación, hay que crearlos: `practice-events`, `evaluation-events`, `moderation-events`,
+  `calibration-events` y las colas de fallos `<topic>.dlt` (p. ej. `practice-events.dlt`), con su
+  cantidad de particiones, replicación y retención.
+- [ ] **Permisos (ACL), si hay:** escribir en nuestros topics, leer `practice-events`, escribir
+  `practice-events.dlt` y usar el consumer group `llm-service`.
+- [ ] **Ambientes:** cuál es el de pruebas de Tema 05 y cuál el de producción.
 
 ## 🟢 Integración en modo test — disponible hoy
 
