@@ -1,6 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.adapter.out.ai;
 
 import ar.edu.utn.frc.tup.piv.llm.provider.spi.AiProviderAdapter;
+import ar.edu.utn.frc.tup.piv.llm.provider.spi.ProviderException;
 import ar.edu.utn.frc.tup.piv.llm.provider.spi.ProviderDescriptor;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,8 +26,14 @@ public class ProviderRegistry {
   }
 
   public AiProviderAdapter required(String providerKey) {
-    var adapter = adapters.get(normalize(providerKey));
-    if (adapter == null) throw new IllegalArgumentException("El proveedor no está instalado: " + providerKey);
+    String key;
+    try {
+      key = normalize(providerKey);
+    } catch (IllegalArgumentException exception) {
+      throw new ProviderException("INVALID_PROVIDER", "providerKey inválido", exception);
+    }
+    var adapter = adapters.get(key);
+    if (adapter == null) throw new ProviderException("PROVIDER_NOT_INSTALLED", "El proveedor no está instalado");
     return adapter;
   }
 

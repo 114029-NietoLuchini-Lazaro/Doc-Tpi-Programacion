@@ -3,6 +3,7 @@ package ar.edu.utn.frc.tup.piv.llm.application.service;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.InputGuard;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.InvalidModelResponseException;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelFunction;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationUnavailableException;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelTimeoutException;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.OutputAntiLeakGuard;
 import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.AuditRepository;
@@ -16,6 +17,8 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.HexFormat;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +36,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class TutorInteractionService {
   private static final String OPERATION = "tutor.interaction";
+  private static final Logger LOGGER = LoggerFactory.getLogger(TutorInteractionService.class);
+  private static final String UNAVAILABLE_MESSAGE =
+      "El tutor no está disponible en este momento. Podés seguir intentando el desafío mientras se restablece.";
 
   private final ModelInvocationService models;
   private final IdempotencyRepository idempotency;
@@ -106,10 +112,9 @@ public class TutorInteractionService {
     try {
       var result = models.invoke(ModelFunction.TUTOR, system, userPrompt, timeout);
       return new Response(result.text(), "completed");
-    } catch (ModelTimeoutException | InvalidModelResponseException exception) {
-      return new Response(
-          "El tutor no está disponible en este momento. Podés seguir intentando el desafío mientras se restablece.",
-          "unavailable");
+    } catch (ModelTimeoutException | InvalidModelResponseException | ModelInvocationUnavailableException exception) {
+      LOGGER.warn("El tutor no pudo obtener una respuesta del modelo: {}", exception.toString());
+      return new Response(UNAVAILABLE_MESSAGE, "unavailable");
     }
   }
 

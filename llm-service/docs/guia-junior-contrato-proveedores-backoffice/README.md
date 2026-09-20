@@ -165,8 +165,13 @@ La respuesta contiene `ModelDescriptor`. Backoffice usa `modelId` y `displayName
 POST /api/llm/admin/provider-credentials/{credentialId}/deployments
 Content-Type: application/json
 
-{ "modelId": "llama-3.3-70b-versatile", "slot": 1 }
+{ "modelId": "<id-devuelto-por-discover-models-y-validado-con-test-model>", "slot": 1 }
 ```
+
+No hardcodear un modelo Groq en el backoffice ni en el servicio: el `modelId` debe salir del
+descubrimiento del provider o de una selección explícita del admin y debe validarse con
+`/test-model` antes de asignarlo. Si Groq retira un modelo, el deployment quedará apuntando a un
+`modelId` no disponible y la invocación deberá fallar de forma controlada.
 
 Un deployment identifica el modelo que se prueba; una credencial identifica la cuenta del proveedor. Hay tres slots de candidatos, del 1 al 3.
 

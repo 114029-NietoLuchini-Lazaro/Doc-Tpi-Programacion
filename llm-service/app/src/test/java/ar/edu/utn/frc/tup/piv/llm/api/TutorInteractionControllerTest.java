@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import ar.edu.utn.frc.tup.piv.llm.application.service.TutorInteractionService;
 import ar.edu.utn.frc.tup.piv.llm.application.model.CallerIdentity;
 import ar.edu.utn.frc.tup.piv.llm.adapter.in.web.security.TutorGatewayAuthorization;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -58,5 +59,14 @@ class TutorInteractionControllerTest {
     var body = new TutorInteractionController.Request(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "  ", "low", null);
 
     assertThatThrownBy(() -> controller.create(body, UUID.randomUUID(), headers)).isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void tutorResponseDtoSerializationPreservesAngleBrackets() throws Exception {
+    var json = new ObjectMapper().writeValueAsString(
+        new TutorInteractionService.Response("Usá <div>hola</div>", "completed"));
+
+    assertThat(json).contains("<div>hola</div>");
+    assertThat(json).doesNotContain("u003c").doesNotContain("u003e");
   }
 }

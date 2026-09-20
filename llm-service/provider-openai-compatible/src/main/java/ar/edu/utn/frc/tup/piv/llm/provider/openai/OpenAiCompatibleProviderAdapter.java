@@ -12,11 +12,20 @@ import ar.edu.utn.frc.tup.piv.llm.provider.spi.ProviderInvocation;
 import ar.edu.utn.frc.tup.piv.llm.provider.spi.ProviderReply;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.langchain4j.exception.AuthenticationException;
+import dev.langchain4j.exception.HttpException;
+import dev.langchain4j.exception.InternalServerException;
+import dev.langchain4j.exception.InvalidRequestException;
+import dev.langchain4j.exception.ModelNotFoundException;
+import dev.langchain4j.exception.RateLimitException;
+import dev.langchain4j.exception.UnresolvedModelServerException;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -66,20 +75,78 @@ final class OpenAiCompatibleProviderAdapter implements AiProviderAdapter {
       if (settings.topP() != null) builder.topP(settings.topP());
       if (settings.seed() != null) builder.seed(Math.toIntExact(settings.seed()));
       return new ProviderReply(builder.build().chat(invocation.prompt()), 0, 0, null);
-    } catch (Exception exception) { throw new ProviderException("PROVIDER_INVOCATION_FAILED", "El proveedor OpenAI compatible no pudo responder", exception); }
+    } catch (ProviderException exception) { throw exception; }
+      catch (Exception exception) { throw classifyInvocationFailure(exception); }
+  }
+
+  ProviderException classifyInvocationFailure(Exception exception) {
+    if (exception instanceof dev.langchain4j.exception.TimeoutException
+        || exception instanceof HttpTimeoutException
+        || exception instanceof java.util.concurrent.TimeoutException) {
+      return new ProviderException("PROVIDER_TIMEOUT", "El proveedor no respondió antes del timeout", exception);
+    }
+    if (exception instanceof AuthenticationException) {
+      return new ProviderException("PROVIDER_AUTHENTICATION_FAILED", "El proveedor rechazó la credencial", exception);
+    }
+    if (exception instanceof ModelNotFoundException) {
+      return new ProviderException("PROVIDER_MODEL_NOT_FOUND", "El modelo no está disponible en el proveedor", exception);
+    }
+    if (exception instanceof InvalidRequestException) {
+      return new ProviderException("PROVIDER_INVALID_REQUEST", "El proveedor rechazó el pedido o el modelo", exception);
+    }
+    if (exception instanceof RateLimitException) {
+      return new ProviderException("PROVIDER_RATE_LIMITED", "El proveedor aplicó límite de uso", exception);
+    }
+    if (exception instanceof InternalServerException || exception instanceof UnresolvedModelServerException) {
+      return new ProviderException("PROVIDER_UNAVAILABLE", "El proveedor no está disponible", exception);
+    }
+    if (exception instanceof HttpException http) {
+      return httpFailure(http.statusCode(), exception);
+    }
+    if (exception instanceof IOException) {
+      return new ProviderException("PROVIDER_CONNECTION_FAILED", "No se pudo conectar con el proveedor", exception);
+    }
+    return new ProviderException("PROVIDER_INVOCATION_FAILED", "El proveedor OpenAI compatible no pudo responder", exception);
   }
 
   private String baseUrl(ProviderCredentialMaterial credential) {
     String value = credential.configuration("baseUrl").replaceFirst("/+$", "");
     return value.endsWith("/v1") ? value : value + "/v1";
   }
+
   private String send(HttpRequest request) {
     try {
       HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
       if (response.statusCode() < 200 || response.statusCode() >= 300)
-        throw new ProviderException("PROVIDER_HTTP_" + response.statusCode(), "El proveedor respondió HTTP " + response.statusCode());
+        throw httpFailure(response.statusCode(), null);
       return response.body();
     } catch (ProviderException exception) { throw exception; }
-      catch (Exception exception) { throw new ProviderException("PROVIDER_CONNECTION_FAILED", "No se pudo conectar con el proveedor", exception); }
+      catch (HttpTimeoutException exception) { throw classifyInvocationFailure(exception); }
+      catch (IOException exception) { throw classifyInvocationFailure(exception); }
+      catch (InterruptedException exception) {
+        Thread.currentThread().interrupt();
+        throw new ProviderException("PROVIDER_INTERRUPTED", "La comunicación con el proveedor fue interrumpida", exception);
+      }
+  }
+
+  private ProviderException httpFailure(int statusCode, Throwable cause) {
+    String code = switch (statusCode) {
+      case 401, 403 -> "PROVIDER_AUTHENTICATION_FAILED";
+      case 400 -> "PROVIDER_INVALID_REQUEST";
+      case 404 -> "PROVIDER_HTTP_404";
+      case 408, 504 -> "PROVIDER_TIMEOUT";
+      case 429 -> "PROVIDER_RATE_LIMITED";
+      default -> statusCode >= 500 ? "PROVIDER_UNAVAILABLE" : "PROVIDER_HTTP_" + statusCode;
+    };
+    String message = switch (code) {
+      case "PROVIDER_AUTHENTICATION_FAILED" -> "El proveedor rechazó la credencial";
+      case "PROVIDER_INVALID_REQUEST" -> "El proveedor rechazó el pedido o el modelo";
+      case "PROVIDER_MODEL_NOT_FOUND" -> "El modelo no está disponible en el proveedor";
+      case "PROVIDER_TIMEOUT" -> "El proveedor no respondió antes del timeout";
+      case "PROVIDER_RATE_LIMITED" -> "El proveedor aplicó límite de uso";
+      case "PROVIDER_UNAVAILABLE" -> "El proveedor no está disponible";
+      default -> "El proveedor respondió HTTP " + statusCode;
+    };
+    return cause == null ? new ProviderException(code, message) : new ProviderException(code, message, cause);
   }
 }

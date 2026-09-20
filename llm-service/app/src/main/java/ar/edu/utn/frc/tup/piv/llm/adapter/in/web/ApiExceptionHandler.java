@@ -1,6 +1,8 @@
 package ar.edu.utn.frc.tup.piv.llm.adapter.in.web;
 
 import ar.edu.utn.frc.tup.piv.llm.application.service.RubricDraftService.OptimisticLockException;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationUnavailableException;
+import ar.edu.utn.frc.tup.piv.llm.provider.spi.ProviderException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -25,6 +27,17 @@ public class ApiExceptionHandler {
   ProblemDetail staleDraft(OptimisticLockException exception, HttpServletRequest request) { return problem(HttpStatus.CONFLICT, exception.getMessage(), request); }
   @ExceptionHandler(IllegalStateException.class)
   ProblemDetail conflict(IllegalStateException exception, HttpServletRequest request) { return problem(HttpStatus.CONFLICT, exception.getMessage(), request); }
+  @ExceptionHandler(ModelInvocationUnavailableException.class)
+  ProblemDetail modelUnavailable(ModelInvocationUnavailableException exception, HttpServletRequest request) {
+    return problem(HttpStatus.SERVICE_UNAVAILABLE, "El servicio de modelos no está disponible temporalmente", request);
+  }
+  @ExceptionHandler(ProviderException.class)
+  ProblemDetail providerUnavailable(ProviderException exception, HttpServletRequest request) {
+    HttpStatus status = providerStatus(exception.code());
+    ProblemDetail problem = problem(status, providerDetail(status), request);
+    problem.setProperty("provider_code", exception.code());
+    return problem;
+  }
   @ExceptionHandler(DataIntegrityViolationException.class)
   ProblemDetail invalidData(DataIntegrityViolationException exception, HttpServletRequest request) {
     String cause = exception.getMostSpecificCause().getMessage();
@@ -40,5 +53,23 @@ public class ApiExceptionHandler {
     ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
     problem.setProperty("requestId", request.getHeader("X-Request-Id"));
     return problem;
+  }
+
+  private HttpStatus providerStatus(String code) {
+    if (code == null) return HttpStatus.SERVICE_UNAVAILABLE;
+    return switch (code) {
+      case "INVALID_PROVIDER", "PROVIDER_NOT_INSTALLED", "INVALID_CONFIGURATION", "INVALID_CREDENTIAL",
+          "PROVIDER_AUTHENTICATION_FAILED", "PROVIDER_INVALID_REQUEST", "PROVIDER_MODEL_NOT_FOUND" ->
+          HttpStatus.UNPROCESSABLE_ENTITY;
+      default -> code.startsWith("PROVIDER_HTTP_4")
+          ? HttpStatus.UNPROCESSABLE_ENTITY
+          : HttpStatus.SERVICE_UNAVAILABLE;
+    };
+  }
+
+  private String providerDetail(HttpStatus status) {
+    return status == HttpStatus.UNPROCESSABLE_ENTITY
+        ? "La configuración o solicitud del proveedor no es válida"
+        : "El proveedor de modelos no está disponible temporalmente";
   }
 }

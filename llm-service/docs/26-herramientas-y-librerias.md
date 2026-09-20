@@ -94,7 +94,7 @@ Este es un **índice**, no la fuente de verdad de ninguna de las dos cosas que m
 | **Google Gemini** | 3.5 Flash-Lite | Tutor · Generador · descripción de imágenes en la ingesta | [03 §1](03-modelos-costos-y-contexto.md) |
 | **Anthropic** | Claude Haiku 4.5 (+ Batch) | Evaluador · Corrector | [03 §1](03-modelos-costos-y-contexto.md) · [ADR-010](08-decisiones-y-pendientes.md) |
 | **OpenAI** | `omni-moderation-latest` (gratis) | Residuo del moderador que la capa clásica no resuelve | [ADR-012](08-decisiones-y-pendientes.md) |
-| **Groq** | `llama-3.3-70b-versatile` | Solo en las demos (API compatible con OpenAI) | [codigo-ejemplo/README (preservado)](estado-implementacion/codigo-ejemplo/fuentes/README.md) |
+| **Groq** | Modelo elegido por deployment y validado contra `/models` / `/test-model` | Solo en las demos (API compatible con OpenAI) | [codigo-ejemplo/README (preservado)](estado-implementacion/codigo-ejemplo/fuentes/README.md) |
 
 ## 5. RAG e ingesta de documentos (en Java)
 

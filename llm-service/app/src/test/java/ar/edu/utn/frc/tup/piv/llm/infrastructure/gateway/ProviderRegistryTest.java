@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import ar.edu.utn.frc.tup.piv.llm.provider.spi.AiProviderAdapter;
 import ar.edu.utn.frc.tup.piv.llm.provider.spi.ProviderCapabilities;
 import ar.edu.utn.frc.tup.piv.llm.provider.spi.ProviderDescriptor;
+import ar.edu.utn.frc.tup.piv.llm.provider.spi.ProviderException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -27,6 +28,16 @@ class ProviderRegistryTest {
         new StubAdapter("sample-provider"), new StubAdapter("sample-provider"))))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("más de un adaptador");
+  }
+
+  @Test
+  void missingRuntimeProviderIsReportedAsAProviderFailure() {
+    var registry = new ProviderRegistry(List.of(new StubAdapter("sample-provider")));
+
+    assertThatThrownBy(() -> registry.required("missing-provider"))
+        .isInstanceOf(ProviderException.class)
+        .extracting("code")
+        .isEqualTo("PROVIDER_NOT_INSTALLED");
   }
 
   private static final class StubAdapter implements AiProviderAdapter {
