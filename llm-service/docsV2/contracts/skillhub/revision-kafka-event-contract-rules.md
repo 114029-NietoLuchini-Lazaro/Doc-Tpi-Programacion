@@ -1,11 +1,12 @@
-# Revisión preparada: `kafka-event-contract-rules` (v4) — NO enviada
+# Borrador: `kafka-event-contract-rules` — entrada inexistente en el hub, sin revisión
 
-**Estado (2026-09-20):** **PREPARADA, no enviada.** La entrada publicada (v3, `owning_team: LLM`) describe un estándar que
-ya no rige: topic por evento `<event>.v<major>` y envelope `eventId`, `version`, `occurredAt`, `producer`, `data`. El
-estándar vigente es el del PDF `KAFKA.pdf` (ver [`../KAFKA_EVENT_STANDARD.md`](../KAFKA_EVENT_STANDARD.md), ADR-020). Se
-envía con `propose_revision` solo cuando se pida. Después de aceptada, hay que **resincronizar el espejo local**
-`.skill-hub/kafka-event-contract-rules.md` con `get_skill` (no editarlo a mano) y el skill local
-`.agents/skills/contratos-kafka/`, que ya está en el estándar nuevo.
+**Estado (2026-09-20): SIN OBJETO, no se envió.** Al ir a enviarla, `get_skill("kafka-event-contract-rules")` respondió
+«No skill exists with the slug»: la entrada ya no está en el hub (`list_skills` tampoco la muestra), así que no hay versión
+que revisar con `propose_revision`. El estándar vigente es el del PDF `KAFKA.pdf` (ver
+[`../KAFKA_EVENT_STANDARD.md`](../KAFKA_EVENT_STANDARD.md), ADR-020) y ya está en el contrato `llm-service-kafka-contract`
+(v5 enviada). Este texto queda **solo como borrador**: si el equipo quiere una regla general de Kafka en el hub, se
+propondría como entrada nueva con `propose_skill`, no como revisión. El espejo local `.skill-hub/kafka-event-contract-rules.md`
+es una copia vieja de una entrada que ya no existe.
 
 **`description`:** Fixed rules an async event contract must meet to travel the platform bus: five-field envelope without eventVersion, UPPER_SNAKE_CASE event types, topics assigned by the notifications group, at-least-once idempotent consumers, outbox publishing.
 

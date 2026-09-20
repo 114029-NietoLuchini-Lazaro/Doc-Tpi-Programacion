@@ -4,25 +4,25 @@ Registro de lo que se hizo contra el Skill Hub para que los agentes de Tema 05 e
 `llm-service`. Las entradas están en **inglés** (la guía del hub lo pide y el índice de búsqueda es en inglés).
 
 > ⚠️ **2026-09-20 — el estándar Kafka cambió.** El PDF `KAFKA.pdf` (ADR-020) reemplazó el envelope con `eventVersion`
-> y los `eventType` con guiones. **El hub quedó desactualizado en lo de Kafka; el HTTP no cambia.** Las revisiones están
-> **preparadas y NO enviadas** (se envían con `propose_revision` cuando se pida).
+> y los `eventType` con guiones. **Las dos revisiones de `llm-service` para Kafka ya se enviaron al hub y esperan que un
+> admin las acepte.** El HTTP no cambia.
 
-| Qué | Estado en el hub (verificado el 2026-09-20) | Qué hay que hacer | Archivo |
-|---|---|---|---|
-| Contrato `llm-service-http-contract` | **Publicado v4.** OpenAPI corregido adjunto: 37.919 bytes, `sha256 e306008d…`, idéntico al del repo (**sigue idéntico**: el PDF no toca HTTP) | **Nada.** | [`pendiente-revision-llm-service-http-contract.md`](pendiente-revision-llm-service-http-contract.md) |
-| Contrato `llm-service-kafka-contract` | **Publicado v4**, con el AsyncAPI v2 adjunto (10.375 bytes, `sha256 1d6b1a68…`; ahora en [`historicos-y-contratos-v1/llm-service-v2.asyncapi.yaml`](../historicos-y-contratos-v1/llm-service-v2.asyncapi.yaml)) — **desactualizado** | Revisión **v5 preparada**: texto nuevo + adjuntar el AsyncAPI **v3.0.0**: 14.810 bytes, `sha256 9c392e25…` | [`pendiente-revision-llm-service-kafka-contract.md`](pendiente-revision-llm-service-kafka-contract.md) |
-| Skill `building-the-practice-service-tutor-client-and-score-consumer` | **Publicado v3**, con la guía v1 adjunta (44.632 bytes, `sha256 b0fd3656…`) — **desactualizado** en la parte de eventos | Revisión **preparada**: texto nuevo + adjuntar la guía **v2**: 52.121 bytes, `sha256 25a18b11…` | [`building-the-practice-service-tutor-client-and-score-consumer.md`](building-the-practice-service-tutor-client-and-score-consumer.md) |
-| Regla `kafka-event-contract-rules` (`owning_team: LLM`) | **Publicada v3** — describe el estándar v1 (`<event>.v<major>`, `version/occurredAt/data`), **desactualizada** | Revisión **v4 preparada**, reescrita con el estándar del PDF | [`revision-kafka-event-contract-rules.md`](revision-kafka-event-contract-rules.md) |
-| Convención `request-correlation-across-http-and-kafka` | Publicada v1 | **Nada:** `traceparent` y `X-Request-Id` en headers, nunca en el payload, sigue valiendo | — |
+| Qué | Estado en el hub (verificado el 2026-09-20) | Archivo |
+|---|---|---|
+| Contrato `llm-service-http-contract` | **Publicado v4.** OpenAPI adjunto: 37.919 bytes, `sha256 e306008d…`, idéntico al del repo. **Sin cambios** (el PDF no toca HTTP) | [`pendiente-revision-llm-service-http-contract.md`](pendiente-revision-llm-service-http-contract.md) |
+| Contrato `llm-service-kafka-contract` | **Publicado v4** (AsyncAPI v2 adjunto, desactualizado) + **revisión v5 ENVIADA, pendiente de un admin.** Adjunto de la v5: AsyncAPI v3.0.0, 14.799 bytes, `sha256 65dc6ce3…` | [`pendiente-revision-llm-service-kafka-contract.md`](pendiente-revision-llm-service-kafka-contract.md) |
+| Skill `building-the-practice-service-tutor-client-and-score-consumer` | **Publicado v3** (guía v1 adjunta, desactualizada) + **revisión v4 ENVIADA, pendiente de un admin.** Adjunto de la v4: guía v2, 52.121 bytes, `sha256 25a18b11…` | [`building-the-practice-service-tutor-client-and-score-consumer.md`](building-the-practice-service-tutor-client-and-score-consumer.md) |
+| Regla `kafka-event-contract-rules` | **Ya no existe en el hub** (`get_skill` responde «No skill exists», 2026-09-20). No hay nada que revisar. El texto queda preparado por si se quiere proponerla de nuevo | [`revision-kafka-event-contract-rules.md`](revision-kafka-event-contract-rules.md) |
+| Convención `request-correlation-across-http-and-kafka` | **Ya no existe en el hub** (no figura en `list_skills`). El espejo local de `.skill-hub/` quedó viejo | — |
 
-**Orden sugerido al enviar:** primero la regla `kafka-event-contract-rules` y el contrato `llm-service-kafka-contract`
-(las fuentes), después el skill (que las enlaza). Los `sha256` de la tabla son los de los archivos del repo al
-2026-09-20: si se edita el AsyncAPI o la guía antes de enviar, hay que recalcularlos (`shasum -a 256`) y actualizar
-esta tabla.
+**Mientras un admin no acepte las revisiones**, `get_skill` sigue devolviendo la v4 del contrato y la v3 del skill, con
+`pending_revision: true`: un agente que use solo el hub va a ver el envelope viejo. **Al aceptarlas**: comprobar el
+`sha256` y el `size_bytes` que muestre `get_skill` contra los de esta tabla (los adjuntos se copiaron a mano al pedido;
+el hub no devuelve el hash de una revisión pendiente) y resincronizar el espejo local `.skill-hub/` con `get_skill`
+(no editarlo a mano). Si se edita el AsyncAPI o la guía del repo, hay que enviar una revisión nueva.
 
-Hasta el cambio de estándar, el hub era autosuficiente para Tema 05: el skill lleva la guía y los dos contratos llevan los YAML; ninguna entrada
-remite a una ruta del repo. **Mientras las revisiones nuevas no se envíen, un agente de Tema 05 que use solo el hub va a implementar el envelope viejo.** Si cambian los YAML o la guía del repo, hay que volver a revisar las entradas
-(los adjuntos son una copia; el `sha256` de la tabla permite detectar la diferencia).
+Las entradas de plataforma que citan Kafka (`backend-service-integration`, `owning_team: platform`) solo remiten al skill
+`contratos-kafka`, que tampoco está en el hub; no chocan con el estándar del PDF y no son nuestras.
 
 **Nota:** los `pendiente-revision-*.md` conservan el texto de la primera revisión de cada contrato; el contenido
 vigente es el que muestra `get_skill` en el hub.

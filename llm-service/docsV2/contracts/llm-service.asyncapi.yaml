@@ -12,7 +12,7 @@ info:
     el grupo de Notificaciones asigne los definitivos (marcados con x-topic-status: pending-assignment).
 
     La correlación (traceparent / X-Request-Id) viaja como headers del mensaje Kafka, nunca en el payload
-    (.skill-hub/request-correlation-across-http-and-kafka.md). Los headers eventId y eventType repiten los del
+    (convención de correlación de la plataforma). Los headers eventId y eventType repiten los del
     envelope para filtrar sin deserializar. No hay header eventVersion.
 
     v3.0.0 reemplaza el envelope de v2 (que agregaba eventVersion) y los eventType con guiones — breaking change
