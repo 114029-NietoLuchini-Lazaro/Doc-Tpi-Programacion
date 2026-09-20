@@ -4,22 +4,22 @@ Registro de lo que se hizo contra el Skill Hub para que los agentes de Tema 05 e
 `llm-service`. Las entradas están en **inglés** (la guía del hub lo pide y el índice de búsqueda es en inglés).
 
 > ⚠️ **2026-09-20 — el estándar Kafka cambió.** El PDF `KAFKA.pdf` (ADR-020) reemplazó el envelope con `eventVersion`
-> y los `eventType` con guiones. **Las dos revisiones de `llm-service` para Kafka ya se enviaron al hub y esperan que un
-> admin las acepte.** El HTTP no cambia.
+> y los `eventType` con guiones. **Las dos revisiones de `llm-service` para Kafka se enviaron y un admin las aceptó**
+> (verificado con `get_skill` el 2026-09-20). El HTTP no cambia.
 
 | Qué | Estado en el hub (verificado el 2026-09-20) | Archivo |
 |---|---|---|
 | Contrato `llm-service-http-contract` | **Publicado v4.** OpenAPI adjunto: 37.919 bytes, `sha256 e306008d…`, idéntico al del repo. **Sin cambios** (el PDF no toca HTTP) | [`pendiente-revision-llm-service-http-contract.md`](pendiente-revision-llm-service-http-contract.md) |
-| Contrato `llm-service-kafka-contract` | **Publicado v4** (AsyncAPI v2 adjunto, desactualizado) + **revisión v5 ENVIADA, pendiente de un admin.** Adjunto de la v5: AsyncAPI v3.0.0, 14.799 bytes, `sha256 65dc6ce3…` | [`pendiente-revision-llm-service-kafka-contract.md`](pendiente-revision-llm-service-kafka-contract.md) |
-| Skill `building-the-practice-service-tutor-client-and-score-consumer` | **Publicado v3** (guía v1 adjunta, desactualizada) + **revisión v4 ENVIADA, pendiente de un admin.** Adjunto de la v4: guía v2, 52.121 bytes, `sha256 25a18b11…` | [`building-the-practice-service-tutor-client-and-score-consumer.md`](building-the-practice-service-tutor-client-and-score-consumer.md) |
+| Contrato `llm-service-kafka-contract` | **Publicado v5**, con el AsyncAPI v3.0.0 adjunto: 14.799 bytes, `sha256 65dc6ce3…` (**coincide con el repo**) | [`pendiente-revision-llm-service-kafka-contract.md`](pendiente-revision-llm-service-kafka-contract.md) |
+| Skill `building-the-practice-service-tutor-client-and-score-consumer` | **Publicado v4**, con la guía v2 adjunta: 52.121 bytes, `sha256 25a18b11…` (**coincide con el repo**) | [`building-the-practice-service-tutor-client-and-score-consumer.md`](building-the-practice-service-tutor-client-and-score-consumer.md) |
 | Regla `kafka-event-contract-rules` | **Ya no existe en el hub** (`get_skill` responde «No skill exists», 2026-09-20). No hay nada que revisar. El texto queda preparado por si se quiere proponerla de nuevo | [`revision-kafka-event-contract-rules.md`](revision-kafka-event-contract-rules.md) |
 | Convención `request-correlation-across-http-and-kafka` | **Ya no existe en el hub** (no figura en `list_skills`). El espejo local de `.skill-hub/` quedó viejo | — |
 
-**Mientras un admin no acepte las revisiones**, `get_skill` sigue devolviendo la v4 del contrato y la v3 del skill, con
-`pending_revision: true`: un agente que use solo el hub va a ver el envelope viejo. **Al aceptarlas**: comprobar el
-`sha256` y el `size_bytes` que muestre `get_skill` contra los de esta tabla (los adjuntos se copiaron a mano al pedido;
-el hub no devuelve el hash de una revisión pendiente) y resincronizar el espejo local `.skill-hub/` con `get_skill`
-(no editarlo a mano). Si se edita el AsyncAPI o la guía del repo, hay que enviar una revisión nueva.
+**Hub al día.** Un agente de Tema 05 que use solo el hub ya ve el envelope de cinco campos. Si se edita el AsyncAPI o la guía del
+repo, hay que enviar una revisión nueva y volver a comparar `sha256` y `size_bytes` con `get_skill`. **Queda pendiente** resincronizar
+el espejo local `.skill-hub/` con `get_skill` (no editarlo a mano): sus copias de `llm-service-kafka-contract` y del skill de Tema 05
+son las versiones viejas, y `kafka-event-contract-rules.md` y `request-correlation-across-http-and-kafka.md` son copias de entradas
+que ya no existen en el hub.
 
 Las entradas de plataforma que citan Kafka (`backend-service-integration`, `owning_team: platform`) solo remiten al skill
 `contratos-kafka`, que tampoco está en el hub; no chocan con el estándar del PDF y no son nuestras.

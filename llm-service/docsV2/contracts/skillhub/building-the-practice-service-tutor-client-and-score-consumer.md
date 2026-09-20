@@ -16,7 +16,7 @@ tags:
 ---
 
 <!-- SUBIDA AL HUB el 2026-09-20 con propose_skill (publicada v3 con la guía adjunta). -->
-<!-- REVISIÓN v4 ENVIADA el 2026-09-20 (pendiente de un admin): pasa los eventos al estándar Kafka del PDF KAFKA.pdf (ADR-020) y adjunta la guía v2 (52.121 bytes, sha256 25a18b11…). El texto vigente en el hub es el que muestra get_skill. -->
+<!-- REVISIÓN v4 ENVIADA Y ACEPTADA el 2026-09-20: pasa los eventos al estándar Kafka del PDF KAFKA.pdf (ADR-020) y adjunta la guía v2 (52.121 bytes, sha256 25a18b11…). El texto vigente en el hub es el que muestra get_skill. -->
 
 ## Rule
 

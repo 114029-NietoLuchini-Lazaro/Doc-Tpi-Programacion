@@ -3,14 +3,14 @@
 > Texto listo para pegar en el canal de Tema 05 (Desafíos Prácticos). La fuente de verdad sigue siendo la guía
 > [`llm-service-contrato-para-desafios-practicos.md`](llm-service-contrato-para-desafios-practicos.md) (v2) y, para su
 > asistente de IA, el skill [`tema-05-skill-integrar-llm-service/SKILL.md`](tema-05-skill-integrar-llm-service/SKILL.md).
-> Si el Skill Hub todavía no aceptó las revisiones ([`../skillhub/README.md`](../skillhub/README.md)), hay que pasarles
-> esos dos archivos: la guía manda sobre lo que diga el hub.
+> El Skill Hub ya tiene las dos entradas actualizadas (contrato Kafka v5 y skill v4, con esta guía adjunta;
+> [`../skillhub/README.md`](../skillhub/README.md)), así que su asistente de IA también puede encontrarlas ahí. Si difieren, manda la guía.
 
 ---
 
 Hola equipo de Desafíos Prácticos 👋 Ya pueden integrar `practice-service` con `llm-service`. Con esto se conectan al **tutor de IA** y al **evaluador**. Hoy responde un **bot de prueba** (sin modelo real): sirve para probar la conexión, los errores y los eventos. Cuando pasemos al modelo real **no tienen que cambiar código**; solo cambia el contenido de las respuestas.
 
-**Qué necesitan (2 archivos, en español):**
+**Qué necesitan (2 archivos, en español; también están en el Skill Hub como `building-the-practice-service-tutor-client-and-score-consumer`):**
 1. **Guía `llm-service-contrato-para-desafios-practicos.md` (v2).** Es el único documento que hace falta: trae el paso a paso, el contrato completo y los dos contratos ejecutables (OpenAPI del tutor y AsyncAPI de los eventos).
 2. **Skill `integrar-llm-service`** (`SKILL.md`), para que su asistente de IA arme el cliente del tutor, el publicador de `ATTEMPT_CLOSED` y el consumidor de scores. Tiene que estar en la misma carpeta que la guía.
 

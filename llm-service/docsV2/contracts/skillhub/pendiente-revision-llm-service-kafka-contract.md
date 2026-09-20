@@ -1,7 +1,7 @@
 # Revisión preparada: `llm-service-kafka-contract` (v5) — NO enviada
 
-**Estado (2026-09-20): ENVIADA.** Revisión **v5** contra la v4 publicada; **pendiente de que un admin la acepte** (`get_skill`
-sigue devolviendo la v4 con `pending_revision: true`). Adjunto enviado: [`../llm-service.asyncapi.yaml`](../llm-service.asyncapi.yaml)
+**Estado (2026-09-20): ENVIADA Y ACEPTADA.** Revisión **v5** contra la v4; un admin la aceptó y `get_skill` devuelve la v5 (adjunto verificado:
+mismo tamaño y `sha256` que el archivo del repo). Adjunto enviado: [`../llm-service.asyncapi.yaml`](../llm-service.asyncapi.yaml)
 v3.0.0, 14.799 bytes, `sha256 65dc6ce348c1f012f9de5b3e1b60923a3189e83d3b45539a4885dcc6a5245e5d`. Se armó sobre el texto
 vivo del hub (v4), que incluye la sección «Test bot first, real model later»; el estándar es el del PDF `KAFKA.pdf`
 ([`../KAFKA_EVENT_STANDARD.md`](../KAFKA_EVENT_STANDARD.md), ADR-020). Lo que cambió en `content`: envelope de cinco campos sin
