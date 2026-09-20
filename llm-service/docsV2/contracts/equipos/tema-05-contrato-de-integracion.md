@@ -16,7 +16,7 @@ Lo único que cambia es el **contenido** de lo que devolvemos, nunca su forma:
 
 | Cambia con el modelo real | No cambia |
 |---|---|
-| El texto del tutor (hoy una pregunta socrática fija) | Rutas, verbos, headers, scope |
+| El texto del tutor (hoy una pregunta de plantilla, sin relación real con el mensaje) | Rutas, verbos, headers, scope |
 | Los puntajes (hoy 55-95 por hash del prompt) | Campos y tipos de request, response y eventos |
 | `evaluator.provider` / `evaluator.model` (hoy `fake` / `fake-evaluator-v1`); tratarlos como texto opaco | Códigos HTTP y forma del error |
 | La latencia y la posibilidad real de `state: unavailable` / `SCORE-DEFERRED` | Topics (una vez acordados), `eventType`, Message Key, `eventVersion` |
@@ -78,7 +78,13 @@ Los campos desconocidos se ignoran.
 
 ### Errores
 
-Cuerpo `application/problem+json` (RFC 7807).
+Cuerpo `application/problem+json` (RFC 7807), con `requestId`:
+
+```json
+{ "type": "about:blank", "title": "Unprocessable Entity", "status": 422,
+  "detail": "riskLevel debe ser high, medium o low",
+  "instance": "/api/llm/tutor/interactions", "requestId": "8ea1c242-ca19-43a3-b7c2-177725fff653" }
+```
 
 | Código | Cuándo |
 |---|---|

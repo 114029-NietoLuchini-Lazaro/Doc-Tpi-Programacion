@@ -263,7 +263,7 @@ redeploy) el contrato que ustedes consumen es el mismo.
 
 | Aspecto | Comportamiento en modo test |
 |---|---|
-| Respuesta del tutor | Una pregunta socrática fija que cita las primeras 12 palabras del `message`. Determinística, sin llamada de red, latencia ~0 |
+| Respuesta del tutor | Una pregunta socrática de plantilla que cita las primeras 12 palabras del prompt armado (no del `message` del alumno, así que el texto puede leerse raro). Determinística, sin llamada de red, latencia ~0 |
 | `state` | Siempre `completed`. El bot no produce `unavailable` ni `blocked` |
 | Idempotencia | Real: reintento con la misma `Idempotency-Key` devuelve la misma respuesta |
 | Guardarraíl de entrada | Real: un intento de jailbreak devuelve un mensaje fijo, `completed`, sin invocar al modelo |

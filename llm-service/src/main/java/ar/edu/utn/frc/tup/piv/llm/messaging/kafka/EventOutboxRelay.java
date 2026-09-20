@@ -1,5 +1,8 @@
 package ar.edu.utn.frc.tup.piv.llm.messaging.kafka;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
@@ -30,10 +33,13 @@ public class EventOutboxRelay {
 
   private final EventOutboxRepository outboxRepository;
   private final KafkaTemplate<String, String> kafkaTemplate;
+  private final ObjectMapper mapper;
 
-  public EventOutboxRelay(EventOutboxRepository outboxRepository, KafkaTemplate<String, String> kafkaTemplate) {
+  public EventOutboxRelay(EventOutboxRepository outboxRepository, KafkaTemplate<String, String> kafkaTemplate,
+      ObjectMapper mapper) {
     this.outboxRepository = outboxRepository;
     this.kafkaTemplate = kafkaTemplate;
+    this.mapper = mapper;
   }
 
   @Scheduled(fixedDelayString = "${llm.kafka.outbox-poll-ms:2000}")
@@ -46,7 +52,7 @@ public class EventOutboxRelay {
 
   private void publishOne(EventOutboxRepository.OutboxRow row) {
     Message<String> message = MessageBuilder
-        .withPayload(row.payloadJson())
+        .withPayload(envelopeJson(row, mapper))
         .setHeader(KafkaHeaders.TOPIC, row.topic())
         .setHeader(KafkaHeaders.KEY, row.messageKey())
         .setHeader("eventId", row.eventId().toString())
@@ -67,5 +73,23 @@ public class EventOutboxRelay {
             row.eventId(), row.topic(), exception);
       }
     });
+  }
+
+  /** El cuerpo del mensaje es el envelope completo del estándar (KAFKA_EVENT_STANDARD §5):
+   * {@code eventId, eventType, eventVersion, timestamp, producer, payload}. Los headers repiten
+   * {@code eventId}/{@code eventType}/{@code eventVersion} para filtrar sin deserializar. */
+  static String envelopeJson(EventOutboxRepository.OutboxRow row, ObjectMapper mapper) {
+    try {
+      ObjectNode envelope = mapper.createObjectNode();
+      envelope.put("eventId", row.eventId().toString());
+      envelope.put("eventType", row.eventType());
+      envelope.put("eventVersion", row.eventVersion());
+      envelope.put("timestamp", row.occurredAt().toInstant().toString());
+      envelope.put("producer", row.producer());
+      envelope.set("payload", mapper.readTree(row.payloadJson()));
+      return mapper.writeValueAsString(envelope);
+    } catch (JsonProcessingException invalid) {
+      throw new IllegalStateException("El payload del evento " + row.eventId() + " no es JSON válido", invalid);
+    }
   }
 }

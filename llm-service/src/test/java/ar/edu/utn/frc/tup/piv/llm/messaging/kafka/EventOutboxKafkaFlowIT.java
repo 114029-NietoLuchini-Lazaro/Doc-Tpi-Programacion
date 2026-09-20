@@ -99,6 +99,9 @@ class EventOutboxKafkaFlowIT extends AbstractIntegrationIT {
 
     assertThat(record.key()).isEqualTo("curso-h07");
     assertThat(record.value()).contains("messageId").contains("msg-h07");
+    // El cuerpo es el envelope completo del estándar; el payload va anidado, no solo.
+    assertThat(record.value()).contains("\"eventId\":\"" + eventId + "\"").contains("\"eventType\":\"MESSAGE-UNBLOCKED\"")
+        .contains("\"eventVersion\":1").contains("\"timestamp\"").contains("\"producer\"").contains("\"payload\":{");
     assertThat(headerValue(record, "eventId")).isEqualTo(eventId.toString());
     assertThat(headerValue(record, "eventType")).isEqualTo("MESSAGE-UNBLOCKED");
     assertThat(headerValue(record, "eventVersion")).isEqualTo("1");
@@ -167,6 +170,7 @@ class EventOutboxKafkaFlowIT extends AbstractIntegrationIT {
     assertThat(score.key()).isEqualTo(cohortId.toString());
     assertThat(headerValue(score, "eventType")).isEqualTo("SCORE-CALCULATED");
     assertThat(score.value()).contains(attemptId.toString()).contains("\"score\"").contains("fake-evaluator-v1");
+    assertThat(score.value()).contains("\"eventType\":\"SCORE-CALCULATED\"").contains("\"payload\":{");
   }
 
   private void waitUntil(java.util.function.BooleanSupplier condition) {

@@ -312,7 +312,7 @@ components:
     RequestId: { description: Correlación recibida, devuelta sin cambios., schema: { type: string } }
   responses:
     Problem:
-      description: RFC 7807 Problem Details con codigo estable y requestId.
+      description: RFC 7807 Problem Details con requestId.
       headers: { X-Request-Id: { $ref: '#/components/headers/RequestId' } }
       content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
   schemas:
@@ -513,12 +513,14 @@ components:
       properties: { items: { type: array, items: { $ref: '#/components/schemas/ModelDeployment' } } }
     Problem:
       type: object
-      required: [type, title, status, detail, codigo, requestId]
+      description: RFC 7807. `codigo` (código estable de error) está reservado y hoy no se emite; no depender de él.
+      required: [type, title, status, detail, requestId]
       properties:
         type: { type: string, format: uri-reference }
         title: { type: string }
         status: { type: integer }
         detail: { type: string }
+        instance: { type: string, format: uri-reference }
         codigo: { type: string }
         requestId: { type: string }
     CreateShadowRunRequest:
