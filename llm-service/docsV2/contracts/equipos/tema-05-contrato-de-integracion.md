@@ -26,8 +26,9 @@ Lo único que cambia es el **contenido** de lo que devolvemos, nunca su forma:
 `POST /api/llm/tutor/interactions` — siempre por el API Gateway.
 
 **Identidad.** Servicio `practice-service`, scope M2M **`llm.tutor.interact`**, con usuario delegado. El Gateway
-agrega `X-Service-Id`, `X-Service-Scopes` y `X-Delegated-User` a partir del JWT, y propaga
-`traceparent` y `X-Request-Id`.
+agrega `X-Principal-Type: service`, `X-Service-Id`, `X-Service-Scopes` y `X-Delegated-User` a partir
+del JWT, y propaga `traceparent` y `X-Request-Id`. Ustedes no los mandan; solo hacen falta si le
+pegan directo al servicio en una prueba local.
 
 **Headers de ustedes:** `Idempotency-Key` (UUID, obligatorio) y `Content-Type: application/json`.
 
@@ -241,7 +242,20 @@ Cada decisión se puede cambiar sin tocar el contrato salvo donde se indica.
 Con el servicio levantado (`docker compose up`; Kafka viene activo):
 
 - **Tutor.** `POST /api/llm/tutor/interactions` por el Gateway. Para pegarle directo desde el host,
-  el overlay `compose.debug.yaml` publica el puerto 8086 y `compose.workbench.yaml` saltea la
-  autenticación.
+  el overlay `compose.debug.yaml` publica el puerto 8086 y hay que mandar a mano los headers de
+  identidad que en la plataforma pone el Gateway:
+
+  ```bash
+  curl -s -X POST http://localhost:8086/api/llm/tutor/interactions \
+    -H 'Content-Type: application/json' \
+    -H 'Idempotency-Key: 11111111-2222-3333-4444-555555555555' \
+    -H 'X-Principal-Type: service' \
+    -H 'X-Service-Id: practice-service' \
+    -H 'X-Service-Scopes: llm.tutor.interact' \
+    -H 'X-Delegated-User: 11111111-1111-1111-1111-111111111111' \
+    -d '{"attemptId":"b1e2c3d4-0001-4a00-8000-000000000001","challengeId":"b1e2c3d4-0002-4a00-8000-000000000002","courseCohortId":"b1e2c3d4-0003-4a00-8000-000000000003","learnerId":"b1e2c3d4-0004-4a00-8000-000000000004","message":"No entiendo por qué mi recursión no corta","riskLevel":"medium"}'
+  ```
+
+  El perfil `workbench` (`compose.workbench.yaml`) saltea la autenticación por completo.
 - **Evaluador.** Publicar el `ATTEMPT-CLOSED` de arriba en `practice-events` y leer `evaluation-events`.
   Dentro de la red de compose el broker es `kafka:9092`.
