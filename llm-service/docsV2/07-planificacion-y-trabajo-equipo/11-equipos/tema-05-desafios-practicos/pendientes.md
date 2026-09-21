@@ -103,6 +103,13 @@ se agregan acá todos los temas nuevos que salgan de la charla.
   ([KAFKA_EVENT_STANDARD §4](../../../contracts/KAFKA_EVENT_STANDARD.md)) los grupos no crean tópicos y los asigna el
   grupo de Notificaciones. Pedírselos (ver [pendientes de Notificaciones](../notifications-service/pendientes.md), K1)
   y avisar a Tema 05 cuando los definan.
+- [ ] **Entrega con el evaluador caído (LLM-EP06-H03):** confirmar que Tema 05 acepta la entrega y otorga
+  XP base y monedas **sin esperar** nuestro puntaje (RF-IA-27 es lógica de producto de ellos, no nuestra), y
+  que no bloquea si no publica o no recibe respuesta nuestra.
+- [ ] **Quién reintenta un puntaje diferido:** hoy publicamos `SCORE_DEFERRED` con `retryFrom` y **nadie
+  reintenta**. Propuesta (A): reintentamos nosotros y guardamos el intento hasta resolverlo. Alternativa (B):
+  ustedes reenvían `ATTEMPT_CLOSED` desde `retryFrom`. En ambos casos deduplicaremos por `attemptId`, no solo
+  por `eventId`. Decidir cuál.
 - [ ] _(agregar acá lo que surja)_
 
 ## 🔴 Pedido al equipo del Gateway y de users-service (identidad y enrutamiento)
