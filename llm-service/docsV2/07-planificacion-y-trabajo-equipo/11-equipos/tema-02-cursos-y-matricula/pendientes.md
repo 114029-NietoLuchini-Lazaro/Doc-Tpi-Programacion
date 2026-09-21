@@ -46,5 +46,5 @@ Se agregan acá todos los temas nuevos que salgan de la charla.
 - [ ] **Semántica de archivado:** confirmar que al archivar frenamos trabajos pendientes de esa
   cohorte (evaluaciones en cola, diferidos) y qué pasa con datos ya generados.
 - [ ] **Productor y nombre:** confirmar `producer` (¿`courses-service`?) y `eventType` en formato
-  estándar (`COURSE-ARCHIVED`).
+  estándar (`COURSE_ARCHIVED`).
 - [ ] _(agregar acá lo que surja)_

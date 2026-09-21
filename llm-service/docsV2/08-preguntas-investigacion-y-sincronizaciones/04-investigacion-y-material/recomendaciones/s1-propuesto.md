@@ -99,7 +99,7 @@ Planning contra la canónica `LLM-S01-H06`.
 | **D01** | Gateway / Eureka / ambiente / frontend compartido · P1 | H02, H03, H07 | Primeros días de S1 | Ruta `/api/llm/**`, `aud=llm-service`, scopes, headers de confianza | Bloquea el borde: sin esto, H03 y H07 no cierran demo real |
 | **D02** | Docentes + cátedra · P5 + P4 | H04, H05 | Antes de migrar `V1` | Definición de las 5 dimensiones y pesos de la rúbrica 1.0 | Si demora: usar rúbrica 1.0 provisional y congelar antes de publicar contrato |
 | **D03** | `practice-service` · P3 | *(solo contrato en S1)* | Contrato en S1 | Contexto/solución/metadata (se integra en S5) | No bloquea S1; se deja el contrato acordado |
-| **D04** | `practice-service` / `courses-service` · P1 + P4 | *(solo contrato en S1)* | Contrato temprano en S1 | `intento_cerrado.v1` y regla de cierre (se integra en S6; desde el 2026-09-13 lo publica `practice-service`, no `challenges-service`) | No bloquea S1; se deja el contrato acordado |
+| **D04** | `practice-service` / `courses-service` · P1 + P4 | *(solo contrato en S1)* | Contrato temprano en S1 | `ATTEMPT_CLOSED` y regla de cierre (se integra en S6; desde el 2026-09-13 lo publica `practice-service`, no `challenges-service`) | No bloquea S1; se deja el contrato acordado |
 
 ### Checklist de compromiso (DoR del sprint)
 

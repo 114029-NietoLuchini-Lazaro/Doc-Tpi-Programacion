@@ -204,14 +204,14 @@ La columna **h** es la referencia de planificación del plan. Los **puntos Fibon
 
 ## S6 — Evaluación asíncrona y diferida (~208 h estimadas)
 
-**No iniciar sin:** S3, contrato `intento_cerrado.v1` con `practice-service` (desde el 2026-09-13; antes `challenges-service`) y regla de cierre de cursos. **Demo:** cierre produce score; con proveedor caído la entrega se acepta y el score llega una sola vez después.
+**No iniciar sin:** S3, contrato `ATTEMPT_CLOSED` con `practice-service` (desde el 2026-09-13; antes `challenges-service`) y regla de cierre de cursos. **Demo:** cierre produce score; con proveedor caído la entrega se acepta y el score llega una sola vez después.
 
 | Orden | Paquete verificable | h | Salida / prueba |
 |---:|---|---:|---|
 | 1 | Consumidor/dedupe | 34 | Envelope, headers, `eventId` y `attemptId` únicos; rechazo seguro de versión inválida. |
 | 2 | Evaluador y evidencia | 38 | Dimensiones, agregado, confianza, justificaciones y versión de rúbrica/modelo/prompt. |
-| 3 | Outbox/resultados | 38 | `score_de_ia_calculado.v1` atómico, reintento sin doble evento. |
-| 4 | Diferido/recuperación | 34 | `score_pendiente_diferido.v1`, job durable y reanudación. |
+| 3 | Outbox/resultados | 38 | `SCORE_CALCULATED` atómico, reintento sin doble evento. |
+| 4 | Diferido/recuperación | 34 | `SCORE_DEFERRED`, job durable y reanudación. |
 | 5 | Consulta pendientes + cursos | 24 | Conteo contractual y bloqueo de archivado por el dueño. |
 | 6 | UI/observabilidad | 16 | Score/pendiente visible y estado operativo. |
 | 7 | Pruebas/demo | 24 | Duplicado, caída, reinicio, outbox, no XP y recorrido integrado. |

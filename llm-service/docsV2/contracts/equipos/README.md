@@ -32,6 +32,7 @@ lugar y se registre en [`registro/`](../../registro/README.md).
 | [`tema-03-motor-de-desafios.md`](tema-03-motor-de-desafios.md) | Tema 03 — Motor de Desafíos | Integración histórica/directa y límites actuales; el flujo vigente de práctica se media por Tema 05. |
 | [`tema-04-desafios-teoricos.md`](tema-04-desafios-teoricos.md) | Tema 04 — Desafíos Teóricos | Recomendación y puntos de coordinación todavía sin contrato técnico. |
 | [`tema-05-desafios-practicos.md`](tema-05-desafios-practicos.md) | Tema 05 — Desafíos Prácticos | Tutor socrático síncrono, cierre de intento y score asíncrono. |
+| [`tema-05-mensaje-de-integracion.md`](tema-05-mensaje-de-integracion.md) | Tema 05 — mensaje para integrar | Texto listo para pegar al equipo; remite al Skill Hub (skill v4, contratos v5) y a la guía v2. |
 | [`tema-11-chat.md`](tema-11-chat.md) | Tema 11 — Chat | Invocación del tutor desde chats de alumnos y moderación. |
 | [`tema-12-backoffice-admin.md`](tema-12-backoffice-admin.md) | Tema 12 — Backoffice / ADMIN | Calibración, golden set, rúbricas editables y operaciones administrativas. |
 

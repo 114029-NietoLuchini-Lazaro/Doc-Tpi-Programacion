@@ -17,13 +17,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Consumidor idempotente (LLM-EP01-H07) de {@code practice-events} / eventType
- * {@code ATTEMPT-CLOSED}, que hoy publica practice-service (Tema 05). Valida el envelope común,
- * aplica CA2-CA4 (deduplicación + dead-letter) y por cada intento cerrado dispara la evaluación
+ * {@code ATTEMPT_CLOSED}, que hoy publica practice-service (Tema 05). Valida el envelope común,
+ * aplica CA2-CA4 (deduplicación + dead-letter en la tabla {@code event_dead_letter}) y por cada intento cerrado dispara la evaluación
  * ({@link AttemptEvaluationService}), que publica el score en {@code evaluation-events}.
  *
  * <p>Corre en una sola transacción: la reserva del {@code eventId} y el evento de score encolado en
  * el outbox se confirman juntos, así un fallo entre ambos no pierde el intento (el evento se
- * reintenta). Un evento mal formado no falla: va a dead-letter y la reserva se conserva.
+ * reintenta). Un evento mal formado no falla: queda en dead-letter (tabla {@code event_dead_letter}, no un tópico: los grupos no
+ * pueden crear tópicos) y la reserva se conserva.
  *
  * <p><b># fixture provisorio</b> — el contrato real de "intento cerrado" todavía converge con Tema
  * 05 (ver {@code docs/historias/ep-01/h07.md} §"Estrategia de autonomía"). Se leen solo los campos
@@ -35,7 +36,7 @@ public class PracticeAttemptClosedListener {
 
   private static final Logger log = LoggerFactory.getLogger(PracticeAttemptClosedListener.class);
   private static final String CONSUMER_GROUP = "llm-service";
-  static final String ATTEMPT_CLOSED = "ATTEMPT-CLOSED";
+  static final String ATTEMPT_CLOSED = "ATTEMPT_CLOSED";
 
   private final KafkaConsumedEventsRepository consumedEvents;
   private final DeadLetterPublisher deadLetterPublisher;
@@ -89,7 +90,7 @@ public class PracticeAttemptClosedListener {
     ClosedAttempt attempt = closedAttempt(envelope.path("payload"));
     if (attempt == null) {
       deadLetterPublisher.send(KafkaTopics.PRACTICE_EVENTS, key, rawValue,
-          "ATTEMPT-CLOSED sin attemptId, courseCohortId, learnerId o transcript válidos");
+          "ATTEMPT_CLOSED sin attemptId, courseCohortId, learnerId o transcript válidos");
       return;
     }
     evaluation.evaluate(attempt);

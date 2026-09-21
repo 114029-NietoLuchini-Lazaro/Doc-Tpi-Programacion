@@ -21,9 +21,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-/** Evalúa un intento cerrado (`ATTEMPT-CLOSED`, Tema 05) con la función EVALUATOR del gateway y
- * publica el resultado en `evaluation-events`: `SCORE-CALCULATED` con el score 0-100 y su desglose,
- * o `SCORE-DEFERRED` si no se pudo evaluar. Contra el adaptador `fake` funciona sin proveedor real.
+/** Evalúa un intento cerrado (`ATTEMPT_CLOSED`, Tema 05) con la función EVALUATOR del gateway y
+ * publica el resultado en `evaluation-events`: `SCORE_CALCULATED` con el score 0-100 y su desglose,
+ * o `SCORE_DEFERRED` si no se pudo evaluar. Contra el adaptador `fake` funciona sin proveedor real.
  *
  * <p><b># fixture provisorio</b> — el payload de ambos eventos es una propuesta nuestra, todavía sin
  * validar con Tema 05 (ver `docsV2/.../tema-05-desafios-practicos/pendientes.md`). Tampoco hay
@@ -33,15 +33,14 @@ import org.springframework.stereotype.Service;
  * <p>El evento se encola en el outbox: hay que llamarlo dentro de la transacción del consumidor. */
 @Service
 public class AttemptEvaluationService {
-  public static final String SCORE_CALCULATED = "SCORE-CALCULATED";
-  public static final String SCORE_DEFERRED = "SCORE-DEFERRED";
+  public static final String SCORE_CALCULATED = "SCORE_CALCULATED";
+  public static final String SCORE_DEFERRED = "SCORE_DEFERRED";
   static final String RUBRIC_UNAVAILABLE = "RUBRIC_UNAVAILABLE";
   static final String INVALID_MODEL_RESPONSE = "INVALID_MODEL_RESPONSE";
   static final String MODEL_UNAVAILABLE = "MODEL_UNAVAILABLE";
-  private static final int EVENT_VERSION = 1;
   private static final Logger log = LoggerFactory.getLogger(AttemptEvaluationService.class);
 
-  /** Lo que necesitamos de `ATTEMPT-CLOSED`; la transcripción viaja tal cual llegó, sin truncar. */
+  /** Lo que necesitamos de `ATTEMPT_CLOSED`; la transcripción viaja tal cual llegó, sin truncar. */
   public record ClosedAttempt(UUID attemptId, UUID courseCohortId, UUID learnerId, JsonNode transcript) {}
 
   public record EvaluatorInfo(String provider, String model) {}
@@ -83,7 +82,7 @@ public class AttemptEvaluationService {
       publishScore(attempt, result, scoreFrom(result, rubric));
     } catch (Deferral deferral) {
       log.warn("Intento {} diferido [reason={}]: {}", attempt.attemptId(), deferral.reason, deferral.getMessage());
-      events.enqueue(KafkaTopics.EVALUATION_EVENTS, attempt.courseCohortId().toString(), SCORE_DEFERRED, EVENT_VERSION,
+      events.enqueue(KafkaTopics.EVALUATION_EVENTS, attempt.courseCohortId().toString(), SCORE_DEFERRED,
           new ScoreDeferred(attempt.attemptId(), attempt.courseCohortId(), attempt.learnerId(), deferral.reason,
               Instant.now().plus(retryAfter).toString()));
     }
@@ -113,13 +112,13 @@ public class AttemptEvaluationService {
     for (Dimension dimension : Dimension.values()) {
       dimensions.put(dimension.name().toLowerCase(Locale.ROOT), score.dimensions().get(dimension));
     }
-    events.enqueue(KafkaTopics.EVALUATION_EVENTS, attempt.courseCohortId().toString(), SCORE_CALCULATED, EVENT_VERSION,
+    events.enqueue(KafkaTopics.EVALUATION_EVENTS, attempt.courseCohortId().toString(), SCORE_CALCULATED,
         new ScoreCalculated(attempt.attemptId(), attempt.courseCohortId(), attempt.learnerId(), rubricVersionId,
             score.overall(), dimensions, new EvaluatorInfo(result.provider(), result.model())));
     log.info("Intento {} evaluado [score={}, proveedor={}]", attempt.attemptId(), score.overall(), result.provider());
   }
 
-  /** Motivo por el que el intento no se pudo evaluar ahora; se traduce en `SCORE-DEFERRED`. */
+  /** Motivo por el que el intento no se pudo evaluar ahora; se traduce en `SCORE_DEFERRED`. */
   private static final class Deferral extends RuntimeException {
     private final String reason;
 

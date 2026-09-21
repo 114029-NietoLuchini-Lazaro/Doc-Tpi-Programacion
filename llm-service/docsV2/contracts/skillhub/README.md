@@ -3,15 +3,26 @@
 Registro de lo que se hizo contra el Skill Hub para que los agentes de Tema 05 encuentren el contrato de
 `llm-service`. Las entradas están en **inglés** (la guía del hub lo pide y el índice de búsqueda es en inglés).
 
-| Qué | Estado (verificado el 2026-09-20) | Archivo |
-|---|---|---|
-| Contrato `llm-service-http-contract` | **Publicado v4.** OpenAPI corregido adjunto: 37.919 bytes, `sha256 e306008d…`, idéntico al del repo | [`pendiente-revision-llm-service-http-contract.md`](pendiente-revision-llm-service-http-contract.md) |
-| Contrato `llm-service-kafka-contract` | **Publicado v4.** AsyncAPI adjunto: 10.375 bytes, `sha256 1d6b1a68…`, idéntico al del repo | [`pendiente-revision-llm-service-kafka-contract.md`](pendiente-revision-llm-service-kafka-contract.md) |
-| Skill `building-the-practice-service-tutor-client-and-score-consumer` | **Publicado v3**, con la guía completa adjunta: 44.632 bytes, `sha256 b0fd3656…`, idéntica a la del repo | [`building-the-practice-service-tutor-client-and-score-consumer.md`](building-the-practice-service-tutor-client-and-score-consumer.md) |
+> ⚠️ **2026-09-20 — el estándar Kafka cambió.** El PDF `KAFKA.pdf` (ADR-020) reemplazó el envelope con `eventVersion`
+> y los `eventType` con guiones. **Las dos revisiones de `llm-service` para Kafka se enviaron y un admin las aceptó**
+> (verificado con `get_skill` el 2026-09-20). El HTTP no cambia.
 
-El hub ya es autosuficiente para Tema 05: el skill lleva la guía y los dos contratos llevan los YAML; ninguna entrada
-remite a una ruta del repo. Si cambian los YAML o la guía del repo, hay que volver a revisar las entradas
-(los adjuntos son una copia; el `sha256` de la tabla permite detectar la diferencia).
+| Qué | Estado en el hub (verificado el 2026-09-20) | Archivo |
+|---|---|---|
+| Contrato `llm-service-http-contract` | **Publicado v4.** OpenAPI adjunto: 37.919 bytes, `sha256 e306008d…`, idéntico al del repo. **Sin cambios** (el PDF no toca HTTP) | [`pendiente-revision-llm-service-http-contract.md`](pendiente-revision-llm-service-http-contract.md) |
+| Contrato `llm-service-kafka-contract` | **Publicado v5**, con el AsyncAPI v3.0.0 adjunto: 14.799 bytes, `sha256 65dc6ce3…` (**coincide con el repo**) | [`pendiente-revision-llm-service-kafka-contract.md`](pendiente-revision-llm-service-kafka-contract.md) |
+| Skill `building-the-practice-service-tutor-client-and-score-consumer` | **Publicado v4**, con la guía v2 adjunta: 52.121 bytes, `sha256 25a18b11…` (**coincide con el repo**) | [`building-the-practice-service-tutor-client-and-score-consumer.md`](building-the-practice-service-tutor-client-and-score-consumer.md) |
+| Regla `kafka-event-contract-rules` | **Ya no existe en el hub** (`get_skill` responde «No skill exists», 2026-09-20). No hay nada que revisar. El texto queda preparado por si se quiere proponerla de nuevo | [`revision-kafka-event-contract-rules.md`](revision-kafka-event-contract-rules.md) |
+| Convención `request-correlation-across-http-and-kafka` | **Ya no existe en el hub** (no figura en `list_skills`). El espejo local de `.skill-hub/` quedó viejo | — |
+
+**Hub al día.** Un agente de Tema 05 que use solo el hub ya ve el envelope de cinco campos. Si se edita el AsyncAPI o la guía del
+repo, hay que enviar una revisión nueva y volver a comparar `sha256` y `size_bytes` con `get_skill`. **Queda pendiente** resincronizar
+el espejo local `.skill-hub/` con `get_skill` (no editarlo a mano): sus copias de `llm-service-kafka-contract` y del skill de Tema 05
+son las versiones viejas, y `kafka-event-contract-rules.md` y `request-correlation-across-http-and-kafka.md` son copias de entradas
+que ya no existen en el hub.
+
+Las entradas de plataforma que citan Kafka (`backend-service-integration`, `owning_team: platform`) solo remiten al skill
+`contratos-kafka`, que tampoco está en el hub; no chocan con el estándar del PDF y no son nuestras.
 
 **Nota:** los `pendiente-revision-*.md` conservan el texto de la primera revisión de cada contrato; el contenido
 vigente es el que muestra `get_skill` en el hub.
@@ -50,9 +61,9 @@ existentes (el hub rechaza lo parecido) y no se había acordado.
 
 - El hub tiene un tipo **`contract`** propio, con archivo adjunto. Es la "parte contratos"; el tag `contracts`
   solo agrupa entradas de otros tipos.
-- La entrada `kafka-event-contract-rules` (v3) todavía describe topics por evento (`<event>.v<major>`) y un
-  envelope con `version`, `occurredAt` y `data`. El estándar vigente de la plataforma
-  (`../KAFKA_EVENT_STANDARD.md`) usa topics por dominio y un envelope con `eventType`, `timestamp` y `payload`.
+- La entrada `kafka-event-contract-rules` (v3) describía topics por evento (`<event>.v<major>`) y un envelope con
+  `version`, `occurredAt` y `data`. Ya hay una revisión preparada ([`revision-kafka-event-contract-rules.md`](revision-kafka-event-contract-rules.md)) con el
+  estándar del PDF `KAFKA.pdf` (`../KAFKA_EVENT_STANDARD.md`, ADR-020).
 - El detector de duplicados del hub compara el **título** con el texto de las entradas existentes. Un título
   como "Integrating practice-service with llm-service" repite casi palabra por palabra el `when_to_use` de
   `llm-service-http-contract`, y por MCP se rechaza sin permitir justificar. Por eso el skill se llama

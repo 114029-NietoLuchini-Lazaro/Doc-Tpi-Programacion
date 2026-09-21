@@ -66,7 +66,7 @@ borrador `POST /ai/moderador`, que quedó obsoleto). Lo que **Tema 11 tiene que 
 
 - **C1:** enviar `sender_id` real (obligatorio, breaking; hoy probamos con un valor mockeado).
 - **C2/C3/C4:** manejo en UI de `PENDING`/`PENDING_REVIEW`, timeout propio y política de reintentos (siempre con el mismo `message_id`).
-- **C5:** si consumen el evento Kafka `MESSAGE-UNBLOCKED` para publicar tras una reversión docente.
+- **C5:** si consumen el evento Kafka `MESSAGE_UNBLOCKED` para publicar tras una reversión docente.
 - **C6:** si necesitan retirar mensajes ya publicados (`DELETE /moderation/v1/decisions/{message_id}`; un `ALLOW` responde `409`).
 
 ## Colisión de vocabulario

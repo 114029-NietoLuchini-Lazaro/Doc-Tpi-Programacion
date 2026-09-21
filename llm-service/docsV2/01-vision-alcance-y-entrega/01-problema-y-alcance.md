@@ -108,12 +108,12 @@ flowchart LR
         D --> E --> F --> G
     end
 
-    C -->|"score_de_ia_calculado.v1<br/>via Tema 05"| D
+    C -->|"SCORE_CALCULATED<br/>via Tema 05"| D
 ```
 
 > ⚠️ **Cambió el 2026-09-13.** El corte de responsabilidad de este diagrama sigue firme (vos das
 > el score, el motor de desafíos aplica el XP), pero `POST /internal/ai-result` directo a Tema 03
-> es un mecanismo descartado. Publicamos `score_de_ia_calculado.v1` por Kafka; lo recibe **Tema 05**,
+> es un mecanismo descartado. Publicamos `SCORE_CALCULATED` por Kafka; lo recibe **Tema 05**,
 > que se lo reenvía a Tema 03. Detalle en [17 · I-04](../contracts/90-mapa-de-integracion-historico.md)
 > [18 §4.2/§4.3](../contracts/91-contratos-inter-equipos-historicos.md)
 

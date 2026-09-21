@@ -30,7 +30,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-/** El evaluador de intentos cerrados: `ATTEMPT-CLOSED` entra, `SCORE-CALCULATED` o `SCORE-DEFERRED`
+/** El evaluador de intentos cerrados: `ATTEMPT_CLOSED` entra, `SCORE_CALCULATED` o `SCORE_DEFERRED`
  * sale por el outbox. Incluye un caso de punta a punta contra el adaptador `fake` real. */
 class AttemptEvaluationServiceTest {
   private final ObjectMapper mapper = new ObjectMapper();
@@ -54,7 +54,7 @@ class AttemptEvaluationServiceTest {
 
     var payload = ArgumentCaptor.forClass(Object.class);
     verify(events).enqueue(eq(KafkaTopics.EVALUATION_EVENTS), eq(attempt.courseCohortId().toString()),
-        eq("SCORE-CALCULATED"), eq(1), payload.capture());
+        eq("SCORE_CALCULATED"), payload.capture());
     var score = (ScoreCalculated) payload.getValue();
     assertThat(score.attemptId()).isEqualTo(attempt.attemptId());
     assertThat(score.learnerId()).isEqualTo(attempt.learnerId());
@@ -144,7 +144,7 @@ class AttemptEvaluationServiceTest {
 
     var payload = ArgumentCaptor.forClass(Object.class);
     verify(events).enqueue(eq(KafkaTopics.EVALUATION_EVENTS), eq(attempt.courseCohortId().toString()),
-        eq("SCORE-CALCULATED"), eq(1), payload.capture());
+        eq("SCORE_CALCULATED"), payload.capture());
     var score = (ScoreCalculated) payload.getValue();
     assertThat(score.score()).isBetween(55, 95);
     assertThat(score.evaluator().model()).isEqualTo("fake-evaluator-v1");
@@ -153,7 +153,7 @@ class AttemptEvaluationServiceTest {
   private ScoreDeferred deferred() {
     var payload = ArgumentCaptor.forClass(Object.class);
     verify(events).enqueue(eq(KafkaTopics.EVALUATION_EVENTS), eq(attempt.courseCohortId().toString()),
-        eq("SCORE-DEFERRED"), eq(1), payload.capture());
+        eq("SCORE_DEFERRED"), payload.capture());
     return (ScoreDeferred) payload.getValue();
   }
 

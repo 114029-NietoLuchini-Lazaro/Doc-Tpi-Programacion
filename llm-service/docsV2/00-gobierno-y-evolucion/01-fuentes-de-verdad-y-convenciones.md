@@ -105,7 +105,10 @@ Los service IDs canónicos son `practice-service`, `challenges-service`, `course
   solo se movió quién nos habla.
 - `courses-service` consulta calibración y evaluaciones pendientes antes de cambiar el estado del curso.
 - `admin-service` administra modelos, golden set y calibraciones mediante M2M delegado.
-- Kafka es el bus compartido para eventos asíncronos. No sustituye al Gateway para solicitudes HTTP.
+- Kafka es el bus compartido para eventos asíncronos. No sustituye al Gateway para solicitudes HTTP. Su estándar
+  es el del PDF `KAFKA.pdf` transcrito en [`KAFKA_EVENT_STANDARD`](../contracts/KAFKA_EVENT_STANDARD.md)
+  ([ADR-020](02-decisiones-y-pendientes.md)): envelope `{eventId, eventType, timestamp, producer, payload}`,
+  tópicos asignados por Notificaciones, bus `event-bus:29092`.
 
 ## 7. Prueba mínima de integración
 

@@ -57,7 +57,6 @@ public class EventOutboxRelay {
         .setHeader(KafkaHeaders.KEY, row.messageKey())
         .setHeader("eventId", row.eventId().toString())
         .setHeader("eventType", row.eventType())
-        .setHeader("eventVersion", String.valueOf(row.eventVersion()))
         .setHeader("traceparent", row.traceparent() == null ? "" : row.traceparent())
         .setHeader("X-Request-Id", row.requestId() == null ? "" : row.requestId())
         .build();
@@ -75,15 +74,14 @@ public class EventOutboxRelay {
     });
   }
 
-  /** El cuerpo del mensaje es el envelope completo del estándar (KAFKA_EVENT_STANDARD §5):
-   * {@code eventId, eventType, eventVersion, timestamp, producer, payload}. Los headers repiten
-   * {@code eventId}/{@code eventType}/{@code eventVersion} para filtrar sin deserializar. */
+  /** El cuerpo del mensaje es el envelope completo del estándar (KAFKA_EVENT_STANDARD §2):
+   * {@code eventId, eventType, timestamp, producer, payload}, sin {@code eventVersion}. Los headers repiten
+   * {@code eventId}/{@code eventType} para filtrar sin deserializar. */
   static String envelopeJson(EventOutboxRepository.OutboxRow row, ObjectMapper mapper) {
     try {
       ObjectNode envelope = mapper.createObjectNode();
       envelope.put("eventId", row.eventId().toString());
       envelope.put("eventType", row.eventType());
-      envelope.put("eventVersion", row.eventVersion());
       envelope.put("timestamp", row.occurredAt().toInstant().toString());
       envelope.put("producer", row.producer());
       envelope.set("payload", mapper.readTree(row.payloadJson()));

@@ -28,13 +28,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Cubre los criterios de aceptación de LLM-EP01-H07 sobre un broker Kafka embebido:
  * <ul>
  *   <li>CA1: {@link KafkaEventProducer} + {@link EventOutboxRelay} publican con eventId,
- *       eventType, eventVersion y correlación (traceparent/X-Request-Id) como headers.</li>
+ *       eventType y correlación (traceparent/X-Request-Id) como headers, y sin eventVersion.</li>
  *   <li>CA2/CA3: {@link KafkaConsumedEventsRepository} reserva el eventId antes de procesar y
  *       reconoce duplicados sin repetir el efecto.</li>
- *   <li>CA4: un mensaje sin eventId (o malformado) se enruta a {@code <topic>.dlt} y no bloquea
- *       el consumo de los eventos siguientes.</li>
- *   <li>Un {@code ATTEMPT-CLOSED} válido se evalúa contra el evaluador {@code fake} sembrado y su
- *       {@code SCORE-CALCULATED} sale por {@code evaluation-events}, con la cohorte como key.</li>
+ *   <li>CA4: un mensaje sin eventId (o malformado) queda en la tabla {@code event_dead_letter} (no hay
+ *       tópico {@code .dlt}: los grupos no pueden crear tópicos) y no bloquea el consumo de los eventos
+ *       siguientes.</li>
+ *   <li>Un {@code ATTEMPT_CLOSED} válido se evalúa contra el evaluador {@code fake} sembrado y su
+ *       {@code SCORE_CALCULATED} sale por {@code evaluation-events}, con la cohorte como key.</li>
  * </ul>
  */
 @SpringBootTest(properties = {
@@ -45,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     "spring.task.scheduling.enabled=true",
     "spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}"
 })
-@EmbeddedKafka(partitions = 1, topics = {"moderation-events", "practice-events", "practice-events.dlt", "evaluation-events"})
+@EmbeddedKafka(partitions = 1, topics = {"moderation-events", "practice-events", "evaluation-events"})
 class EventOutboxKafkaFlowIT extends AbstractIntegrationIT {
 
   @Autowired
@@ -88,7 +89,7 @@ class EventOutboxKafkaFlowIT extends AbstractIntegrationIT {
     UUID eventId;
     try {
       eventId = kafkaEventProducer.enqueue(
-          KafkaTopics.MODERATION_EVENTS, "curso-h07", "MESSAGE-UNBLOCKED", 1,
+          KafkaTopics.MODERATION_EVENTS, "curso-h07", "MESSAGE_UNBLOCKED",
           Map.of("messageId", "msg-h07"));
     } finally {
       MDC.clear();
@@ -100,11 +101,12 @@ class EventOutboxKafkaFlowIT extends AbstractIntegrationIT {
     assertThat(record.key()).isEqualTo("curso-h07");
     assertThat(record.value()).contains("messageId").contains("msg-h07");
     // El cuerpo es el envelope completo del estándar; el payload va anidado, no solo.
-    assertThat(record.value()).contains("\"eventId\":\"" + eventId + "\"").contains("\"eventType\":\"MESSAGE-UNBLOCKED\"")
-        .contains("\"eventVersion\":1").contains("\"timestamp\"").contains("\"producer\"").contains("\"payload\":{");
+    assertThat(record.value()).contains("\"eventId\":\"" + eventId + "\"").contains("\"eventType\":\"MESSAGE_UNBLOCKED\"")
+        .contains("\"timestamp\"").contains("\"producer\"").contains("\"payload\":{");
     assertThat(headerValue(record, "eventId")).isEqualTo(eventId.toString());
-    assertThat(headerValue(record, "eventType")).isEqualTo("MESSAGE-UNBLOCKED");
-    assertThat(headerValue(record, "eventVersion")).isEqualTo("1");
+    assertThat(headerValue(record, "eventType")).isEqualTo("MESSAGE_UNBLOCKED");
+    assertThat(record.value()).doesNotContain("eventVersion");
+    assertThat(record.headers().lastHeader("eventVersion")).as("no hay header eventVersion").isNull();
     assertThat(headerValue(record, "traceparent")).isEqualTo("trace-h07-1");
     assertThat(headerValue(record, "X-Request-Id")).isEqualTo("req-h07-1");
 
@@ -120,8 +122,8 @@ class EventOutboxKafkaFlowIT extends AbstractIntegrationIT {
   void consumerDeduplicatesReprocessedEventId() {
     UUID eventId = UUID.randomUUID();
 
-    boolean firstReservation = consumedEventsRepository.tryReserve(eventId, "practice-events", "ATTEMPT-CLOSED", "llm-service");
-    boolean secondReservation = consumedEventsRepository.tryReserve(eventId, "practice-events", "ATTEMPT-CLOSED", "llm-service");
+    boolean firstReservation = consumedEventsRepository.tryReserve(eventId, "practice-events", "ATTEMPT_CLOSED", "llm-service");
+    boolean secondReservation = consumedEventsRepository.tryReserve(eventId, "practice-events", "ATTEMPT_CLOSED", "llm-service");
 
     assertThat(firstReservation).isTrue();
     assertThat(secondReservation).isFalse();
@@ -133,17 +135,21 @@ class EventOutboxKafkaFlowIT extends AbstractIntegrationIT {
 
   @Test
   void malformedEventWithoutEventIdIsRoutedToDeadLetterAndDoesNotBlockNextEvents() {
-    testProducer.send(new ProducerRecord<>(KafkaTopics.PRACTICE_EVENTS, "curso-x", "{\"noEventId\":true}"));
+    String marker = "noEventId-" + UUID.randomUUID();
+    testProducer.send(new ProducerRecord<>(KafkaTopics.PRACTICE_EVENTS, "curso-x", "{\"" + marker + "\":true}"));
     testProducer.flush();
 
-    testConsumer.subscribe(java.util.List.of(KafkaTopics.PRACTICE_EVENTS + ".dlt"));
-    ConsumerRecord<String, String> deadLettered = pollUntilAny(testConsumer);
-    assertThat(deadLettered.value()).contains("noEventId");
+    waitUntil(() -> {
+      Integer rows = jdbc.queryForObject(
+          "select count(*) from llm.event_dead_letter where source_topic = ? and raw_value like ? and reason = ?",
+          Integer.class, KafkaTopics.PRACTICE_EVENTS, "%" + marker + "%", "Evento sin eventId");
+      return rows != null && rows == 1;
+    });
 
     // El próximo evento bien formado en el mismo topic se sigue consumiendo sin bloqueo (CA4).
     UUID nextEventId = UUID.randomUUID();
-    String wellFormed = "{\"eventId\":\"" + nextEventId + "\",\"eventType\":\"ATTEMPT-CLOSED\",\"eventVersion\":1,"
-        + "\"producer\":\"practice-service\",\"payload\":{}}";
+    String wellFormed = "{\"eventId\":\"" + nextEventId + "\",\"eventType\":\"ATTEMPT_CLOSED\","
+        + "\"timestamp\":\"2026-09-20T15:00:00Z\",\"producer\":\"practice-service\",\"payload\":{}}";
     testProducer.send(new ProducerRecord<>(KafkaTopics.PRACTICE_EVENTS, "curso-x", wellFormed));
     testProducer.flush();
 
@@ -158,8 +164,8 @@ class EventOutboxKafkaFlowIT extends AbstractIntegrationIT {
   void aClosedAttemptIsEvaluatedByTheFakeAndItsScoreIsPublishedInEvaluationEvents() {
     UUID attemptId = UUID.randomUUID();
     UUID cohortId = UUID.randomUUID();
-    String attemptClosed = "{\"eventId\":\"" + UUID.randomUUID() + "\",\"eventType\":\"ATTEMPT-CLOSED\",\"eventVersion\":1,"
-        + "\"producer\":\"practice-service\",\"payload\":{\"attemptId\":\"" + attemptId + "\",\"courseCohortId\":\"" + cohortId
+    String attemptClosed = "{\"eventId\":\"" + UUID.randomUUID() + "\",\"eventType\":\"ATTEMPT_CLOSED\","
+        + "\"timestamp\":\"2026-09-20T15:00:00Z\",\"producer\":\"practice-service\",\"payload\":{\"attemptId\":\"" + attemptId + "\",\"courseCohortId\":\"" + cohortId
         + "\",\"learnerId\":\"" + UUID.randomUUID() + "\",\"transcript\":[{\"role\":\"student\",\"content\":\"no entiendo mi recursión\"}]}}";
     testProducer.send(new ProducerRecord<>(KafkaTopics.PRACTICE_EVENTS, cohortId.toString(), attemptClosed));
     testProducer.flush();
@@ -168,9 +174,9 @@ class EventOutboxKafkaFlowIT extends AbstractIntegrationIT {
     ConsumerRecord<String, String> score = pollUntilAny(testConsumer);
 
     assertThat(score.key()).isEqualTo(cohortId.toString());
-    assertThat(headerValue(score, "eventType")).isEqualTo("SCORE-CALCULATED");
+    assertThat(headerValue(score, "eventType")).isEqualTo("SCORE_CALCULATED");
     assertThat(score.value()).contains(attemptId.toString()).contains("\"score\"").contains("fake-evaluator-v1");
-    assertThat(score.value()).contains("\"eventType\":\"SCORE-CALCULATED\"").contains("\"payload\":{");
+    assertThat(score.value()).contains("\"eventType\":\"SCORE_CALCULATED\"").contains("\"payload\":{");
   }
 
   private void waitUntil(java.util.function.BooleanSupplier condition) {

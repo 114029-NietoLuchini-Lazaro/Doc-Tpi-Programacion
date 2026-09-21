@@ -22,12 +22,12 @@ Técnica común en
 [transversales del README](../README.md#resiliencia-y-manejo-de-errores-técnica-común-a-todos-los-endpoints).
 Este es el único equipo donde "qué pasa si falla" **es** el contrato, no un detalle aparte:
 
-1. El alumno entrega el intento → Tema 05 publica `intento_cerrado` (desde el 2026-09-13; antes lo publicaba Tema 03) → nosotros encolamos.
+1. El alumno entrega el intento → Tema 05 publica `ATTEMPT_CLOSED` (desde el 2026-09-13; antes lo publicaba Tema 03) → nosotros encolamos.
 2. Si el proveedor no responde tras backoff+tope, publicamos `score_pendiente_diferido` con
    `motivo: proveedor_no_disponible` y `reintentar_desde`.
 3. **El Backend tiene que haber aceptado la entrega en el paso 1, sin esperar el score.** El
    registro académico queda con `score_agregado = null` hasta que llegue
-   `score_de_ia_calculado` (éxito) o se resuelva por otra vía (override docente).
+   `SCORE_CALCULATED` (éxito) o se resuelva por otra vía (override docente).
 4. Mientras el pendiente exista, `GET /course-cohorts/{courseCohortId}/pending-evaluations` lo
    cuenta y **bloquea el cierre del curso** — el Backend/Tema 02 tienen que consultarlo antes de
    cerrar, no asumir que "sin error, está todo evaluado".

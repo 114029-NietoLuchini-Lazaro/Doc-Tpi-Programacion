@@ -122,7 +122,7 @@ psql_llm() {
 }
 if [ "$SKIP_COMPOSE_MANAGE" != "true" ]; then
   echo "4b. [H07·CA5] Registrando eventId $EVENT_ID en kafka_consumed_events antes del reinicio..."
-  psql_llm "insert into llm.kafka_consumed_events (event_id, topic, event_type, consumer_group) values ('$EVENT_ID', 'practice-events', 'ATTEMPT-CLOSED', 'llm-service')" > /dev/null
+  psql_llm "insert into llm.kafka_consumed_events (event_id, topic, event_type, consumer_group) values ('$EVENT_ID', 'practice-events', 'ATTEMPT_CLOSED', 'llm-service')" > /dev/null
 fi
 
 if [ "$SKIP_COMPOSE_MANAGE" != "true" ]; then

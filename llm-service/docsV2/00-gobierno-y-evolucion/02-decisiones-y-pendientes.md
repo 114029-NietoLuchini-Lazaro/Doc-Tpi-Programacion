@@ -490,6 +490,38 @@ Historia [LLM-EP01-H01](../07-planificacion-y-trabajo-equipo/09-epicas-historias
 
 ---
 
+### ADR-020 — Estándar Kafka del PDF `KAFKA.pdf`: envelope de 5 campos, `eventType` con guion bajo y tópicos asignados por Notificaciones
+
+**Decisión (2026-09-20):** los eventos de `llm-service` siguen el estándar del PDF de la cátedra
+(«Apache Kafka → Eventos que conectan servicios»), que **reemplaza** al estándar anterior
+(`KAFKA_EVENT_STANDARD` con `eventVersion`, conservado como histórico):
+
+- Envelope `{eventId, eventType, timestamp, producer, payload}`. **Sin `eventVersion`.**
+- `eventType` en `MAYÚSCULAS_CON_GUION_BAJO`: `ATTEMPT_CLOSED`, `SCORE_CALCULATED`, `SCORE_DEFERRED`,
+  `MESSAGE_UNBLOCKED`.
+- Bus `event-bus:29092`, variable `KAFKA_BOOTSTRAP`, `group-id` = nombre del servicio.
+- **No creamos tópicos.** Los nombres de `llm-service` (`practice-events`, `evaluation-events`,
+  `moderation-events`…) quedan como **provisorios, a asignar por Notificaciones**. Sin tópico `.dlt`: los
+  mensajes rechazados se guardan en la tabla `event_dead_letter`.
+- Se conservan, porque el PDF no los contradice: Message Key por dominio, outbox transaccional, deduplicación por
+  `eventId`, headers `traceparent`/`X-Request-Id`.
+
+**Por qué:** el PDF es el contrato que van a usar todos los grupos; sostener el estándar viejo obliga a Tema 05 y
+Notificaciones a adaptarse a un formato que nadie más habla.
+
+**Queda abierto (pendientes con Notificaciones):** nombres definitivos de tópico, tópico de dead-letter, política
+de versionado sin `eventVersion`, valor de `producer` y forma oficial de `timestamp` (el `JsonSerializer` del PDF
+escribe un `Instant` como número, no como el texto ISO-8601 de su ejemplo).
+
+**Se revisa si:** Notificaciones asigna los tópicos (se actualiza `KafkaTopics` y el AsyncAPI), o define un mecanismo
+de versionado de eventos.
+
+📄 [`KAFKA_EVENT_STANDARD`](../contracts/KAFKA_EVENT_STANDARD.md) ·
+[`llm-service.asyncapi.yaml`](../contracts/llm-service.asyncapi.yaml) ·
+[pendientes de Notificaciones](../07-planificacion-y-trabajo-equipo/11-equipos/notifications-service/pendientes.md)
+
+---
+
 ## Parte B — Preguntas abiertas para el Product Owner
 
 Van con recomendación, no solo con la pregunta.
@@ -943,7 +975,7 @@ Conceptualmente ya está resuelto ([01](../01-vision-alcance-y-entrega/01-proble
 Los cuatro puntos: vos devolvés score 0-100 y nunca XP; el Tema 10 aplica PAR-05; vos exponés el contador de pendientes; **el backend implementa la degradación de RF-IA-27** (que la entrega se acepte con tu servicio caído). Ese último es el que más se cae entre equipos.
 
 > ⚠️ **Cambió el 2026-09-13.** Estos cuatro puntos siguen firmes como regla de negocio, pero el
-> tránsito ya no es directo con Tema 03: publicás `score_de_ia_calculado.v1` para **Tema 05**, que
+> tránsito ya no es directo con Tema 03: publicás `SCORE_CALCULATED` para **Tema 05**, que
 > es quien se lo reenvía a Tema 03 para que aplique el XP. Detalle en
 > [17 · I-04](../contracts/90-mapa-de-integracion-historico.md)y [18 §4.2/§4.3](../contracts/91-contratos-inter-equipos-historicos.md)
 

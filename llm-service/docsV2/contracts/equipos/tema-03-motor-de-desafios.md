@@ -31,7 +31,7 @@ vigente del evaluador vive ahora en
 
 ## Qué nos da (contrato anterior, retirado)
 
-- Publica el evento `intento_cerrado.v1`, que dispara la evaluación asincrónica. Estructura
+- Publica el evento `ATTEMPT_CLOSED`, que dispara la evaluación asincrónica. Estructura
   mínima obligatoria: `trace_id`, `curso_cohorte_id`, `intento_id`, `alumno_id`,
   `rubric_version`, `transcripcion` — todos marcados **OBLIGATORIO** en 18 §3.
 
@@ -59,7 +59,7 @@ y `trace_id` todavía no están en el YAML ejecutable**, aunque doc 18 los pida 
 
 ## Qué le damos (contrato anterior, retirado)
 
-- `score_agregado` (0–100) con desglose por dimensión vía el evento `score_de_ia_calculado.v1`.
+- `score_agregado` (0–100) con desglose por dimensión vía el evento `SCORE_CALCULATED`.
 - **Nunca devolvemos XP.** El modificador (PAR-05) lo aplica el motor de desafíos, no nosotros.
 - Si el evaluador no puede completar: `score_pendiente_diferido`, con `motivo` y
   `reintentar_desde`.

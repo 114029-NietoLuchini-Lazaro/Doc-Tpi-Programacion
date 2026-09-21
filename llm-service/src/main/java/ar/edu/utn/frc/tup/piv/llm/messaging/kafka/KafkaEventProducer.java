@@ -32,15 +32,14 @@ public class KafkaEventProducer {
    * Encola un evento para publicación asíncrona.
    *
    * @param topic       topic por dominio (ver {@link KafkaTopics})
-   * @param messageKey  Kafka Message Key del dominio (KAFKA_EVENT_STANDARD.md §13/§14)
-   * @param eventType   hecho del dominio en MAYÚSCULAS-CON-GUIONES (§7)
-   * @param eventVersion versión del contrato del evento, empieza en 1 (§8)
+   * @param messageKey  Kafka Message Key del dominio (KAFKA_EVENT_STANDARD.md §6)
+   * @param eventType   hecho del dominio en MAYÚSCULAS_CON_GUION_BAJO (§3)
    * @param payload     datos específicos del evento (serializados como JSON)
    */
-  public <T> UUID enqueue(String topic, String messageKey, String eventType, int eventVersion, T payload) {
+  public <T> UUID enqueue(String topic, String messageKey, String eventType, T payload) {
     UUID eventId = UUID.randomUUID();
     EventEnvelope<T> envelope = new EventEnvelope<>(
-        eventId, eventType, eventVersion, OffsetDateTime.now(), producerId, payload);
+        eventId, eventType, OffsetDateTime.now(), producerId, payload);
     String requestId = MDC.get("requestId");
     String traceId = MDC.get("traceId");
     outboxRepository.insert(envelope, topic, messageKey, requestId, traceId);

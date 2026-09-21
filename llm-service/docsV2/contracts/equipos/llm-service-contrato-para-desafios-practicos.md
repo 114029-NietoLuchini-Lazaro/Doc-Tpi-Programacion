@@ -1,10 +1,18 @@
-# llm-service — contrato para Desafíos Prácticos (Tema 05) · guía y contrato v1
+# llm-service — contrato para Desafíos Prácticos (Tema 05) · guía y contrato v2
 
 > **Para quién:** el equipo de Tema 05 (`practice-service`). **Es el único archivo que necesitan:** se
 > entiende solo y trae, como anexos, los contratos ejecutables (Anexo A: OpenAPI del tutor; Anexo B:
 > AsyncAPI de los eventos Kafka), recortados a lo que les toca. **Cómo leerlo:** la sección 1 explica de
 > qué se trata, la 2 es el paso a paso para empezar a probar, de la 5 a la 11 está el contrato
 > completo, la 12 cuenta en qué estado está todo y qué sigue, y al final están los anexos.
+
+> **Qué cambió respecto de la v1 de esta guía (2026-09-20).** Los eventos Kafka pasaron al estándar del PDF
+> de Kafka de la cátedra. **El HTTP del tutor no cambió.** En los eventos: (1) el envelope tiene **cinco
+> campos** — se **quitó `eventVersion`**; (2) los `eventType` pasaron de `ATTEMPT-CLOSED` a **`ATTEMPT_CLOSED`**
+> (con guion bajo), y `SCORE_CALCULATED` y `SCORE_DEFERRED` igual; (3) el bus es **`event-bus:29092`**
+> (variable `KAFKA_BOOTSTRAP`); (4) ya **no hay tópico `.dlt`**: los grupos no pueden crear tópicos; (5) los
+> **nombres de tópico son provisorios**: los asigna Notificaciones. Si ya implementaron contra la v1, hay que
+> cambiar solo esos puntos.
 
 ## 1. En una página
 
@@ -43,14 +51,14 @@ flowchart LR
         T["Tutor (bot de prueba)"]
         V["Evaluador (bot de prueba)"]
     end
-    K1[("Kafka · practice-events")]
-    K2[("Kafka · evaluation-events")]
+    K1[("Kafka · practice-events (provisorio)")]
+    K2[("Kafka · evaluation-events (provisorio)")]
     A -->|"POST /api/llm/tutor/interactions + token"| GW
     GW --> T
     T -->|"respuesta"| A
-    B -->|"ATTEMPT-CLOSED"| K1
+    B -->|"ATTEMPT_CLOSED"| K1
     K1 --> V
-    V -->|"SCORE-CALCULATED o SCORE-DEFERRED"| K2
+    V -->|"SCORE_CALCULATED o SCORE_DEFERRED"| K2
     K2 --> C
 ```
 
@@ -64,7 +72,7 @@ flowchart LR
 | | Estado | Qué hace falta |
 |---|---|---|
 | **Tutor (HTTP)** | Listo, con el bot | El alta en la plataforma y el token (sección 2) |
-| **Evaluador (Kafka)** | Listo de nuestro lado, con el bot | Que exista un broker Kafka compartido y acordar los nombres de topic |
+| **Evaluador (Kafka)** | Listo de nuestro lado, con el bot | Que Notificaciones asigne los nombres de tópico (el bus es `event-bus:29092`) |
 
 ## 2. Cómo arrancar, paso a paso
 
@@ -150,11 +158,11 @@ practice-service:
 una respuesta `200` normal, la misma respuesta al repetir la `Idempotency-Key`, y los errores `401`,
 `403` y `422`.
 
-**Paso 5 · Evaluador (cuando haya broker).** Publiquen un `ATTEMPT-CLOSED` en `practice-events` y lean
+**Paso 5 · Evaluador (cuando Notificaciones asigne los tópicos).** Publiquen un `ATTEMPT_CLOSED` en `practice-events` y lean
 `evaluation-events` (sección 6).
 
 **Paso 6 · Confirmarnos los puntos de la sección 10.** Ninguno cambia el contrato, pero algunos hay que
-cerrarlos antes de integrar en serio (broker, nombres de topic y solución esperada).
+cerrarlos antes de integrar en serio (nombres de topic, `producer`/`timestamp` y solución esperada).
 
 ## 3. Qué va a hacer el bot de prueba
 
@@ -192,7 +200,7 @@ circuito, no la nota.
 | El texto del tutor (hoy una pregunta de plantilla, sin relación real con el mensaje) | Rutas, verbos, headers, scope |
 | Los puntajes (hoy arbitrarios) | Campos y tipos de request, response y eventos |
 | `evaluator.provider` / `evaluator.model` (hoy `fake` / `fake-evaluator-v1`); trátenlos como texto opaco | Códigos HTTP y forma del error |
-| La latencia y la frecuencia real de `state: unavailable` y de `SCORE-DEFERRED` | Topics (una vez acordados), `eventType`, Message Key, `eventVersion` |
+| La latencia y la frecuencia real de `state: unavailable` y de `SCORE_DEFERRED` | Topics (una vez asignados), `eventType`, Message Key, forma del envelope |
 
 ## 5. Tutor (HTTP) — contrato
 
@@ -289,17 +297,17 @@ como fallo.
 
 ## 6. Evaluador (Kafka) — contrato
 
-Ustedes publican el cierre del intento y nosotros devolvemos el score. Envelope estándar de la
-plataforma (`eventId`, `eventType`, `eventVersion`, `timestamp`, `producer`, `payload`) en el cuerpo
-del mensaje.
+Ustedes publican el cierre del intento y nosotros devolvemos el score. Todo va por el bus de la plataforma,
+con el estándar del PDF de Kafka de la cátedra: en el cuerpo del mensaje, un envelope de **cinco campos**
+(`eventId`, `eventType`, `timestamp`, `producer`, `payload`), todo lo emitido **en inglés** y `eventType` en
+`MAYÚSCULAS_CON_GUION_BAJO`. **No hay `eventVersion`.**
 
-> **Los nombres de topic son una propuesta nuestra.** `practice-events` y `evaluation-events` no
-> figuran todavía en la tabla de dominios del estándar de Kafka de la plataforma
-> (`KAFKA_EVENT_STANDARD.md`, §17), que hoy lista `challenge-events` y otros. Hay que acordarlos con
-> ustedes y registrarlos ahí. Si ustedes ya publican en otro topic, lo cambiamos en nuestra
-> configuración sin tocar los campos.
+> **Los nombres de tópico son provisorios.** El estándar dice que los grupos **no podemos crear tópicos** y
+> que los asigna el grupo de Notificaciones. `practice-events` y `evaluation-events` son una propuesta nuestra,
+> todavía sin asignar: cuando Notificaciones dé los definitivos, cambiar el nombre es solo configuración y no
+> toca los campos. Mientras tanto, usen esos dos nombres como propiedad configurable.
 
-### Entrada: `ATTEMPT-CLOSED` en `practice-events`
+### Entrada: `ATTEMPT_CLOSED` en `practice-events`
 
 | Campo del `payload` | Tipo | |
 |---|---|---|
@@ -310,16 +318,16 @@ del mensaje.
 
 Forma recomendada de cada elemento del `transcript`: `{ "role": "student" | "tutor", "content": "..." }`.
 Solo validamos que sea un array; el evaluador real lee el contenido tal cual, así que cuanto más
-completo, mejor puntúa. Si algún día validáramos la forma, sería con un `eventVersion` nuevo.
+completo, mejor puntúa. Si algún día validáramos la forma, se avisaría antes por escrito.
 
-`eventVersion` de partida: `1`. La Message Key la eligen ustedes; no dependemos de ella.
+La Message Key la eligen ustedes; no dependemos de ella. El `producer` que usen es el nombre de su servicio
+(hoy `practice-service`; el valor oficial está por confirmar con Notificaciones).
 
 ```json
 {
   "eventId": "9f0c6c1e-6d0b-4c53-9a3e-0b1f6c8f2a11",
-  "eventType": "ATTEMPT-CLOSED",
-  "eventVersion": 1,
-  "timestamp": "2026-09-19T15:00:00Z",
+  "eventType": "ATTEMPT_CLOSED",
+  "timestamp": "2026-09-20T15:00:00Z",
   "producer": "practice-service",
   "payload": {
     "attemptId": "b1e2c3d4-0001-4a00-8000-000000000001",
@@ -335,7 +343,7 @@ completo, mejor puntúa. Si algún día validáramos la forma, sería con un `ev
 
 ### Salida: `evaluation-events`, Message Key = `courseCohortId`
 
-**`SCORE-CALCULATED`** (`eventVersion` 1):
+**`SCORE_CALCULATED`**:
 
 | Campo | Tipo | Notas |
 |---|---|---|
@@ -348,9 +356,8 @@ completo, mejor puntúa. Si algún día validáramos la forma, sería con un `ev
 ```json
 {
   "eventId": "3f1a7c52-8b0e-4d19-a6c4-1d2e9b7f5a30",
-  "eventType": "SCORE-CALCULATED",
-  "eventVersion": 1,
-  "timestamp": "2026-09-19T15:00:04.512Z",
+  "eventType": "SCORE_CALCULATED",
+  "timestamp": "2026-09-20T15:00:04.512Z",
   "producer": "llm-service",
   "payload": {
     "attemptId": "b1e2c3d4-0001-4a00-8000-000000000001",
@@ -364,7 +371,7 @@ completo, mejor puntúa. Si algún día validáramos la forma, sería con un `ev
 }
 ```
 
-**`SCORE-DEFERRED`** (`eventVersion` 1) cuando no se pudo evaluar: `attemptId`, `courseCohortId`,
+**`SCORE_DEFERRED`** cuando no se pudo evaluar: `attemptId`, `courseCohortId`,
 `learnerId`, `reason` (`MODEL_UNAVAILABLE` \| `INVALID_MODEL_RESPONSE` \| `RUBRIC_UNAVAILABLE`) y
 `retryFrom` (instante ISO-8601 sugerido para reintentar).
 
@@ -374,12 +381,12 @@ completo, mejor puntúa. Si algún día validáramos la forma, sería con un `ev
 |---|---|
 | Mismo `eventId` repetido | Se ignora; no se vuelve a publicar el score |
 | Otro `eventType` en `practice-events` | Se registra y se ignora |
-| Falta `attemptId`, `courseCohortId` o `learnerId`, no son UUID, o `transcript` no es un array | Va a `practice-events.dlt`; no se evalúa |
-| Evaluación fallida | `SCORE-DEFERRED` con el `reason` |
-| Reevaluar un intento | Publicar de nuevo `ATTEMPT-CLOSED` con un `eventId` nuevo; llega otro score. Hoy **no reintentamos solos** un diferido |
+| Falta `attemptId`, `courseCohortId` o `learnerId`, no son UUID, o `transcript` no es un array | No se evalúa. **No hay tópico dead-letter** (no podemos crear tópicos): el mensaje queda guardado en la tabla `event_dead_letter` de `llm-service`, con el motivo |
+| Evaluación fallida | `SCORE_DEFERRED` con el `reason` |
+| Reevaluar un intento | Publicar de nuevo `ATTEMPT_CLOSED` con un `eventId` nuevo; llega otro score. Hoy **no reintentamos solos** un diferido |
 
 Consuman los eventos de score de forma idempotente por `eventId`. Nuestros mensajes llevan además
-como headers `eventId`, `eventType`, `eventVersion` y, si los hay, `traceparent` y `X-Request-Id`.
+como headers `eventId`, `eventType` y, si los hay, `traceparent` y `X-Request-Id`. **No hay header `eventVersion`.**
 
 ### Cómo funciona y cómo conectarse
 
@@ -388,65 +395,102 @@ los mensajes durante un tiempo (la retención la define el broker), y cada **gru
 su ritmo, con su propio avance (*offset*). Dos servicios con grupos distintos reciben, los dos, todos los
 mensajes. Nadie le "pregunta" nada a nadie: uno publica en un topic y el otro está suscripto a ese topic.
 
-| Topic | Publica | Lee | Grupo de consumidores | Message Key |
+| Topic (provisorio) | Publica | Lee | Grupo de consumidores | Message Key |
 |---|---|---|---|---|
 | `practice-events` | Tema 05 | `llm-service` | `llm-service` | La eligen ustedes |
-| `evaluation-events` | `llm-service` | Tema 05 | **El que elijan ustedes** (uno propio y estable, p. ej. `practice-service`) | `courseCohortId` |
-| `practice-events.dlt` | `llm-service` | Quien monitoree | — | La del mensaje original |
+| `evaluation-events` | `llm-service` | Tema 05 | **El nombre de su servicio** (uno propio y estable: `practice-service`) | `courseCohortId` |
 
 El flujo completo de un intento:
 
-1. Ustedes cierran el intento y **publican** un `ATTEMPT-CLOSED` en `practice-events`.
+1. Ustedes cierran el intento y **publican** un `ATTEMPT_CLOSED` en `practice-events`.
 2. Nosotros lo leemos, lo evaluamos y dejamos el resultado en una tabla propia (patrón *outbox*).
 3. Un proceso nuestro revisa esa tabla **cada 2 segundos** y **publica** el score en `evaluation-events`.
 4. Ustedes lo **leen** de `evaluation-events`, filtran por `eventType` y lo relacionan con el intento por
    `payload.attemptId`.
 
-No hay una respuesta directa al `ATTEMPT-CLOSED`: el resultado se espera en `evaluation-events`. Con el
+No hay una respuesta directa al `ATTEMPT_CLOSED`: el resultado se espera en `evaluation-events`. Con el
 bot llega en unos segundos; con el modelo real, según cuánto tarde el modelo.
+
+**Conexión (del PDF).** El bus es `event-bus:29092` dentro de la red de Docker: variable `KAFKA_BOOTSTRAP`
+con ese valor por defecto. Los dos lados usan **Spring for Apache Kafka** (`org.springframework.kafka:spring-kafka`).
+El `group-id` es el nombre del propio servicio.
 
 **Cómo publican ustedes** (a `practice-events`):
 
-- Clave y valor como texto (`StringSerializer`); el valor es el envelope JSON completo.
+```yaml
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:event-bus:29092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer   # como en el PDF
+```
+
+- El valor es el envelope JSON de cinco campos. Con `JsonSerializer` y la clase `Event<T>` del PDF alcanza; si
+  prefieren serializar a mano, también sirve (`StringSerializer` + Jackson).
+- ⚠️ **`timestamp` como texto.** `JsonSerializer` escribe un `Instant` como **número** (`1789914600.0`), no como el
+  `"2026-09-20T15:00:00Z"` del ejemplo del PDF. Nosotros no leemos el `timestamp` del `ATTEMPT_CLOSED`, así que
+  funciona igual, pero para publicar el texto ISO-8601 pongan `@JsonFormat(shape = JsonFormat.Shape.STRING)` en el
+  campo o usen un `ObjectMapper` con `WRITE_DATES_AS_TIMESTAMPS` desactivado.
 - `acks=all` recomendado, y un `eventId` (UUID) único por evento: nosotros deduplicamos por él, así que
   si reintentan un envío, reutilicen el mismo `eventId`.
-- Un `ATTEMPT-CLOSED` por intento, publicado cuando el intento ya está cerrado y el `transcript` está
+- Un `ATTEMPT_CLOSED` por intento, publicado cuando el intento ya está cerrado y el `transcript` está
   completo. Para no perder el evento si Kafka no está disponible, conviene guardarlo primero en su base y
   publicarlo después (el mismo patrón *outbox* que usamos nosotros).
 
 ```java
 // Ejemplo (Spring Kafka, no compilado): publicar el cierre de un intento.
-kafkaTemplate.send("practice-events", attemptId.toString(), objectMapper.writeValueAsString(envelope));
+kafkaTemplate.send("practice-events", attemptId.toString(), event);   // event: Event<AttemptClosedPayload>
 ```
 
 **Cómo se suscriben ustedes** (a `evaluation-events`):
 
-- Con un **`group.id` propio y estable**. Si usaran el nuestro (`llm-service`), nos repartiríamos los
-  mensajes y a ninguno le llegaría todo.
-- Clave y valor como texto (`StringDeserializer`) y parsear el JSON: el envelope viene en el cuerpo.
-- El topic trae los dos tipos de evento, así que **filtren por `eventType`** (`SCORE-CALCULATED` y
-  `SCORE-DEFERRED`). Además viaja como header, para filtrar sin deserializar.
-- Recomendamos `auto.offset.reset=earliest` la primera vez, para no perder scores publicados antes de que
+- Con un **`group-id` propio y estable** (el nombre de su servicio). Si usaran el nuestro (`llm-service`),
+  nos repartiríamos los mensajes y a ninguno le llegaría todo.
+- **Este tópico mezcla dos `eventType` con payloads distintos** (`SCORE_CALCULATED` y `SCORE_DEFERRED`), así que
+  el consumidor **tipado por un solo payload del PDF no alcanza**: consuman `Event<?>` (o el cuerpo como
+  `JsonNode`) y **ramifiquen por `eventType`**. Además viaja como header, para filtrar sin deserializar.
+- Si usan `JsonDeserializer` de Spring: **nosotros no mandamos el header `__TypeId__`** (llevaría el nombre de una
+  clase Java nuestra), así que configuren el tipo por defecto y ajusten los paquetes de confianza:
+
+  ```yaml
+  spring:
+    kafka:
+      consumer:
+        group-id: practice-service
+        auto-offset-reset: earliest
+        key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+        properties:
+          spring.json.use.type.headers: false
+          spring.json.value.default.type: com.example.events.Event      # su clase de evento
+          spring.json.trusted.packages: "com.example.*"
+  ```
+
+  y un `ObjectMapper` con `JavaTimeModule` para el `timestamp`. Nuestro `timestamp` es texto ISO-8601 en UTC.
+  Es más simple todavía leer el cuerpo como `String` y parsear el JSON.
+- Recomendamos `auto-offset-reset: earliest` la primera vez, para no perder scores publicados antes de que
   arranquen, y confirmar el offset **después** de procesar cada evento.
 - Puede llegar el mismo evento más de una vez: deduplicar por `eventId`.
 - El orden solo está garantizado **dentro de una misma cohorte** (misma key, misma partición); no hay
   orden entre cohortes.
 - Si un intento se reevalúa pueden llegar varios eventos con el mismo `attemptId` (por ejemplo un
-  `SCORE-DEFERRED` y luego un `SCORE-CALCULATED`): quédense con el más reciente por `timestamp`.
+  `SCORE_DEFERRED` y luego un `SCORE_CALCULATED`): quédense con el más reciente por `timestamp`.
 
 ```java
 // Ejemplo (Spring Kafka, no compilado): recibir los scores.
 @KafkaListener(topics = "evaluation-events", groupId = "practice-service")
-public void onScore(String body) throws JsonProcessingException {
-    JsonNode event = objectMapper.readTree(body);
-    String type = event.get("eventType").asText();       // SCORE-CALCULATED | SCORE-DEFERRED
-    JsonNode payload = event.get("payload");             // attemptId, score, dimensions...
+public void onScore(Event<?> event) {
+    switch (event.getEventType()) {                      // SCORE_CALCULATED | SCORE_DEFERRED
+        case "SCORE_CALCULATED" -> { /* payload: attemptId, score, dimensions... */ }
+        case "SCORE_DEFERRED"   -> { /* payload: attemptId, reason, retryFrom */ }
+        default -> { /* eventType desconocido: se ignora */ }
+    }
 }
 ```
 
-**Conexión.** La dirección del broker (`bootstrap.servers`) y, si el broker lo exige, TLS o usuario y
-contraseña, los define el equipo que lo administra: hoy no hay un broker compartido definido (ver la
-sección 10). Los topics los crea ese equipo; nosotros no los creamos.
+**Seguridad y tópicos.** Si el bus exige TLS o usuario y contraseña, lo define el grupo que lo administra.
+Los tópicos los asigna Notificaciones; ni ustedes ni nosotros los creamos.
 
 ## 7. Decisiones tomadas
 
@@ -461,39 +505,43 @@ Cada decisión se puede cambiar sin tocar el contrato salvo donde se indica.
 | D5 | El score sale por Kafka a ustedes; nunca hablamos directo con Tema 03 | Un único camino de vuelta; ustedes se lo reenvían a Tema 03 |
 | D6 | Message Key de `evaluation-events`: `courseCohortId` | Ordena los scores de una cohorte |
 | D7 | Rúbrica única (la plantilla institucional) para todas las cohortes hasta que exista un mapa cohorte → curso | Es interno; lo único visible es `rubricVersionId` en el evento, que ya viaja |
-| D8 | Campos, tipos, `eventType` y `eventVersion: 1` de los eventos como figuran en el Anexo B | Un cambio incompatible sería `eventVersion: 2`, con aviso previo |
-| D9 | Los nombres de topic (`practice-events`, `evaluation-events`) son una propuesta a acordar | Cambiarlos es configuración nuestra y de ustedes; no altera los campos de los eventos |
+| D8 | Campos, tipos y `eventType` de los eventos como figuran en el Anexo B; envelope de cinco campos, sin `eventVersion` (estándar del PDF) | Un cambio incompatible se avisa antes y se coordina: el estándar no define aún un versionado de eventos |
+| D9 | Los nombres de topic (`practice-events`, `evaluation-events`) son **provisorios**: los asigna Notificaciones | Los grupos no pueden crear tópicos. Cambiarlos es configuración; no altera los campos de los eventos |
 
 ## 8. Cómo va a evolucionar (sin romper)
 
 - **Solo cambios aditivos** dentro de una versión: campos opcionales nuevos, valores nuevos en el
   contenido de un campo abierto, códigos de error nuevos. Ignoren los campos que no conozcan.
-- **Un cambio incompatible** sale como `eventVersion` nuevo (eventos) o como endpoint nuevo (HTTP),
-  con aviso previo, y la versión anterior sigue funcionando en paralelo.
+- **Un cambio incompatible** sale como endpoint nuevo (HTTP), con aviso previo, y la versión anterior
+  sigue funcionando en paralelo. En los **eventos** no hay `eventVersion`: un cambio incompatible se avisa
+  antes por escrito y se coordina con ustedes, hasta que Notificaciones defina cómo versionar eventos.
 - **Streaming (SSE)** irá en un endpoint aparte, `/tutor/interactions/stream`. El actual no cambia.
 - **Evento de ediciones y tests del IDE** (alimenta la dimensión autonomía): será un `eventType`
-  nuevo. No modifica `ATTEMPT-CLOSED` ni `SCORE-CALCULATED`.
+  nuevo. No modifica `ATTEMPT_CLOSED` ni `SCORE_CALCULATED`.
 
 ## 9. Qué no valida el modo test
 
 - La calidad del tutor y de los puntajes, la latencia real y la frecuencia real de `unavailable`.
 - La calificación por curso: hoy usamos siempre la rúbrica institucional.
 - Que el evaluador tenga contexto del desafío: el evento no lo trae. Un campo opcional
-  (por ejemplo `challengeContext`) se puede sumar al `payload` sin cambiar la versión.
+  (por ejemplo `challengeContext`) se puede sumar al `payload` sin romper nada.
 
 ## 10. Qué necesitamos que nos confirmen (ninguno cambia el contrato)
 
-1. **Topics.** Que `practice-events` (entrada) y `evaluation-events` (salida) les sirven como nombre, o
-   en qué topic publican hoy. Los registramos juntos en el estándar.
-2. **Broker.** A qué Kafka y en qué ambiente se conectan; el del compose de `llm-service` es solo
-   local. Nosotros y ustedes tenemos que usar el mismo.
-3. **Payload de score.** Que `SCORE-CALCULATED` y `SCORE-DEFERRED` les sirven tal cual están.
+1. **Topics.** Los nombres definitivos los asigna Notificaciones (los grupos no crean tópicos). Que
+   `practice-events` (entrada) y `evaluation-events` (salida) les sirven como nombre provisorio, o en qué
+   topic publican hoy.
+2. **Broker.** Que se conectan a `event-bus:29092` (variable `KAFKA_BOOTSTRAP`) y en qué ambiente; el broker
+   `kafka-local` del compose de `llm-service` es solo local.
+3. **Payload de score.** Que `SCORE_CALCULATED` y `SCORE_DEFERRED` les sirven tal cual están.
 4. **Transcript.** Que pueden armar `{role, content}` como se recomienda arriba.
 5. **Message Key** de `practice-events`, si tienen una preferencia de orden.
 6. **Solución esperada.** Que aceptan mandarla en `expectedSolution` (o avisan si prefieren otro camino;
    sería un cambio de contrato y hay que decidirlo antes de integrar).
 7. **Evento del IDE.** Quién lo genera, ustedes o Tema 06.
 8. **Pantalla de tutor no disponible.** Qué muestran cuando llega `state: unavailable`.
+9. **`producer` y `timestamp`.** Qué valor de `producer` usan (nosotros: `llm-service`) y si publican el
+   `timestamp` como texto ISO-8601 o como número (ver la advertencia de la sección 6).
 
 ## 11. Cómo probar la conexión
 
@@ -518,9 +566,10 @@ para pruebas locales sirve cualquiera, por ejemplo la que genera `openssl rand -
   ```
 
   El perfil `workbench` (`compose.workbench.yaml`) saltea la autenticación por completo.
-- **Evaluador.** Con el Kafka del mismo compose (`kafka:9092` dentro de su red): publicar el
-  `ATTEMPT-CLOSED` de la sección 6 en `practice-events` (con `kafka-console-producer.sh` dentro del
-  contenedor de Kafka) y leer `evaluation-events`.
+- **Evaluador.** Con el broker local `kafka-local` del mismo compose (`kafka-local:29092` dentro de su red;
+  no se llama `event-bus` a propósito, para no chocar con el bus de la plataforma si también está levantado):
+  publicar el `ATTEMPT_CLOSED` de la sección 6 en `practice-events` (con `kafka-console-producer.sh` dentro
+  del contenedor de Kafka) y leer `evaluation-events`. Para apuntar al bus de la plataforma, `KAFKA_BOOTSTRAP=event-bus:29092`.
 
 ## 12. Estado de las pruebas y próximos pasos
 
@@ -529,11 +578,11 @@ para pruebas locales sirve cualquiera, por ejemplo la que genera `openssl rand -
 | Qué | Resultado |
 |---|---|
 | Tutor con el bot, por HTTP | Respuesta normal, repetición de la `Idempotency-Key` con la misma respuesta, y los errores `401`, `403` y `422`. También forzamos un fallo del modelo y responde `200` con `state: unavailable` |
-| Evaluador con el bot, con un broker Kafka local | Un `ATTEMPT-CLOSED` válido produce un `SCORE-CALCULATED` con la cohorte como key; un `eventId` repetido no duplica el score; un evento inválido va a `practice-events.dlt`; un fallo del evaluador produce un `SCORE-DEFERRED` |
+| Evaluador con el bot, con un broker Kafka local | Un `ATTEMPT_CLOSED` válido produce un `SCORE_CALCULATED` con la cohorte como key; un `eventId` repetido no duplica el score; un evento inválido queda en la tabla `event_dead_letter`; un fallo del evaluador produce un `SCORE_DEFERRED` |
 | Modelo real, en una prueba puntual con un proveedor de prueba | El tutor respondió en español de forma socrática (en menos de 3 s en las dos llamadas que hicimos) y no entregó código ante un pedido directo de la solución. El evaluador devolvió puntajes válidos y distinguió un intento bueno (90) de uno malo (25), pero **puso el mismo valor en las cinco dimensiones**: el desglose por dimensión todavía no es confiable |
 
 **Repetición en limpio (2026-09-20).** Levantamos de cero el compose local de `llm-service` (bot, sin keys de
-proveedor, Kafka local) y corrimos los casos de las secciones 3 y 6 con dos scripts que quedan en el repo de
+proveedor, broker Kafka local) y corrimos los casos de las secciones 3 y 6 con dos scripts que quedan en el repo de
 `llm-service`: `scripts/probar-bot-tutor.sh` y `scripts/probar-bot-evaluador.sh`. Salen con error si algún caso
 falla y se pueden repetir contra el mismo broker. Resultado: **todos los casos dieron OK, sin diferencias con lo
 descrito en este documento**.
@@ -541,16 +590,16 @@ descrito en este documento**.
 | Script | Casos que comprueba |
 |---|---|
 | `probar-bot-tutor.sh` | Mensaje normal (`200`, `completed`, `conversacionId`); misma key y mismo cuerpo (respuesta idéntica); misma key con otro cuerpo (`422`); scope incorrecto y otro servicio (`401`); sin identidad delegada (`403`); `riskLevel` inválido y campos ausentes (`422`); jailbreak (`200`, mensaje fijo). Los errores llegan como `application/problem+json` |
-| `probar-bot-evaluador.sh` | `ATTEMPT-CLOSED` válido produce un `SCORE-CALCULATED` con la cohorte como key, los headers `eventId`, `eventType` y `eventVersion`, y `evaluator` `fake` / `fake-evaluator-v1`; un `eventId` repetido, otro `eventType` y los eventos inválidos no producen un segundo score; sin `attemptId`, con un `attemptId` que no es UUID y con `transcript` que no es array van a `practice-events.dlt`; el otro `eventType` no va a la cola; reenviar el intento con un `eventId` nuevo produce un segundo score |
+| `probar-bot-evaluador.sh` | `ATTEMPT_CLOSED` válido produce un `SCORE_CALCULATED` con la cohorte como key, los headers `eventId` y `eventType`, y `evaluator` `fake` / `fake-evaluator-v1`; un `eventId` repetido, otro `eventType` y los eventos inválidos no producen un segundo score; sin `attemptId`, con un `attemptId` que no es UUID y con `transcript` que no es array quedan en `event_dead_letter`; el otro `eventType` no queda ahí; reenviar el intento con un `eventId` nuevo produce un segundo score |
 
-Los scripts no cubren `state: unavailable` ni `SCORE-DEFERRED`: el bot no los produce solo y hay que forzar el
+Los scripts no cubren `state: unavailable` ni `SCORE_DEFERRED`: el bot no los produce solo y hay que forzar el
 fallo.
 
 **Lo que todavía no está verificado:**
 
 - El **ruteo por el API Gateway**: desde nuestro entorno de pruebas la plataforma hoy no es alcanzable, así que
   no probamos el circuito completo con el token, ni si el Gateway agrega la identidad delegada.
-- Un **broker Kafka compartido**: no hay uno definido, así que el circuito de eventos se probó solo con uno local.
+- El **bus de la plataforma** (`event-bus:29092`) y los **tópicos definitivos**: todavía no están asignados, así que el circuito de eventos se probó solo con un broker local.
 - La calidad del evaluador con el modelo real, que falta calibrar.
 
 **Próximos pasos, por equipo:**
@@ -558,7 +607,7 @@ fallo.
 | Quién | Qué |
 |---|---|
 | Equipo de la plataforma | Dar de alta a `practice-service` como cliente con el scope `llm.tutor.interact`; agregar `llm-service` a la allowlist del Gateway; confirmar la ruta del pedido del token y si el Gateway agrega `X-Delegated-User` con un token de servicio; asegurar que `llm-service` y el Gateway se vean en la red |
-| Quien administre Kafka | Definir el broker compartido, la seguridad si la hay, y crear los topics (incluida la cola `practice-events.dlt`) |
+| Notificaciones (dueño del bus) | Asignar los tópicos definitivos de `llm-service` y de `practice-service`; confirmar `producer`, la forma del `timestamp` y la política de versionado de eventos |
 | Tema 05 | Confirmar los puntos de la sección 10 y empezar a integrar el tutor con el bot |
 | `llm-service` | Calibrar el evaluador con el modelo real; resolver el reintento automático de los diferidos y el mapa cohorte → curso para la rúbrica; cambiar el tutor para no exigir la identidad delegada si el Gateway no la agrega |
 
@@ -567,7 +616,7 @@ fallo.
 Contrato ejecutable de `POST /api/llm/tutor/interactions`, para validar un cliente o generar uno. Es un
 extracto del contrato completo de `llm-service` recortado al tutor; cuando difiera de las secciones 2 y 5,
 avísennos. El número de versión que figura adentro (`2.0.0-proposed`) es el del archivo completo de
-`llm-service`: para ustedes rige la versión v1 de esta guía.
+`llm-service`: para ustedes rige la versión v2 de esta guía.
 
 ```yaml
 openapi: 3.1.0
@@ -781,245 +830,275 @@ components:
 Contrato ejecutable de los dos topics que les tocan, `practice-events` y `evaluation-events`. Es un extracto
 del contrato completo recortado a esos dos canales. Ojo con la perspectiva: las operaciones están
 descriptas **desde `llm-service`**, así que `receive` significa que nosotros leemos (ustedes publican) y
-`send` que nosotros publicamos (ustedes leen). El `host: kafka:9092` es el del compose local de
-`llm-service`; el broker real está por definir (sección 10). Sobre los números de versión, vale lo mismo
-que en el Anexo A.
+`send` que nosotros publicamos (ustedes leen). El `host: event-bus:29092` es el bus de la plataforma; los
+nombres de canal (`practice-events`, `evaluation-events`) son provisorios (`x-topic-status: pending-assignment`,
+sección 6). El número de versión (`3.0.0`) es el del archivo completo de `llm-service`; para ustedes rige la
+versión v2 de esta guía.
 
 ```yaml
 asyncapi: 3.0.0
 info:
   title: llm-service — eventos Kafka (extracto para Tema 05)
-  version: 2.0.0
+  version: 3.0.0
 servers:
-  platformKafka:
-    host: kafka:9092
+  eventBus:
+    host: event-bus:29092
     protocol: kafka
+    description: >-
+      Bus de la plataforma. Variable KAFKA_BOOTSTRAP (default event-bus:29092). group-id = nombre del
+      servicio.
 channels:
   practice-events:
     address: practice-events
-    description: 'Dominio de practice-service (Tema 05). Consumido por llm-service.
-      Message Key: definida por el productor (Tema 05) — Pendiente de documentar acá
-      hasta que confirmen su estrategia.
-
-'
+    x-topic-status: pending-assignment
+    description: >
+      Dominio de practice-service (Tema 05). Consumido por llm-service. Message Key: definida por el productor
+      (Tema 05) — Pendiente de documentar acá hasta que confirmen su estrategia.
     messages:
       attemptClosed:
-        "$ref": "#/components/messages/AttemptClosed"
+        $ref: '#/components/messages/AttemptClosed'
   evaluation-events:
     address: evaluation-events
-    description: 'Dominio de evaluación automática, publicado por llm-service. Message
-      Key: `courseCohortId` (preserva el orden de los scores dentro de una misma cohorte/curso).
-
-'
+    x-topic-status: pending-assignment
+    description: >
+      Dominio de evaluación automática, publicado por llm-service. Message Key: `courseCohortId` (preserva el
+      orden de los scores dentro de una misma cohorte/curso). El tópico mezcla dos eventType con payloads
+      distintos: un consumidor tipado por payload no alcanza, hay que ramificar por eventType.
     messages:
       scoreCalculated:
-        "$ref": "#/components/messages/ScoreResult"
+        $ref: '#/components/messages/ScoreResult'
       scoreDeferred:
-        "$ref": "#/components/messages/DeferredScore"
+        $ref: '#/components/messages/DeferredScore'
 operations:
   consumeAttemptClosed:
     action: receive
     channel:
-      "$ref": "#/channels/practice-events"
+      $ref: '#/channels/practice-events'
   publishScoreCalculated:
     action: send
     channel:
-      "$ref": "#/channels/evaluation-events"
+      $ref: '#/channels/evaluation-events'
   publishScoreDeferred:
     action: send
     channel:
-      "$ref": "#/channels/evaluation-events"
+      $ref: '#/channels/evaluation-events'
 components:
   messages:
     AttemptClosed:
+      headers:
+        $ref: '#/components/schemas/MessageHeaders'
       payload:
-        "$ref": "#/components/schemas/AttemptClosedEvent"
+        $ref: '#/components/schemas/AttemptClosedEvent'
     ScoreResult:
+      headers:
+        $ref: '#/components/schemas/MessageHeaders'
       payload:
-        "$ref": "#/components/schemas/ScoreCalculatedEvent"
+        $ref: '#/components/schemas/ScoreCalculatedEvent'
     DeferredScore:
+      headers:
+        $ref: '#/components/schemas/MessageHeaders'
       payload:
-        "$ref": "#/components/schemas/ScoreDeferredEvent"
+        $ref: '#/components/schemas/ScoreDeferredEvent'
   schemas:
-    AttemptClosedEvent:
-      allOf:
-      - "$ref": "#/components/schemas/Envelope"
-      - type: object
-        properties:
-          payload:
-            type: object
-            required:
-            - attemptId
-            - courseCohortId
-            - learnerId
-            - transcript
-            properties:
-              attemptId:
-                type: string
-                format: uuid
-              courseCohortId:
-                type: string
-                format: uuid
-              learnerId:
-                type: string
-                format: uuid
-              transcript:
-                type: array
-                items:
-                  type: object
-    ScoreCalculatedEvent:
-      description: 'PROVISORIO — propuesta de llm-service, todavía sin validar con
-        Tema 05 (consumidor). Implementado en AttemptEvaluationService; el campo `score`
-        lo calcula el código con los pesos fijos de la rúbrica, no el modelo (RF-IA-15).
-
-'
-      allOf:
-      - "$ref": "#/components/schemas/Envelope"
-      - type: object
-        properties:
-          eventType:
-            const: SCORE-CALCULATED
-          payload:
-            type: object
-            required:
-            - attemptId
-            - courseCohortId
-            - learnerId
-            - rubricVersionId
-            - score
-            - dimensions
-            - evaluator
-            properties:
-              attemptId:
-                type: string
-                format: uuid
-              courseCohortId:
-                type: string
-                format: uuid
-              learnerId:
-                type: string
-                format: uuid
-              rubricVersionId:
-                type: string
-                format: uuid
-              score:
-                type: integer
-                minimum: 0
-                maximum: 100
-                description: Agregado ponderado, redondeado.
-              dimensions:
-                type: object
-                required:
-                - autonomy
-                - clarity
-                - progression
-                - compliance
-                - efficiency
-                additionalProperties: false
-                properties:
-                  autonomy:
-                    type: integer
-                    minimum: 0
-                    maximum: 100
-                  clarity:
-                    type: integer
-                    minimum: 0
-                    maximum: 100
-                  progression:
-                    type: integer
-                    minimum: 0
-                    maximum: 100
-                  compliance:
-                    type: integer
-                    minimum: 0
-                    maximum: 100
-                  efficiency:
-                    type: integer
-                    minimum: 0
-                    maximum: 100
-              evaluator:
-                type: object
-                required:
-                - provider
-                - model
-                properties:
-                  provider:
-                    type: string
-                    description: "`fake` en modo test."
-                  model:
-                    type: string
-                    description: "`fake-evaluator-v1` en modo test."
-    ScoreDeferredEvent:
-      description: 'PROVISORIO — propuesta de llm-service, todavía sin validar con
-        Tema 05. Se publica cuando el intento no se pudo evaluar ahora; `retryFrom`
-        es un instante ISO-8601 sugerido para reintentar.
-
-'
-      allOf:
-      - "$ref": "#/components/schemas/Envelope"
-      - type: object
-        properties:
-          eventType:
-            const: SCORE-DEFERRED
-          payload:
-            type: object
-            required:
-            - attemptId
-            - courseCohortId
-            - learnerId
-            - reason
-            - retryFrom
-            properties:
-              attemptId:
-                type: string
-                format: uuid
-              courseCohortId:
-                type: string
-                format: uuid
-              learnerId:
-                type: string
-                format: uuid
-              reason:
-                type: string
-                enum:
-                - MODEL_UNAVAILABLE
-                - INVALID_MODEL_RESPONSE
-                - RUBRIC_UNAVAILABLE
-              retryFrom:
-                type: string
-                format: date-time
-    Envelope:
+    MessageHeaders:
       type: object
-      description: Envelope común de plataforma (KAFKA_EVENT_STANDARD.md §5). No renombrar/eliminar
-        estos campos.
-      required:
-      - eventId
-      - eventType
-      - eventVersion
-      - timestamp
-      - producer
-      - payload
+      description: >
+        Headers del mensaje Kafka (no forman parte del envelope JSON). La correlación nunca va en el payload.
+        No existe el header eventVersion.
       properties:
         eventId:
           type: string
           format: uuid
-          description: UUID único de esta instancia del evento (§6).
+          description: Repite envelope.eventId.
         eventType:
           type: string
-          description: Hecho del dominio, MAYÚSCULAS-CON-GUIONES, p.ej. MESSAGE-UNBLOCKED
-            (§7).
-        eventVersion:
-          type: integer
-          minimum: 1
-          description: Versión del contrato de este eventType, empieza en 1 (§8).
+          description: Repite envelope.eventType.
+        traceparent:
+          type: string
+          description: W3C trace context, si hay.
+        X-Request-Id:
+          type: string
+          description: Id de correlación, si hay.
+    Envelope:
+      type: object
+      description: >
+        Envelope común de plataforma (KAFKA_EVENT_STANDARD.md §2, del PDF KAFKA.pdf). Son exactamente estos
+        cinco campos, todos obligatorios. No renombrar, quitar ni agregar campos.
+      required:
+        - eventId
+        - eventType
+        - timestamp
+        - producer
+        - payload
+      additionalProperties: false
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          description: UUID único de esta instancia del evento.
+        eventType:
+          type: string
+          description: Hecho del dominio ya ocurrido, MAYÚSCULAS_CON_GUION_BAJO, p.ej. MESSAGE_UNBLOCKED (§3).
         timestamp:
           type: string
           format: date-time
-          description: ISO 8601 UTC (§9).
+          description: Momento en que ocurrió, ISO-8601 en UTC.
         producer:
           type: string
-          description: Identificador del microservicio productor (§10).
+          description: >
+            Microservicio que produjo el evento. Hoy `llm-service` (spring.application.name). Valor a
+            confirmar con Notificaciones (el PDF usa `challenges-service` como ejemplo y
+            `tema-XX-service-name` como plantilla).
         payload:
           type: object
-          description: Datos específicos del eventType/eventVersion (§11).
+          description: Datos específicos del eventType (§2).
+    AttemptClosedEvent:
+      description: >
+        PROVISORIO — contrato de entrada aún en convergencia con Tema 05 (productor). llm-service solo lee los
+        campos listados; los desconocidos se ignoran.
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            eventType:
+              const: ATTEMPT_CLOSED
+            payload:
+              type: object
+              required:
+                - attemptId
+                - courseCohortId
+                - learnerId
+                - transcript
+              properties:
+                attemptId:
+                  type: string
+                  format: uuid
+                courseCohortId:
+                  type: string
+                  format: uuid
+                learnerId:
+                  type: string
+                  format: uuid
+                transcript:
+                  type: array
+                  items:
+                    type: object
+    ScoreCalculatedEvent:
+      description: >
+        PROVISORIO — propuesta de llm-service, todavía sin validar con Tema 05 (consumidor). Implementado en
+        AttemptEvaluationService; el campo `score` lo calcula el código con los pesos fijos de la rúbrica, no
+        el modelo (RF-IA-15).
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            eventType:
+              const: SCORE_CALCULATED
+            payload:
+              type: object
+              required:
+                - attemptId
+                - courseCohortId
+                - learnerId
+                - rubricVersionId
+                - score
+                - dimensions
+                - evaluator
+              properties:
+                attemptId:
+                  type: string
+                  format: uuid
+                courseCohortId:
+                  type: string
+                  format: uuid
+                learnerId:
+                  type: string
+                  format: uuid
+                rubricVersionId:
+                  type: string
+                  format: uuid
+                score:
+                  type: integer
+                  minimum: 0
+                  maximum: 100
+                  description: Agregado ponderado, redondeado.
+                dimensions:
+                  type: object
+                  required:
+                    - autonomy
+                    - clarity
+                    - progression
+                    - compliance
+                    - efficiency
+                  additionalProperties: false
+                  properties:
+                    autonomy:
+                      type: integer
+                      minimum: 0
+                      maximum: 100
+                    clarity:
+                      type: integer
+                      minimum: 0
+                      maximum: 100
+                    progression:
+                      type: integer
+                      minimum: 0
+                      maximum: 100
+                    compliance:
+                      type: integer
+                      minimum: 0
+                      maximum: 100
+                    efficiency:
+                      type: integer
+                      minimum: 0
+                      maximum: 100
+                evaluator:
+                  type: object
+                  required:
+                    - provider
+                    - model
+                  properties:
+                    provider:
+                      type: string
+                      description: '`fake` en modo test.'
+                    model:
+                      type: string
+                      description: '`fake-evaluator-v1` en modo test.'
+    ScoreDeferredEvent:
+      description: >
+        PROVISORIO — propuesta de llm-service, todavía sin validar con Tema 05. Se publica cuando el intento
+        no se pudo evaluar ahora; `retryFrom` es un instante ISO-8601 sugerido para reintentar.
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            eventType:
+              const: SCORE_DEFERRED
+            payload:
+              type: object
+              required:
+                - attemptId
+                - courseCohortId
+                - learnerId
+                - reason
+                - retryFrom
+              properties:
+                attemptId:
+                  type: string
+                  format: uuid
+                courseCohortId:
+                  type: string
+                  format: uuid
+                learnerId:
+                  type: string
+                  format: uuid
+                reason:
+                  type: string
+                  enum:
+                    - MODEL_UNAVAILABLE
+                    - INVALID_MODEL_RESPONSE
+                    - RUBRIC_UNAVAILABLE
+                retryFrom:
+                  type: string
+                  format: date-time
 ```

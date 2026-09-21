@@ -80,27 +80,36 @@ se agregan acá todos los temas nuevos que salgan de la charla.
 - [ ] **Message Key de `practice-events`:** la define el productor y hoy figura "Pendiente" en el
   AsyncAPI. Confirmar qué usan (¿`attemptId`? ¿`courseCohortId`?) y el orden que garantiza.
 - [ ] **`AttemptClosed` — campos y versión:** confirmar `attemptId`, `courseCohortId`, `learnerId`,
-  `transcript` (forma de cada mensaje del transcript, tamaño máximo) y `eventVersion` de partida.
+  `transcript` (forma de cada mensaje del transcript, tamaño máximo). El estándar del PDF no tiene `eventVersion`.
 - [ ] **Topic y `eventType` de nuestros eventos de score:** hoy publicamos en `evaluation-events`
-  (`SCORE-CALCULATED` / `SCORE-DEFERRED`). Confirmar que consumen ese topic y que el nombre les sirve
-  (sigue pendiente lo de "tópico/nombre de versión" de la sección de contrato).
+  (`SCORE_CALCULATED` / `SCORE_DEFERRED`). El nombre del tópico es **provisorio**: lo asigna Notificaciones
+  (los grupos no crean tópicos). Confirmar que consumen ese tópico y que el `eventType` les sirve.
 - [ ] **Payload de `ScoreCalculated` / `ScoreDeferred`:** ya está en el AsyncAPI como **provisorio**
   (`score`, `dimensions`, `evaluator`, `rubricVersionId`; `reason` y `retryFrom` en el diferido).
   Falta que Tema 05 lo valide como consumidor.
 - [ ] **Fuente del evento de ediciones/tests del IDE:** ¿Tema 05 o Tema 06 (sandbox)? Ya listado arriba;
   si es Tema 06 hay que sumarlos a la conversación.
-- [ ] **Reintentos y DLQ:** qué esperan que hagamos ante un `AttemptClosed` inválido o duplicado
-  (hoy: idempotencia por `eventId` + `DeadLetterPublisher`) y quién monitorea la DLQ.
+- [ ] **Reintentos y dead-letter:** qué esperan que hagamos ante un `AttemptClosed` inválido o duplicado
+  (hoy: idempotencia por `eventId` + tabla `event_dead_letter`, sin tópico `.dlt` porque no podemos crear
+  tópicos) y quién revisa esos rechazos.
 - [x] **Scope del tutor:** alineado a `llm.tutor.interact` (el registrado en el Gateway y el que exige el
   código). Se corrigieron los documentos que decían `llm.tutor.invoke`; hay que avisarle a Tema 05.
 - [x] **Evaluador por Kafka (nuestro lado):** `PracticeAttemptClosedListener` ya dispara la evaluación
-  contra el fake y publica `SCORE-CALCULATED`/`SCORE-DEFERRED` en `evaluation-events`
+  contra el fake y publica `SCORE_CALCULATED`/`SCORE_DEFERRED` en `evaluation-events`
   (`AttemptEvaluationService`, con IT sobre Kafka embebido). Queda que Tema 05 valide el payload.
 - [ ] **Cohorte → curso → rúbrica:** el evento trae `courseCohortId` y no hay mapa a curso, así que se
   evalúa siempre con la plantilla institucional. Definir de dónde sale la rúbrica activa del curso.
-- [ ] **Nombres de topic:** `practice-events` y `evaluation-events` son nuestros; el estándar
-  ([KAFKA_EVENT_STANDARD §17](../../../contracts/KAFKA_EVENT_STANDARD.md)) lista `challenge-events` y otros, sin ellos.
-  Acordarlos con Tema 05 y registrarlos en esa tabla.
+- [ ] **Nombres de topic:** `practice-events` y `evaluation-events` son nuestros y **provisorios**: según el estándar
+  ([KAFKA_EVENT_STANDARD §4](../../../contracts/KAFKA_EVENT_STANDARD.md)) los grupos no crean tópicos y los asigna el
+  grupo de Notificaciones. Pedírselos (ver [pendientes de Notificaciones](../notifications-service/pendientes.md), K1)
+  y avisar a Tema 05 cuando los definan.
+- [ ] **Entrega con el evaluador caído (LLM-EP06-H03):** confirmar que Tema 05 acepta la entrega y otorga
+  XP base y monedas **sin esperar** nuestro puntaje (RF-IA-27 es lógica de producto de ellos, no nuestra), y
+  que no bloquea si no publica o no recibe respuesta nuestra.
+- [ ] **Quién reintenta un puntaje diferido:** hoy publicamos `SCORE_DEFERRED` con `retryFrom` y **nadie
+  reintenta**. Propuesta (A): reintentamos nosotros y guardamos el intento hasta resolverlo. Alternativa (B):
+  ustedes reenvían `ATTEMPT_CLOSED` desde `retryFrom`. En ambos casos deduplicaremos por `attemptId`, no solo
+  por `eventId`. Decidir cuál.
 - [ ] _(agregar acá lo que surja)_
 
 ## 🔴 Pedido al equipo del Gateway y de users-service (identidad y enrutamiento)
@@ -122,21 +131,22 @@ Tema 05 nos llama con un token de servicio `client_credentials` por el Gateway (
 - [ ] **`APP_CLIENT_SECRET` de `llm-service`** (vacío en nuestro `.env`): hace falta solo si `llm-service` llama a
   otros servicios por el Gateway (p. ej. las notificaciones de moderación).
 
-## 🔴 Pedido al responsable del broker Kafka (infraestructura, no contrato)
+## 🔴 Pedido al grupo dueño del bus Kafka (Notificaciones; infraestructura, no contrato)
 
-Sin esto no podemos publicar ni consumir fuera de nuestro compose local (`kafka:9092`). No hay
-ningún responsable nombrado en los docs; hay que averiguar quién es.
+El PDF `KAFKA.pdf` fija el bus en `event-bus:29092` y dice que los grupos **no crean tópicos**: se los pide
+al grupo de Notificaciones. Sin los tópicos asignados no podemos publicar ni consumir fuera de nuestro
+compose local (`kafka-local:29092`).
 
 - [ ] **Bootstrap servers** y alcance de red desde el contenedor de `llm-service` (red `tpi-platform`);
-  se configuran con `KAFKA_BOOTSTRAP_SERVERS`.
+  se configuran con `KAFKA_BOOTSTRAP` (por defecto `event-bus:29092`).
 - [ ] **Seguridad:** si el broker exige TLS o SASL, y las credenciales. Nuestra configuración no tiene
   nada de seguridad hoy (PLAINTEXT), hay que sumarlo.
-- [ ] **Creación de topics:** nosotros no los creamos (no hay `KafkaAdmin`). Si el broker no tiene
-  autocreación, hay que crearlos: `practice-events`, `evaluation-events`, `moderation-events`,
-  `calibration-events` y las colas de fallos `<topic>.dlt` (p. ej. `practice-events.dlt`), con su
-  cantidad de particiones, replicación y retención.
-- [ ] **Permisos (ACL), si hay:** escribir en nuestros topics, leer `practice-events`, escribir
-  `practice-events.dlt` y usar el consumer group `llm-service`.
+- [ ] **Asignación de topics:** nosotros no los creamos (no hay `KafkaAdmin`) ni podemos pedir que existan
+  por nuestra cuenta. Pedir a Notificaciones los tópicos para `practice-events`, `evaluation-events`,
+  `moderation-events` y `calibration-events` (nombres hoy provisorios), con su cantidad de particiones,
+  replicación y retención. **Ya no usamos `<topic>.dlt`**: el dead-letter es la tabla `event_dead_letter`.
+- [ ] **Permisos (ACL), si hay:** escribir en nuestros topics, leer `practice-events` y usar el consumer
+  group `llm-service`.
 - [ ] **Ambientes:** cuál es el de pruebas de Tema 05 y cuál el de producción.
 
 ## 🟢 Integración en modo test — disponible hoy
