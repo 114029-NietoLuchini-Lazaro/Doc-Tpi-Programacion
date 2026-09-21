@@ -27,6 +27,7 @@ paths:
       responses:
         '200': { description: Respuesta segura del tutor, content: { application/json: { schema: { $ref: '#/components/schemas/TutorInteractionResponse' } } } }
         '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
         '429': { $ref: '#/components/responses/Problem' }
         '503': { $ref: '#/components/responses/Problem' }
   /tutor/conversations:
@@ -42,14 +43,17 @@ paths:
       responses:
         '201': { description: Conversación creada, content: { application/json: { schema: { $ref: '#/components/schemas/Conversation' } } } }
         '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
     get:
-      summary: Lista conversaciones de tutoría, filtrables por alumno y/o curso
+      summary: Lista conversaciones de tutoría, filtrables por alumno, curso y/o desafío
       operationId: listConversations
       parameters:
         - { name: learnerId, in: query, schema: { type: string, format: uuid } }
         - { name: courseCohortId, in: query, schema: { type: string, format: uuid } }
+        - { name: challengeId, in: query, schema: { type: string, format: uuid } }
       responses:
         '200': { description: Conversaciones, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Conversation' } } } } }
+        '403': { $ref: '#/components/responses/Problem' }
   /tutor/conversations/{conversationId}/messages:
     get:
       summary: Consulta el histórico de mensajes de una conversación
@@ -57,6 +61,24 @@ paths:
       parameters: [ { $ref: '#/components/parameters/ConversationId' } ]
       responses:
         '200': { description: Histórico de mensajes, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Message' } } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    post:
+      summary: Envía un mensaje nuevo a una conversación propia dentro de un desafío activo
+      operationId: appendConversationMessage
+      parameters: [ { $ref: '#/components/parameters/ConversationId' }, { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [contenido]
+              properties:
+                contenido: { type: string, minLength: 1 }
+      responses:
+        '201': { description: Mensaje registrado, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } }
+        '403': { $ref: '#/components/responses/Problem' }
         '404': { $ref: '#/components/responses/Problem' }
   /rag/documents:
     get:

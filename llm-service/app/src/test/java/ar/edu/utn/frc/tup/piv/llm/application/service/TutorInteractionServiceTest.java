@@ -196,7 +196,7 @@ class TutorInteractionServiceTest {
     var service = new TutorInteractionService(models, idempotency, audit, conversations, messages, mapper, 1000);
 
     var request = new TutorInteractionService.Request(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
-        UUID.randomUUID(), "¿seguimos?", "low", conversationId);
+        found.learnerId(), "¿seguimos?", "low", conversationId);
     var response = service.respond(request, UUID.randomUUID(), actor);
 
     assertThat(response.conversacionId()).isEqualTo(conversationId);
@@ -260,7 +260,7 @@ class TutorInteractionServiceTest {
         conversations, messages, mapper, 1000);
 
     service.respond(new TutorInteractionService.Request(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
-        UUID.randomUUID(), "¿seguimos?", "low", conversationId), UUID.randomUUID(), actor);
+        found.learnerId(), "¿seguimos?", "low", conversationId), UUID.randomUUID(), actor);
 
     var user = org.mockito.ArgumentCaptor.forClass(String.class);
     verify(models).invoke(eq(ModelFunction.TUTOR), anyString(), user.capture(), any());
