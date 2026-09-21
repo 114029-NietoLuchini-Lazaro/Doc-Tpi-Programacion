@@ -49,6 +49,7 @@ public class ProviderCredentialController {
     private final ObjectMapper json;
     private final GatewayExecutor executor;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public ProviderCredentialController(ProviderCredentialRepository repository, EncryptedSecretService crypto,
                                         ProviderRegistry registry, ProviderInvocationGateway gateway, GoldenSetAuthorization authorization,
                                         EvaluatorModelEvents events, ObjectMapper json, GatewayExecutor executor) {

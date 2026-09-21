@@ -41,11 +41,11 @@ class CalibrationPersistenceIT extends AbstractIntegrationIT {
     UUID cred = null;
     if (withCredential) {
       cred = UUID.randomUUID();
-      jdbc.update("insert into llm.provider_credentials (id, provider, display_name, base_url, encrypted_secret, secret_nonce, secret_mask, created_by_user_id) values (?, 'OPENAI_COMPATIBLE', 'x', 'http://h/v1', ?, ?, 'sk-1234', ?)",
+      jdbc.update("insert into llm.provider_credentials (id, provider_key, display_name, public_configuration, encrypted_secrets, secret_nonce, secret_mask, created_by_user_id) values (?, 'openai-compatible', 'x', cast('{\"baseUrl\":\"http://h/v1\"}' as jsonb), ?, ?, 'sk-1234', ?)",
           cred, new byte[] {1, 2}, new byte[] {3}, TEACHER);
     }
     UUID dep = UUID.randomUUID();
-    jdbc.update("insert into llm.model_deployments (id, adapter_id, model_id, model_version, credential_id) values (?,?,?,?,?)", dep, adapter, "m-" + dep, "v1", cred);
+    jdbc.update("insert into llm.model_deployments (id, adapter_id, model_id, model_version, credential_id, provider_key) values (?,?,?,?,?,'openai-compatible')", dep, adapter, "m-" + dep, "v1", cred);
     return dep;
   }
 

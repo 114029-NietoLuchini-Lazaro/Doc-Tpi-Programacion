@@ -3,3 +3,12 @@ eureka:
     enabled: false
     register-with-eureka: false
     fetch-registry: false
+
+# `main` agregó llm.courses.* sin default en application.yml a propósito: el despliegue debe
+# definirlos (compose.yaml los inyecta). No tenía ITs que levantaran el contexto, así que nadie
+# notó que los 99 ITs de `dev` no pueden arrancar sin estos valores. Se fijan acá y no en
+# application.yml para que producción siga fallando rápido si faltan.
+llm:
+  courses:
+    base-url: http://localhost:4300
+    service-token: integration-test-token

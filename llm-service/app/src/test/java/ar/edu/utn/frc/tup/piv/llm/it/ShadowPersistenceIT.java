@@ -81,7 +81,7 @@ class ShadowPersistenceIT extends AbstractIntegrationIT {
     UUID adapter = UUID.randomUUID();
     jdbc.update("insert into llm.model_adapters (id, provider, created_by_user_id) values (?,?,?)", adapter, "adp-" + adapter, TEACHER);
     UUID deployment = UUID.randomUUID();
-    jdbc.update("insert into llm.model_deployments (id, adapter_id, model_id, model_version) values (?,?,?,?)", deployment, adapter, "m-" + deployment, "v1");
+    jdbc.update("insert into llm.model_deployments (id, adapter_id, model_id, model_version, provider_key) values (?,?,?,?,'openai-compatible')", deployment, adapter, "m-" + deployment, "v1");
     var run = runs.createCourse(course, rubric, goldenVersion, deployment, UUID.randomUUID(), TEACHER);
     jdbc.update("update llm.calibration_runs set state='RUNNING', started_at=now() where id=?", run.id());
     runs.finish(run.id(), true, BigDecimal.ONE, 1);
