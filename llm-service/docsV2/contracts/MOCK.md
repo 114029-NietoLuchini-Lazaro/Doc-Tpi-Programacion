@@ -45,6 +45,13 @@ docker compose -f compose.yaml -f compose.workbench.yaml up
 - Activa `SPRING_PROFILES_ACTIVE=workbench`.
 - Habilita `WorkbenchDemoCatalog` con cursos preconfigurados (Programación III, Paradigmas de Programación).
 - Simula la identidad del docente sin requerir el API Gateway real ni un Identity Provider M2M.
+- Levanta además `gateway-mock` (Nginx) en `localhost:8080` como único punto HTTP del laboratorio:
+  enruta `/api/llm/**` al `llm-service` real y `/api/courses/**` al `courses-mock` (MockServer, que
+  reemplaza a `courses-service`). El navegador usa rutas relativas y no construye headers de
+  identidad ni tokens M2M: Nginx descarta los headers sensibles que mande el cliente, inyecta la
+  identidad delegada de desarrollo, `traceparent` y `X-Request-Id`, y conserva el path completo.
+- El mock de integración **no reemplaza al backend**: `llm-service` y PostgreSQL corren de verdad;
+  solo se simulan las fronteras que pertenecen a otros equipos.
 
 ---
 

@@ -8,19 +8,22 @@ de otra contraparte.
 
 1. [Mapa de integración](00-mapa-de-integracion.md): actores, canales, responsables y acuerdos
    pendientes.
-2. [Requisitos a otros micros](requisitos-a-otros-micros.md): datos, eventos y consultas que
+2. [Inventario y brechas](01-inventario-y-brechas.md): contratos definidos, parciales y faltantes,
+   con el orden recomendado para cerrarlos, y
+   [contratos de skills y calibración](02-contratos-skills-y-calibracion.md).
+3. [Requisitos a otros micros](requisitos-a-otros-micros.md): datos, eventos y consultas que
    Tema 07 necesita recibir para responder, evaluar o cerrar un intento.
-3. [OpenAPI actual](llm-service.openapi.yaml): contrato HTTP que Tema 07 expone.
-4. [AsyncAPI actual](llm-service.asyncapi.yaml) (v3.0.0): eventos Kafka que Tema 07 publica y consume, con los
+4. [OpenAPI actual](llm-service.openapi.yaml): contrato HTTP que Tema 07 expone.
+5. [AsyncAPI actual](llm-service.asyncapi.yaml) (v3.0.0): eventos Kafka que Tema 07 publica y consume, con los
    nombres de tópico marcados como provisorios. Su estándar es el del PDF `KAFKA.pdf`, transcrito en
    [`KAFKA_EVENT_STANDARD.md`](KAFKA_EVENT_STANDARD.md) ([ADR-020](../00-gobierno-y-evolucion/02-decisiones-y-pendientes.md)).
-5. [Contratos por equipo](equipos/README.md): explicación completa por contraparte, incluyendo
+6. [Contratos por equipo](equipos/README.md): explicación completa por contraparte, incluyendo
    responsabilidades, secuencias, errores y pendientes.
-6. [Contratos históricos V1](historicos-y-contratos-v1/README.md),
+7. [Contratos históricos V1](historicos-y-contratos-v1/README.md),
    [mapa histórico](90-mapa-de-integracion-historico.md) y
    [contratos históricos inter-equipos](91-contratos-inter-equipos-historicos.md): antecedentes
    útiles para entender cambios, no fuentes para crear una integración nueva.
-7. [Simulador y Mock](MOCK.md): comando de una línea (Prism) y simulación local con Docker Workbench para habilitar integración desacoplada (CA2).
+8. [Simulador y Mock](MOCK.md): comando de una línea (Prism) y simulación local con Docker Workbench para habilitar integración desacoplada (CA2).
 
 ## Cómo leerla
 

@@ -1,8 +1,13 @@
 openapi: 3.1.0
 info:
-  title: LLM Service API
+  title: LLM Service API (v1 - Histórico / Reemplazado)
   version: 1.0.0
-  description: API privada de llm-service. Toda llamada ingresa mediante API Gateway.
+  x-deprecated: true
+  description: |
+    DOCUMENTO HISTÓRICO - REEMPLAZADO POR v2.
+    El flujo de Golden Set v1 (/golden-sets) fue retirado en commit 605f381 y reemplazado por la arquitectura con ámbito de curso (v2).
+    Para el contrato vigente del Golden Set y Calibración, consultar llm-service-v2-golden-set.openapi.yaml.
+    API privada de llm-service. Toda llamada ingresa mediante API Gateway.
 servers:
   - url: /api/llm
 security:
@@ -251,6 +256,7 @@ components:
         message: { type: string, minLength: 1 }
         riskLevel: { type: string, enum: [high, medium, low] }
         conversacionId: { type: string, format: uuid, nullable: true, description: 'Opcional. Si no viene, la interacción es independiente (comportamiento actual, sin cambios).' }
+        expectedSolution: { type: string, nullable: true, writeOnly: true, description: 'Opcional. Solución esperada del desafío, enviada por practice-service (M2M). Solo la usa el guardarraíl de salida para detectar fugas: no entra al prompt del modelo, no se persiste, no se audita ni se registra en logs. Sin este campo el guardarraíl aplica solo la heurística de bloques de código largos. Solo se evalúa cuando riskLevel es medium o high.' }
     TutorInteractionResponse:
       type: object
       required: [message, state, conversacionId]

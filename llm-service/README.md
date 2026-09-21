@@ -5,9 +5,12 @@ de prueba y documentación). Se puede copiar/mover `llm-service/` entera a otro 
 links de abajo siguen funcionando, porque `docs/` y `llm-workbench/` viven como subcarpetas de
 ésta, no como hermanas sueltas en la raíz de un repo.
 
+La documentación canónica actual está en [`docsV2/`](docsV2/). La carpeta `docs/` se conserva como
+antecedente histórico; no la uses para definir contratos ni decisiones nuevas.
+
 > Si estás integrando `llm-service` con el proyecto completo de la cátedra (gateway + discovery +
 > microservicios de los demás grupos) en vez de compartir/entregar el TP, primero leé
-> [37 §9](docs/37-estructura-carpetas-backend.md#9-qué-se-copia-como-raíz-al-integrar-con-el-proyecto-de-cátedra):
+> [estructura V2](docsV2/02-arquitectura-y-plataforma/04-estructura-del-backend.md):
 > ese caso necesita sacar `docs/` y `llm-workbench/` de la copia.
 
 Documentación de diseño de la capa de inteligencia artificial de la **Plataforma de Aprendizaje
@@ -17,7 +20,7 @@ Gamificado**.
 >
 > Para planificar o implementar Tema 07, mandan primero el PRD y `idea.pptx.pdf` (canales de la
 > cátedra, no versionado acá). La aplicación concreta para este repositorio está en
-> [`docs/00-fuentes-de-verdad-y-convenciones.md`](docs/00-fuentes-de-verdad-y-convenciones.md):
+> [`docsV2/00-gobierno-y-fuentes-de-verdad.md`](docsV2/00-gobierno-y-fuentes-de-verdad.md):
 > el servicio es **`llm-service`**, sus rutas privadas viven bajo **`/api/llm/**`** y la
 > correlación usa **`traceparent` + `X-Request-Id`**. Los ejemplos que aún mencionan
 > `ms-evaluacion-llm`, `/ai/*` o `trace_id` se consideran antecedentes hasta que se reescriban.
@@ -44,10 +47,11 @@ puertos de negocio: en la plataforma, sólo API Gateway publica la API.
 docker compose -f compose.yaml -f compose.workbench.yaml up --build
 ```
 
-Abrir `http://localhost:4200`. Esta composición activa el perfil `workbench` exclusivamente en el
-entorno demo: asigna una identidad docente de prueba dentro del servidor y el proxy Angular
-reenvía `/api/llm/**` a `llm-service` por la red Docker. El perfil no se usa en la integración
-real: ahí API Gateway valida la sesión y agrega los headers M2M que el servicio exige.
+Abrir `http://localhost:4200/docente`. El Workbench sólo consume rutas relativas `/api/**` y su
+proxy las envía al `gateway-mock` en el puerto 8080. Ese borde simula la autenticación y agrega la
+identidad delegada; reenvía `/api/llm/**` al servicio real y `/api/courses/**` a Courses mock. El
+backend y PostgreSQL no se exponen al navegador. Ver la guía vigente de
+[laboratorio y contratos](docs/RESUMEN-CONVERSACION-Y-PLAN-MOCKSERVER.md).
 
 ### Apagar y verificar
 

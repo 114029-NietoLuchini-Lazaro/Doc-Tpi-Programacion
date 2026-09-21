@@ -63,7 +63,7 @@ Consumidor -> API Gateway -> /api/llm/** -> controller -> aplicación/dominio
 ```
 
 Paquete raíz real: **`ar.edu.utn.frc.tup.piv.llm`** (bajo
-`llm-service/src/main/java/ar/edu/utn/frc/tup/piv/llm/`, espejado en `src/test/java/...`).
+`llm-service/app/src/main/java/ar/edu/utn/frc/tup/piv/llm/`, espejado en `app/src/test/java/...`).
 
 ## 2. El diagrama de capas
 
@@ -108,77 +108,65 @@ flowchart TB
 reservadas que todavía no existen. **Flecha punteada roja-ish (`hueco`)** = el atajo que hoy usan 7
 controllers, contrario al flujo de doc 36 — detallado en §6.
 
-## 3. El scaffold completo
+## 3. La estructura real
 
-```
+> Foto verificada contra `main` el 2026-09-18, tras el refactor a reactor Maven multi-módulo.
+> Los nombres de capas de documentos históricos no deben usarse para crear carpetas nuevas.
+
+```text
 llm-service/
-├── pom.xml · Dockerfile · compose.yaml (+ .workbench.yaml)
-├── src/main/resources/
-│   ├── application.yml (+ -workbench)
-│   └── db/migration/            — V1…V12, Flyway
-├── src/main/java/ar/edu/utn/frc/tup/piv/llm/     ← el paquete, capas de doc 36
-│   ├── api/                     — 12 controllers + ApiExceptionHandler
-│   ├── application/             — services de caso de uso · ports · workers
-│   ├── domain/                  — java puro, sin Spring (verificado)
-│   ├── infrastructure/
-│   │   ├── persistence/         — *Repository sobre JdbcTemplate
-│   │   ├── messaging/            🔲 reservada — Kafka, Tema 11
-│   │   └── ai/                   🔲 reservada — langchain4j, M1
-│   ├── security/                — CallerIdentity · CourseAuthorization · GoldenSetAuthorization
-│   └── configuration/           — WorkbenchCorsConfiguration · WorkbenchDemoCatalog
-└── src/test/java/ar/edu/utn/frc/tup/piv/llm/     ← espejo de main
-    (api/ · application/ · domain/ · infrastructure/persistence/ · security/)
+├── app/                         aplicación Spring Boot ejecutable
+├── provider-spi/                puerto común para proveedores LLM
+├── provider-openai-compatible/  adaptador OpenAI-compatible
+├── provider-anthropic/          adaptador Anthropic
+├── provider-gemini/             adaptador Gemini
+├── llm-workbench/               consumidor Angular temporal
+├── demo/                        Gateway/Courses simulados
+├── compose.yaml                 PostgreSQL + app privados
+└── docsV2/                      documentación canónica
 ```
 
-`messaging/` y `ai/` van marcadas 🔲 porque son carpetas de destino, no carpetas que existan hoy —
-se crean cuando entre esa capacidad (§2 y §5 explican por qué).
+El `pom.xml` raíz es un reactor Maven con esos cinco módulos. La aplicación está en:
 
-## 4. El árbol de hoy, capa por capa
+```text
+app/src/main/
+├── java/ar/edu/utn/frc/tup/piv/llm/
+│   ├── adapter/in/web/          controllers bajo /api/llm/**
+│   ├── adapter/in/messaging/    consumidores de eventos
+│   ├── adapter/out/ai/          adaptadores a proveedores
+│   ├── adapter/out/http/        clientes HTTP, incluido Courses
+│   ├── adapter/out/messaging/   publicación de eventos
+│   ├── adapter/out/persistence/ JDBC y repositorios
+│   ├── application/             casos de uso, puertos y workers
+│   ├── domain/                  reglas de negocio sin I/O
+│   └── configuration/           configuración Spring
+└── resources/db/migration/      migraciones Flyway
+```
 
-| Capa (doc 36) | Carpeta real | Qué hay ahora | Puede depender de | No puede depender de |
-|---|---|---|---|---|
-| **api** | `api/` | 12 `@RestController` + `ApiExceptionHandler` | `application`, `security`, `domain` | JPA/JDBC directo — hoy hay 7 excepciones, ver §6 |
-| **application** | `application/` | Services de caso de uso, ports (`AttemptStartedPort`, `ChallengeEnablementPort`), workers (`CalibrationRunWorker`, `PendingEvaluationWorker`), adapters mock | `domain`, `infrastructure/persistence` | — |
-| **domain** | `domain/` | `CalibrationMetrics`, `CalibrationStateMachine`, `RubricValidator`, `TranscriptSanitizer`, `RealCaseAnonymizer` — **verificado: cero imports de Spring/framework** | sólo `java.*` | Spring, JDBC, Kafka, SDK de proveedor |
-| **infrastructure/persistence** | `infrastructure/persistence/` | 11 `*Repository` sobre `JdbcTemplate` (no JPA — el `pom.xml` sólo trae `spring-boot-starter-jdbc`) | Spring JDBC, `domain` (para mapear filas) | — |
-| **infrastructure/messaging** | *no existe* | — | — | Reservada para cuando entre Kafka (contrato del Tema 11, ver [02 §6](01-arquitectura-y-stack.md)
-| **infrastructure/ai** | *no existe* | — | — | Reservada para los adapters `langchain4j` detrás de `LlmAdapter` (M1, ADR-016) |
-| **security** | `security/` | `CallerIdentity`, `CourseAuthorization`, `GoldenSetAuthorization` | `application`, `api` los consumen | — |
-| **configuration** | `configuration/` | `WorkbenchCorsConfiguration`, `WorkbenchDemoCatalog` | Spring `@Configuration` | — |
+Los tests viven en `app/src/test/java/...`. No existe un árbol ejecutable `src/main` en la raíz de
+`llm-service`; toda incorporación nueva debe respetar el módulo `app` y los `provider-*`.
 
-`infrastructure/messaging` e `infrastructure/ai` **no faltan por descuido**: EP-03/S1 es sólo golden
-set y calibración, sin integración a Kafka ni llamada real a un proveedor LLM todavía. Se crean
-cuando entre esa capacidad.
+El frontend no llama a `app` directamente. En local atraviesa `gateway-mock`; el cliente
+`GatewayCoursesMembershipClient` también sale por Gateway con M2M. MockServer permanece fuera del
+backend y representa sólo la dependencia Courses.
 
-## 5. Código nuevo: en qué carpeta va
+## 4. Código nuevo: en qué carpeta va
 
-| Si vas a escribir... | Va en... | Nota |
-|---|---|---|
-| Un endpoint HTTP nuevo | `api/` | Llama a un service de `application/`, no a un repository. Ver el hueco de §6 antes de copiar un controller existente como plantilla |
-| Una regla de negocio sin I/O (cálculo, validación, máquina de estados) | `domain/` | Debe compilar sin ninguna dependencia de Spring |
-| Un caso de uso que orquesta domain + persistencia | `application/` | Es la capa que sí puede tocar `infrastructure` |
-| Una tabla, query o migración nueva | `infrastructure/persistence/` + `resources/db/migration/V*.sql` (Flyway) | El repository expone tipos que `application/` consume; que no se filtren directo a `api/` |
-| Un adapter a un proveedor LLM | `infrastructure/ai/` (crearla) | Detrás de la interfaz `LlmAdapter` (doc 02 §4), un módulo `langchain4j` por proveedor |
-| Publicar o consumir un evento del bus | `infrastructure/messaging/` (crearla) | Contrato lo define el Tema 11; no confundir con la cola interna (Postgres `SKIP LOCKED`), que es `infrastructure/persistence/` |
-| Un chequeo de token, scope u ownership | `security/` | |
-| Un bean de configuración, perfil o CORS | `configuration/` | |
+| Cambio | Ubicación |
+|---|---|
+| Endpoint HTTP | `app/.../adapter/in/web` |
+| Caso de uso | `app/.../application` |
+| Regla sin I/O | `app/.../domain` |
+| JDBC o migración | `adapter/out/persistence` + `resources/db/migration` |
+| Proveedor LLM | módulo `provider-*` + `adapter/out/ai` |
+| Cliente a otro microservicio | `adapter/out/http` |
+| Kafka | `adapter/in|out/messaging` |
 
-## 6. Hueco conocido — no corregido acá
+## 5. Chequeo contra las 10 épicas — ¿alcanzan las 8 capas para todo el servicio?
 
-Al armar este mapa quedó a la vista que **7 de los 12 controllers de `api/`** importan un
-`*Repository` de `infrastructure/persistence/` directo y lo usan como colaborador, sin pasar por
-`application/` — rompe el flujo `controller -> aplicación/dominio` de §1 (es la flecha punteada del
-diagrama en §2):
-
-`ModelDeploymentController`, `CourseEvaluationStatusController`, `CourseGoldenSetController`,
-`GoldenSetUpdateProposalController`, `CalibrationActivationController`, `CalibrationRunController`,
-`GoldenSetImportController`.
-
-Este documento **no lo corrige** (es código importado con dueño, [[no-tocar-codigo-ajeno]]): el
-detalle completo, con los 7 archivos y el fragmento de código, está transcripto en
-[`llm-service/CORRECCIONES-SUGERIDAS.md`](../06-operacion-calidad-y-pruebas/04-estado-de-implementacion/codigo-ejemplo/fuentes/CORRECCIONES-SUGERIDAS.md)
-
-## 7. Chequeo contra las 10 épicas — ¿alcanzan las 8 capas para todo el servicio?
+> **Nota (2026-09-21).** Este chequeo se escribió contra el árbol anterior al refactor
+> multi-módulo y nombra las capas viejas (`api/`, `infrastructure/ai/`, …). El análisis por
+> épica sigue valiendo; para el nombre actual de cada carpeta, ver §3.
 
 Este documento nació mirando sólo EP-03 (golden set). Para no dejar una falsa sensación de
 completitud, se cruzó cada una de las 10 fichas de [`docs/epicas/`](../07-planificacion-y-trabajo-equipo/09-epicas-historias-tareas-sprints/epicas/README.md) contra las 8
@@ -200,7 +188,7 @@ capas de §1 — qué necesita cada épica y si ya tiene una carpeta destino.
 pendiente es dónde vive el pipeline de RAG (EP-09) — y no es urgente: esa épica arranca en **S14**,
 muy lejos todavía. Queda anotado para no descubrirlo recién ahí.
 
-## 9. Qué se copia como raíz al integrar con el proyecto de cátedra
+## 6. Qué se copia como raíz al integrar con el proyecto de cátedra
 
 **🟡 2026-09-12 — cambió la forma, no el fondo.** Hasta esta fecha `docs/` y `llm-workbench/` eran
 carpetas hermanas de `llm-service/` en la raíz del repo, así que quedaban afuera "solas" al copiar
@@ -234,9 +222,10 @@ para registrarse contra el discovery real del proyecto integrado.
 "qué es la raíz" no adelanta esas capas — se crean recién cuando entre Kafka (Tema 11) o el proveedor
 LLM real (M1/ADR-016), como ya estaba definido.
 
-## 10. Ver también
+## 7. Ver también
 
 - [02 — Arquitectura y stack](01-arquitectura-y-stack.md) — los 8 módulos lógicos (M1–M8) y el AI
   Gateway; es un corte funcional, no de carpetas.
 - [36 — Playbook de construcción](../07-planificacion-y-trabajo-equipo/06-playbook-de-construccion.md) — la regla de fronteras y por qué,
   y la secuencia obligatoria para construir una capacidad nueva.
+

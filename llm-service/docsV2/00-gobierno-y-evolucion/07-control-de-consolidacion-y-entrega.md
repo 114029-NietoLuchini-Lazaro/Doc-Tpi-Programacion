@@ -26,6 +26,23 @@ La jerarquía ya definida en [00](01-fuentes-de-verdad-y-convenciones.md) sigue 
 3. `00`, contratos y ADR.
 4. Resto de `docs/`.
 
+## 2. Regla de evolución documental acordada
+
+Cuando cambia una decisión, el cambio **no** se resuelve agregando una adenda que deje vigente una regla errónea en el documento que explica el tema.
+
+1. Se actualiza el documento temático canónico donde una persona buscaría esa regla.
+2. Se conserva el antecedente histórico, identificado como tal; no se elimina información.
+3. Se registra el cambio con el estado anterior, el motivo, el estado nuevo, la fecha y los documentos afectados.
+4. Los contratos ejecutables se actualizan si el cambio modifica una ruta, evento, payload, estado o invariante observable por otro servicio.
+5. Los documentos de planificación o presentación solo repiten el detalle cuando es necesario para su audiencia; en otro caso enlazan al documento canónico.
+
+La jerarquía ya definida en [00](01-fuentes-de-verdad-y-convenciones.md) sigue aplicando:
+
+1. PRD y adendas de producto expresamente aprobadas.
+2. Propuesta de arquitectura de la cátedra.
+3. `00`, contratos y ADR.
+4. Resto de `docs/`.
+
 ### 2.1 Registro inicial de cambios que hay que propagar
 
 | ID | Fecha conocida | Antes | Por qué cambió | Ahora | Fuente aprobatoria | Documentos que deben quedar alineados | Estado |
@@ -38,6 +55,29 @@ La jerarquía ya definida en [00](01-fuentes-de-verdad-y-convenciones.md) sigue 
 - **AsyncAPI** describe eventos asíncronos: topic, quién publica, quién consume y el payload. En esta plataforma se aplica a Kafka.
 
 Los contratos existentes son [OpenAPI v1](../contracts/historicos-y-contratos-v1/llm-service-v1.openapi.yaml), [OpenAPI v2 Golden Set/calibración](../contracts/historicos-y-contratos-v1/llm-service-v2-golden-set.openapi.yaml)y [AsyncAPI v1](../contracts/historicos-y-contratos-v1/llm-service-v1.asyncapi.yaml)
+
+## 3. Cronología y función de los documentos superpuestos
+
+Las fechas de creación que muestra Git quedaron afectadas por una consolidación de rutas del 2026-09-12. Por eso no deben usarse solas para decidir si un archivo es duplicado. La cronología útil se determina por contenido, historial y rótulos de vigencia.
+
+| Grupo | Papel que conserva | Estado de vigencia |
+|---|---|---|
+| [10](../01-vision-alcance-y-entrega/02-entregables-y-plan.md) | Plan inicial de entregables. | Histórico; remite a [38]. |
+| [20](../07-planificacion-y-trabajo-equipo/01-backlog-y-sprints.md) | Backlog y sprints de una planificación posterior. | Histórico; remite a [38]. |
+| [23](../07-planificacion-y-trabajo-equipo/03-plan-de-construccion-del-producto.md) | Plan de construcción de 19 sprints. | Histórico; su horizonte fue retirado. |
+| [35](../07-planificacion-y-trabajo-equipo/04-backlog-ejecutable.md) | Recetas y estimaciones detalladas; algunas siguen siendo antecedentes útiles. | Mixto; no es el calendario rector. |
+| [38](../07-planificacion-y-trabajo-equipo/05-plan-de-cinco-sprints.md) | Calendario rector vigente de máximo cinco sprints. | Vigente. |
+| [30](../07-planificacion-y-trabajo-equipo/02-arranque-agil-y-sprint-0.md) | Vista de entrega y arranque; reúne enlaces de trabajo. | No es fuente de verdad por su propia declaración. |
+| [31](../03-capacidades-de-ia/golden-set-y-calibracion/01-plan-de-revision.md), [32](../03-capacidades-de-ia/golden-set-y-calibracion/02-especificacion-funcional.md), [33](../03-capacidades-de-ia/golden-set-y-calibracion/03-modelo-de-dominio-y-transiciones.md) | Plan de revisión, especificación funcional y modelo de dominio, respectivamente. | Complementarios; no son copias entre sí. |
+
+## 4. Contratos entre microservicios: estado actual
+
+### 4.1 Qué es cada contrato
+
+- **OpenAPI** describe una API HTTP: rutas, verbo, seguridad, headers, request, response y errores. Es el acuerdo para llamadas síncronas a través del Gateway.
+- **AsyncAPI** describe eventos asíncronos: topic, quién publica, quién consume y el payload. En esta plataforma se aplica a Kafka.
+
+Los contratos existentes son [OpenAPI v1](../contracts/historicos-y-contratos-v1/llm-service-v1.openapi.yaml), [OpenAPI v2 Golden Set/calibración](../contracts/historicos-y-contratos-v1/llm-service-v2-golden-set.openapi.yaml) y [AsyncAPI v1](../contracts/historicos-y-contratos-v1/llm-service-v1.asyncapi.yaml).
 
 ### 4.2 Cobertura por par
 
@@ -66,6 +106,16 @@ La propuesta `TUP_PIV_BE_PROPUESTA_ARQ.pdf`, página 7, no usa la etiqueta “Fa
 | 1 | Rúbricas con pesos fijos `30/25/20/15/10` | La adenda aprobada ADR-017 reemplaza solo la rigidez de criterios, anclas, prompts y pesos: las cinco dimensiones continúan obligatorias, los pesos suman 100 % y las versiones publicadas son inmutables. | [00], ADR-017, [31], [32], [33], OpenAPI v2. | **Parcial.** La regla nueva está definida, pero convive con textos que dicen “pesos fijos”. | Propagar DOC-001 a [04], [13](../03-capacidades-de-ia/03-rubricas-y-prompts.md)
 | 2 | Invocación del modelo | Adapter de modelo detrás de `LlmAdapter`; llamada del tutor con contexto validado, guardarraíles y trazabilidad. | [02](../02-arquitectura-y-plataforma/01-arquitectura-y-stack.md), ADR-016, [03], [04](../03-capacidades-de-ia/02-funciones-de-ia.md)
 | 3 | Golden Set base | ADMIN publica el Golden Set base; el curso trabaja con una copia independiente y versionada. Es contenido docente, no un entregable que pueda producir el equipo de desarrollo por sí solo. | [31], [32](../03-capacidades-de-ia/golden-set-y-calibracion/02-especificacion-funcional.md)trazabilidad. | [31](../03-capacidades-de-ia/golden-set-y-calibracion/01-plan-de-revision.md)der, se compara la salida del tutor contra la solución esperada del desafío; la solución no entra al Golden Set ni se devuelve al alumno. | [05](../04-seguridad-datos-y-cumplimiento/01-seguridad-y-guardarrailes.md), [17](../contracts/90-mapa-de-integracion-historico.md) DOC-001 conserve contradicciones en documentos temáticos canónicos;
+- no exista una fuente OpenAPI vigente y coherente para Golden Set, rúbricas, calibración y consultas de curso;
+- AsyncAPI no especifique los datos de cada evento publicado/consumido;
+- no esté firmado el contrato de solución esperada de Tema 05 para anti-fuga;
+- no se verifique cada contrato contra los controladores y pruebas de integración.
+
+### 5.1 Dictamen de cumplimiento documental
+
+**La documentación no cumple todavía 100 % de la primera entrega.** No es por ausencia de explicación funcional: los seis puntos están identificados y, salvo anti-fuga, cuentan con diseño sustantivo. No puede declararse completa mientras:
+
+- DOC-001 conserve contradicciones en documentos temáticos canónicos;
 - no exista una fuente OpenAPI vigente y coherente para Golden Set, rúbricas, calibración y consultas de curso;
 - AsyncAPI no especifique los datos de cada evento publicado/consumido;
 - no esté firmado el contrato de solución esperada de Tema 05 para anti-fuga;

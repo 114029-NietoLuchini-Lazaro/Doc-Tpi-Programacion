@@ -1,6 +1,6 @@
 # 05 — Guía de Demostración Reproducible — Sprint 1 (LLM-EP01-H06 / ex-H09)
 
-> **Historia de Usuario / Tarea Técnica:** [`../../07-planificacion-y-trabajo-equipo/09-epicas-historias-tareas-sprints/historias/ep-01/h06.md`](../../07-planificacion-y-trabajo-equipo/09-epicas-historias-tareas-sprints/historias/ep-01/h06.md)  
+> **Historia de Usuario / Tarea Técnica:** [`../../07-planificacion-y-trabajo-equipo/09-epicas-historias-tareas-sprints/historias/ep-01/h06.md`](../07-planificacion-y-trabajo-equipo/09-epicas-historias-tareas-sprints/historias/ep-01/h06.md)  
 > **Traza de Criterios de Aceptación:** CA3 (persistencia tras reinicio), CA4 (guía paso a paso ejecutable), CA6 (bloqueo ante pérdida de datos).  
 > **Audiencia:** Equipo de desarrollo, Product Owner, Comité evaluador de Sprint Review.  
 > **Objetivo:** Demostrar con evidencia reproducible —y no solo con un relato— el recorrido canónico de S1: **acceso autorizado → alta de rúbrica y golden set → carga de casos de referencia → reinicio de contenedores → consulta y verificación de persistencia**.
@@ -24,7 +24,7 @@ La demostración debe ejecutarse en el ambiente integrado reproducible mediante 
 
 ## 2. Convención de Headers de Plataforma (Gateway e Identidad)
 
-Conforme a las reglas de la plataforma (ADR-015 y [00 · gobierno](../../00-gobierno-y-fuentes-de-verdad.md)), todas las peticiones a `/api/llm/**` deben incorporar los headers inyectados por el API Gateway:
+Conforme a las reglas de la plataforma (ADR-015 y [00 · gobierno](../00-gobierno-y-fuentes-de-verdad.md)), todas las peticiones a `/api/llm/**` deben incorporar los headers inyectados por el API Gateway:
 
 ```bash
 HEADER_SERVICE='X-Service-Id: admin-service'
@@ -195,7 +195,23 @@ Cualquier integrante del equipo o revisor puede ejecutar la verificación comple
 
 ---
 
-## 4. Matriz de Trazabilidad de Criterios de Aceptación
+## 4. Pruebas Negativas y Manejo de Errores
+
+Para validar la seguridad e invariantes de negocio durante la demo:
+
+1. **Acceso no autorizado (sin scope o sin service de confianza):**
+   ```bash
+   curl -s -o /dev/null -w "%{http_code}\n" -X GET http://localhost:8080/api/llm/courses/22222222-2222-2222-2222-222222222222/golden-sets
+   ```
+   **Resultado:** `401 Unauthorized` o `403 Forbidden`.
+
+2. **Acceso con rol no docente:**
+   Enviar `X-Actor-Role: STUDENT`.  
+   **Resultado:** `403 Forbidden` (`Solo los docentes del curso pueden gestionar el Golden Set`).
+
+---
+
+## 5. Matriz de Trazabilidad de Criterios de Aceptación
 
 | Criterio de Aceptación | Cómo se valida en la demo | Estado |
 |---|---|---|

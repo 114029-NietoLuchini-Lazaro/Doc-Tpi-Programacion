@@ -5,6 +5,10 @@
 > secuencia del tutor y el evaluador, presupuestos y decisiones de diseño — `18` §4 ya no repite este detalle. Carta original:
 > [docs/entregas/alcance-y-contrato-para-desafios-practicos.md](../../01-vision-alcance-y-entrega/03-entregas/alcance-y-contrato-para-desafios-practicos.md).
 > Reglas generales: [18 §0](../91-contratos-inter-equipos-historicos.md#0-cómo-leemos-los-contratos).
+>
+> **Fuente ejecutable:** [`../llm-service.openapi.yaml`](../llm-service.openapi.yaml). Este archivo
+> explica acuerdos y evolución; los ejemplos `/ai/**` y cualquier referencia a V1 son históricos y
+> no deben implementarse como contrato nuevo.
 
 ## Qué nos llama
 

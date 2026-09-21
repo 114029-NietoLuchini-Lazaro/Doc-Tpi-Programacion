@@ -39,6 +39,10 @@ services:
       # de este compose; si la plataforma está levantada en la red tpi-platform, apuntar a event-bus:29092.
       KAFKA_BOOTSTRAP: ${KAFKA_BOOTSTRAP:-kafka-local:29092}
       LLM_KAFKA_ENABLED: ${LLM_KAFKA_ENABLED:-true}
+      # The base stack has no Courses mock. These defaults make configuration
+      # explicit so Spring can start; deployments must override both values.
+      LLM_COURSES_BASE_URL: ${LLM_COURSES_BASE_URL:-http://host.docker.internal:4300}
+      LLM_COURSES_SERVICE_TOKEN: ${LLM_COURSES_SERVICE_TOKEN:-local-gateway-m2m-token}
     depends_on:
       postgres:
         condition: service_healthy
