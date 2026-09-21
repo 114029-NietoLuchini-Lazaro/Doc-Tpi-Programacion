@@ -13,6 +13,7 @@ import ar.edu.utn.frc.tup.piv.llm.domain.ai.EmbeddingResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -119,8 +120,8 @@ class ModelInvocationGatewayPolicyTest {
   private ModelInvocationService service(GatewayPolicy policy, Function<ModelInvocationRequest, ModelInvocationResult> fn) {
     var configs = mock(FunctionModelConfigRepository.class);
     var deployments = mock(ModelDeploymentRepository.class);
-    when(configs.find(ModelFunction.TUTOR))
-        .thenReturn(Optional.of(asignado(deployments, "fake", "m", "1", true)));
+    var cfg1 = asignado(deployments, "fake", "m", "1", true);
+    when(configs.find(ModelFunction.TUTOR)).thenReturn(Optional.of(cfg1));
     ModelInvocationPort port = new ModelInvocationPort() {
       public ModelInvocationResult invoke(ModelInvocationRequest r) { return fn.apply(r); }
       public String provider() { return "fake"; }
@@ -145,8 +146,8 @@ class ModelInvocationGatewayPolicyTest {
     var calls = new AtomicInteger();
     var configs = mock(FunctionModelConfigRepository.class);
     var deployments = mock(ModelDeploymentRepository.class);
-    when(configs.find(ModelFunction.EMBEDDING))
-        .thenReturn(Optional.of(asignado(deployments, "fake", "emb", "1", true)));
+    var cfg2 = asignado(deployments, "fake", "emb", "1", true);
+    when(configs.find(ModelFunction.EMBEDDING)).thenReturn(Optional.of(cfg2));
     ar.edu.utn.frc.tup.piv.llm.domain.ai.EmbeddingPort port = new ar.edu.utn.frc.tup.piv.llm.domain.ai.EmbeddingPort() {
       public ar.edu.utn.frc.tup.piv.llm.domain.ai.EmbeddingResult embed(String text) {
         if (calls.incrementAndGet() < 2) throw new IllegalStateException("503");
@@ -186,8 +187,9 @@ class ModelInvocationGatewayPolicyTest {
   private static FunctionModelConfigRepository.Config asignado(ModelDeploymentRepository deployments,
       String provider, String modelId, String modelVersion, boolean enabled) {
     UUID deploymentId = UUID.randomUUID();
-    when(deployments.byId(deploymentId)).thenReturn(Optional.of(
-        new ModelDeploymentSummary(deploymentId, provider, modelId, modelVersion, "ENABLED")));
+    // doReturn/when: este helper se invoca dentro de otro when(...), y Mockito no admite when() anidado.
+    doReturn(Optional.of(new ModelDeploymentSummary(deploymentId, provider, modelId, modelVersion, "ENABLED")))
+        .when(deployments).byId(deploymentId);
     return new FunctionModelConfigRepository.Config(deploymentId, enabled);
   }
 }

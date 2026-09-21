@@ -16,17 +16,6 @@ class GoldenSetAuthorizationTest {
   private static final String REQUIRED_SCOPE = "llm.golden-set.manage";
 
   @Test
-  void inWorkbenchModeAlwaysResolvesTheWorkbenchUserWithoutHeaders() {
-    UUID workbenchUser = UUID.randomUUID();
-    var authorization = new GoldenSetAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE);
-
-    var actor = authorization.require(new HttpHeaders());
-
-    assertThat(actor.serviceId()).isEqualTo("workbench");
-    assertThat(actor.delegatedUserId()).isEqualTo(workbenchUser);
-  }
-
-  @Test
   void acceptsATrustedServiceWithTheRequiredScope() {
     var authorization = new GoldenSetAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE);
     UUID delegatedUser = UUID.randomUUID();

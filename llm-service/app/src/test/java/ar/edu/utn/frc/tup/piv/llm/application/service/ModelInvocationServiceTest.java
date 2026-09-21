@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -93,8 +94,8 @@ class ModelInvocationServiceTest {
     var configs = mock(FunctionModelConfigRepository.class);
     var deployments = mock(ModelDeploymentRepository.class);
     // Primero configurado en groq:
-    when(configs.find(ModelFunction.TUTOR))
-        .thenReturn(Optional.of(asignado(deployments, "groq", "llama-3.3-70b-versatile", "1", true)));
+    var cfg1 = asignado(deployments, "groq", "llama-3.3-70b-versatile", "1", true);
+    when(configs.find(ModelFunction.TUTOR)).thenReturn(Optional.of(cfg1));
 
     var service = new ModelInvocationService(configs, deployments, java.util.List.of(fakeAdapter, groqAdapter));
 
@@ -103,8 +104,8 @@ class ModelInvocationServiceTest {
     assertThat(groqResult.provider()).isEqualTo("groq");
 
     // Luego cambia en la base a fake (sin redesplegar):
-    when(configs.find(ModelFunction.TUTOR))
-        .thenReturn(Optional.of(asignado(deployments, "fake", "fake-socratic-v1", "1", true)));
+    var cfg2 = asignado(deployments, "fake", "fake-socratic-v1", "1", true);
+    when(configs.find(ModelFunction.TUTOR)).thenReturn(Optional.of(cfg2));
 
     var fakeResult = service.invoke(ModelFunction.TUTOR, "system", "¿cómo ordeno?", Duration.ofSeconds(1));
     assertThat(fakeResult.text()).isEqualTo("respuesta del fake");
@@ -120,8 +121,8 @@ class ModelInvocationServiceTest {
     };
     var configs = mock(FunctionModelConfigRepository.class);
     var deployments = mock(ModelDeploymentRepository.class);
-    when(configs.find(ModelFunction.TUTOR))
-        .thenReturn(Optional.of(asignado(deployments, "fake", "modelo-asignado", "1", true)));
+    var cfg3 = asignado(deployments, "fake", "modelo-asignado", "1", true);
+    when(configs.find(ModelFunction.TUTOR)).thenReturn(Optional.of(cfg3));
     var service = new ModelInvocationService(configs, deployments, adapter);
 
     service.invoke(ModelFunction.TUTOR, "system", "pregunta", Duration.ofSeconds(1));
@@ -134,8 +135,8 @@ class ModelInvocationServiceTest {
     Adapter fakeAdapter = request -> new ModelInvocationResult("pista", "fake", "fake-socratic-v1");
     var configs = mock(FunctionModelConfigRepository.class);
     var deployments = mock(ModelDeploymentRepository.class);
-    when(configs.find(ModelFunction.TUTOR))
-        .thenReturn(Optional.of(asignado(deployments, "unsupported-provider", "m1", "1", true)));
+    var cfg4 = asignado(deployments, "unsupported-provider", "m1", "1", true);
+    when(configs.find(ModelFunction.TUTOR)).thenReturn(Optional.of(cfg4));
 
     var service = new ModelInvocationService(configs, deployments, java.util.List.of(fakeAdapter));
 
@@ -147,8 +148,8 @@ class ModelInvocationServiceTest {
   private ModelInvocationService serviceWithAdapter(Adapter adapter) {
     var configs = mock(FunctionModelConfigRepository.class);
     var deployments = mock(ModelDeploymentRepository.class);
-    when(configs.find(ModelFunction.TUTOR))
-        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config(java.util.UUID.randomUUID(), true)));
+    var config = asignado(deployments, "fake", "fake-socratic-v1", "1", true);
+    when(configs.find(ModelFunction.TUTOR)).thenReturn(Optional.of(config));
     return new ModelInvocationService(configs, deployments, adapter);
   }
 
@@ -176,8 +177,9 @@ class ModelInvocationServiceTest {
   private static FunctionModelConfigRepository.Config asignado(ModelDeploymentRepository deployments,
       String provider, String modelId, String modelVersion, boolean enabled) {
     UUID deploymentId = UUID.randomUUID();
-    when(deployments.byId(deploymentId)).thenReturn(Optional.of(
-        new ModelDeploymentSummary(deploymentId, provider, modelId, modelVersion, "ENABLED")));
+    // doReturn/when: este helper se invoca dentro de otro when(...), y Mockito no admite when() anidado.
+    doReturn(Optional.of(new ModelDeploymentSummary(deploymentId, provider, modelId, modelVersion, "ENABLED")))
+        .when(deployments).byId(deploymentId);
     return new FunctionModelConfigRepository.Config(deploymentId, enabled);
   }
 }

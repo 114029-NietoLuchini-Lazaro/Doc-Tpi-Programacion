@@ -37,7 +37,7 @@ class CourseGoldenSetServiceTest {
     when(repository.copyPublishedPlatformVersion(course, base, user)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> service.copyFromPublishedBase(course, base, new CallerIdentity("gateway", user, null, null)))
-        .isInstanceOf(IllegalStateException.class).hasMessageContaining("base publicado");
+        .isInstanceOf(IllegalStateException.class).hasMessageContaining("La versión base no existe o no está publicada");
   }
 
   @Test void rejectsReferenceScoresOutsideTheInclusiveZeroToOneHundredRange() throws Exception {
@@ -73,6 +73,9 @@ class CourseGoldenSetServiceTest {
     UUID course = UUID.randomUUID(), version = UUID.randomUUID();
     CallerIdentity actor = new CallerIdentity("gateway", UUID.randomUUID(), null, null);
     when(repository.countCases(version)).thenReturn(3);
+    when(repository.findDetail(course, version)).thenReturn(Optional.of(
+        new ar.edu.utn.frc.tup.piv.llm.domain.goldenset.GoldenSetDetail(
+            version, UUID.randomUUID(), "v1", 1, "DRAFT", null, java.util.List.of())));
     when(repository.publishDraft(course, version)).thenReturn(true);
 
     service.publish(course, version, actor);

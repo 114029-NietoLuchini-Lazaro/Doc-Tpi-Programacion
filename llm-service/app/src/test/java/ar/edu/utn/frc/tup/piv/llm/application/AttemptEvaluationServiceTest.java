@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -142,7 +143,8 @@ class AttemptEvaluationServiceTest {
   void theRealFakeAdapterProducesAScoreEndToEndWithoutAnyProvider() {
     var configs = mock(FunctionModelConfigRepository.class);
     var deployments = mock(ModelDeploymentRepository.class);
-    when(configs.find(ModelFunction.EVALUATOR)).thenReturn(Optional.of(asignado(deployments, "fake", "fake-evaluator-v1", "1", true)));
+    var cfg1 = asignado(deployments, "fake", "fake-evaluator-v1", "1", true);
+    when(configs.find(ModelFunction.EVALUATOR)).thenReturn(Optional.of(cfg1));
     var withFake = new AttemptEvaluationService(rubrics, new ModelInvocationService(configs, deployments, new FakeModelAdapter()),
         events, mapper, rubricVersionId, 1000, 30);
     when(rubrics.weightsAndPrompts(rubricVersionId)).thenReturn(fullRubric());
@@ -181,8 +183,9 @@ class AttemptEvaluationServiceTest {
   private static FunctionModelConfigRepository.Config asignado(ModelDeploymentRepository deployments,
       String provider, String modelId, String modelVersion, boolean enabled) {
     UUID deploymentId = UUID.randomUUID();
-    when(deployments.byId(deploymentId)).thenReturn(Optional.of(
-        new ModelDeploymentSummary(deploymentId, provider, modelId, modelVersion, "ENABLED")));
+    // doReturn/when: este helper se invoca dentro de otro when(...), y Mockito no admite when() anidado.
+    doReturn(Optional.of(new ModelDeploymentSummary(deploymentId, provider, modelId, modelVersion, "ENABLED")))
+        .when(deployments).byId(deploymentId);
     return new FunctionModelConfigRepository.Config(deploymentId, enabled);
   }
 }

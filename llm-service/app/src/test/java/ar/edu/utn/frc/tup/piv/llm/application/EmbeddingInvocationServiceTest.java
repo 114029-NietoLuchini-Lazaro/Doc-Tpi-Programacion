@@ -9,6 +9,7 @@ import ar.edu.utn.frc.tup.piv.llm.application.service.EmbeddingInvocationService
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -29,8 +30,8 @@ class EmbeddingInvocationServiceTest {
   void embedsWhenTheFunctionIsEnabled() {
     var configs = mock(FunctionModelConfigRepository.class);
     var deployments = mock(ModelDeploymentRepository.class);
-    when(configs.find(ModelFunction.EMBEDDING))
-        .thenReturn(Optional.of(asignado(deployments, "fake", "fake-embedding-768", "1", true)));
+    var cfg1 = asignado(deployments, "fake", "fake-embedding-768", "1", true);
+    when(configs.find(ModelFunction.EMBEDDING)).thenReturn(Optional.of(cfg1));
     var adapter = mock(EmbeddingPort.class);
     when(adapter.embed("hola")).thenReturn(new EmbeddingResult(new float[768], "fake", "fake-embedding-768"));
     var service = new EmbeddingInvocationService(configs, deployments, adapter);
@@ -55,8 +56,8 @@ class EmbeddingInvocationServiceTest {
   void failsWhenTheFunctionIsDisabled() {
     var configs = mock(FunctionModelConfigRepository.class);
     var deployments = mock(ModelDeploymentRepository.class);
-    when(configs.find(ModelFunction.EMBEDDING))
-        .thenReturn(Optional.of(asignado(deployments, "fake", "fake-embedding-768", "1", false)));
+    var cfg2 = asignado(deployments, "fake", "fake-embedding-768", "1", false);
+    when(configs.find(ModelFunction.EMBEDDING)).thenReturn(Optional.of(cfg2));
     var adapter = mock(EmbeddingPort.class);
     var service = new EmbeddingInvocationService(configs, deployments, adapter);
 
@@ -67,8 +68,8 @@ class EmbeddingInvocationServiceTest {
   void rejectsANullVectorForASingleEmbed() {
     var configs = mock(FunctionModelConfigRepository.class);
     var deployments = mock(ModelDeploymentRepository.class);
-    when(configs.find(ModelFunction.EMBEDDING))
-        .thenReturn(Optional.of(asignado(deployments, "fake", "fake-embedding-768", "1", true)));
+    var cfg3 = asignado(deployments, "fake", "fake-embedding-768", "1", true);
+    when(configs.find(ModelFunction.EMBEDDING)).thenReturn(Optional.of(cfg3));
     var adapter = mock(EmbeddingPort.class);
     when(adapter.embed(any())).thenReturn(new EmbeddingResult(null, "fake", "fake-embedding-768"));
     var service = new EmbeddingInvocationService(configs, deployments, adapter);
@@ -80,8 +81,8 @@ class EmbeddingInvocationServiceTest {
   void rejectsAVectorWithTheWrongDimension() {
     var configs = mock(FunctionModelConfigRepository.class);
     var deployments = mock(ModelDeploymentRepository.class);
-    when(configs.find(ModelFunction.EMBEDDING))
-        .thenReturn(Optional.of(asignado(deployments, "fake", "fake-embedding-768", "1", true)));
+    var cfg4 = asignado(deployments, "fake", "fake-embedding-768", "1", true);
+    when(configs.find(ModelFunction.EMBEDDING)).thenReturn(Optional.of(cfg4));
     var adapter = mock(EmbeddingPort.class);
     when(adapter.embed(any())).thenReturn(new EmbeddingResult(new float[10], "fake", "fake-embedding-768"));
     var service = new EmbeddingInvocationService(configs, deployments, adapter);
@@ -93,8 +94,8 @@ class EmbeddingInvocationServiceTest {
   void embedBatchToleratesIndividualNullVectors() {
     var configs = mock(FunctionModelConfigRepository.class);
     var deployments = mock(ModelDeploymentRepository.class);
-    when(configs.find(ModelFunction.EMBEDDING))
-        .thenReturn(Optional.of(asignado(deployments, "fake", "fake-embedding-768", "1", true)));
+    var cfg5 = asignado(deployments, "fake", "fake-embedding-768", "1", true);
+    when(configs.find(ModelFunction.EMBEDDING)).thenReturn(Optional.of(cfg5));
     var adapter = mock(EmbeddingPort.class);
     when(adapter.embedBatch(any())).thenReturn(List.of(
         new EmbeddingResult(new float[768], "fake", "fake-embedding-768"),
@@ -111,8 +112,8 @@ class EmbeddingInvocationServiceTest {
   void cutsTheCallWhenTheAdapterExceedsTheConfiguredTimeout() {
     var configs = mock(FunctionModelConfigRepository.class);
     var deployments = mock(ModelDeploymentRepository.class);
-    when(configs.find(ModelFunction.EMBEDDING))
-        .thenReturn(Optional.of(asignado(deployments, "fake", "fake-embedding-768", "1", true)));
+    var cfg6 = asignado(deployments, "fake", "fake-embedding-768", "1", true);
+    when(configs.find(ModelFunction.EMBEDDING)).thenReturn(Optional.of(cfg6));
     var adapter = mock(EmbeddingPort.class);
     when(adapter.embed(any())).thenAnswer(invocation -> {
       Thread.sleep(300);
@@ -141,8 +142,9 @@ class EmbeddingInvocationServiceTest {
   private static FunctionModelConfigRepository.Config asignado(ModelDeploymentRepository deployments,
       String provider, String modelId, String modelVersion, boolean enabled) {
     UUID deploymentId = UUID.randomUUID();
-    when(deployments.byId(deploymentId)).thenReturn(Optional.of(
-        new ModelDeploymentSummary(deploymentId, provider, modelId, modelVersion, "ENABLED")));
+    // doReturn/when: este helper se invoca dentro de otro when(...), y Mockito no admite when() anidado.
+    doReturn(Optional.of(new ModelDeploymentSummary(deploymentId, provider, modelId, modelVersion, "ENABLED")))
+        .when(deployments).byId(deploymentId);
     return new FunctionModelConfigRepository.Config(deploymentId, enabled);
   }
 }
