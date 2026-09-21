@@ -55,7 +55,7 @@ apuntando al nombre de red de ese servicio — no hay nada más que preparar de 
 | Comando | Qué levanta |
 |---|---|
 | `docker compose up --build` | Solo `postgres` + `llm-service`, sin perfil `workbench`, sin puertos de negocio publicados. Los datos de `postgres` persisten en el volumen nombrado `llm-postgres-data` entre `down`/`up` (solo se borran con `down --volumes`). |
-| `docker compose -f compose.yaml -f compose.workbench.yaml up --build` | Lo anterior, más `workbench` en `localhost:4200`, `gateway-mock` en `localhost:8080` y `courses-mock`, y le agrega `SPRING_PROFILES_ACTIVE=workbench` a `llm-service` (CORS para `localhost:4200`, identidad docente fija — `WorkbenchCorsConfiguration`, `WorkbenchDemoCatalog`). El navegador usa rutas relativas contra `gateway-mock`: no construye headers de identidad ni tokens M2M. |
+| `docker compose -f compose.yaml -f compose.workbench.yaml up --build` | Lo anterior, más `workbench` en `localhost:4200`, `gateway-mock` en `localhost:8080` y `courses-mock`, y le agrega `SPRING_PROFILES_ACTIVE=workbench` a `llm-service` (CORS para `localhost:4200`, identidad docente fija — `WorkbenchCorsConfiguration`, y siembra de rúbrica y golden set con `WorkbenchCalibrationSeed`; los cursos los sirve `courses-mock`, no el backend). El navegador usa rutas relativas contra `gateway-mock`: no construye headers de identidad ni tokens M2M. |
 | `docker compose -f compose.yaml -f compose.debug.yaml up --build` | Lo anterior (sin `workbench`), más el puerto `5432` de `postgres` publicado al host — solo para debug local (cliente SQL, o reproducir el escenario "puerto ocupado" de H02). No se usa en la plataforma real ni en CI. |
 
 Detalle línea por línea de cada variable de entorno: [`.env.example`](../../.env.example)
