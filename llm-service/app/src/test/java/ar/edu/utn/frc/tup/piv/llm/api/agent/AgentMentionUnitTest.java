@@ -1,5 +1,8 @@
 package ar.edu.utn.frc.tup.piv.llm.api.agent;
 
+import ar.edu.utn.frc.tup.piv.llm.adapter.in.web.agent.AgentMentionRequest;
+import ar.edu.utn.frc.tup.piv.llm.adapter.in.web.agent.AgentMentionResponse;
+
 import ar.edu.utn.frc.tup.piv.llm.adapter.in.web.agent.AgentMentionController;
 import ar.edu.utn.frc.tup.piv.llm.adapter.in.web.agent.MentionCitationDto;
 

@@ -1,5 +1,8 @@
 package ar.edu.utn.frc.tup.piv.llm.application;
 
+import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.ModelDeploymentRepository;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelDeploymentSummary;
+
 import ar.edu.utn.frc.tup.piv.llm.application.service.AttemptEvaluationService;
 import ar.edu.utn.frc.tup.piv.llm.application.service.ModelInvocationService;
 
@@ -20,7 +23,7 @@ import ar.edu.utn.frc.tup.piv.llm.domain.CalibrationMetrics.Dimension;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelFunction;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelInvocationResult;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.ProviderUnavailableException;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.ai.FakeModelAdapter;
+import ar.edu.utn.frc.tup.piv.llm.adapter.out.ai.FakeModelAdapter;
 import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.FunctionModelConfigRepository;
 import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.RubricVersionRepository;
 import ar.edu.utn.frc.tup.piv.llm.messaging.kafka.KafkaEventProducer;
@@ -138,8 +141,9 @@ class AttemptEvaluationServiceTest {
   @Test
   void theRealFakeAdapterProducesAScoreEndToEndWithoutAnyProvider() {
     var configs = mock(FunctionModelConfigRepository.class);
-    when(configs.find(ModelFunction.EVALUATOR)).thenReturn(Optional.of(new FunctionModelConfigRepository.Config("fake", "fake-evaluator-v1", "1", true)));
-    var withFake = new AttemptEvaluationService(rubrics, new ModelInvocationService(configs, new FakeModelAdapter()),
+    var deployments = mock(ModelDeploymentRepository.class);
+    when(configs.find(ModelFunction.EVALUATOR)).thenReturn(Optional.of(asignado(deployments, "fake", "fake-evaluator-v1", "1", true)));
+    var withFake = new AttemptEvaluationService(rubrics, new ModelInvocationService(configs, deployments, new FakeModelAdapter()),
         events, mapper, rubricVersionId, 1000, 30);
     when(rubrics.weightsAndPrompts(rubricVersionId)).thenReturn(fullRubric());
 
@@ -167,5 +171,18 @@ class AttemptEvaluationServiceTest {
         new DimensionInput(Dimension.PROGRESSION, "Progresión", "avanza entre mensajes", null, BigDecimal.valueOf(20)),
         new DimensionInput(Dimension.COMPLIANCE, "Cumplimiento", "respeta los límites", null, BigDecimal.valueOf(15)),
         new DimensionInput(Dimension.EFFICIENCY, "Eficiencia", "no repite consultas", null, BigDecimal.valueOf(10)));
+  }
+
+  /**
+   * Desde la V26 la asignación función→modelo guarda el id del despliegue; proveedor y modelo se
+   * leen de {@code ModelDeploymentRepository}. Registra el despliegue en el mock y devuelve el
+   * Config correspondiente.
+   */
+  private static FunctionModelConfigRepository.Config asignado(ModelDeploymentRepository deployments,
+      String provider, String modelId, String modelVersion, boolean enabled) {
+    UUID deploymentId = UUID.randomUUID();
+    when(deployments.byId(deploymentId)).thenReturn(Optional.of(
+        new ModelDeploymentSummary(deploymentId, provider, modelId, modelVersion, "ENABLED")));
+    return new FunctionModelConfigRepository.Config(deploymentId, enabled);
   }
 }

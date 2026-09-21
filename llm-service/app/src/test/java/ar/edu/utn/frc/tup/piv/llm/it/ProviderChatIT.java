@@ -6,7 +6,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import ar.edu.utn.frc.tup.piv.llm.adapter.out.ai.EncryptedSecretService;
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.gateway.ProviderLlmGateway.Provider;
 import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.ProviderCredentialRepository;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
@@ -42,10 +41,10 @@ class ProviderChatIT extends AbstractIntegrationIT {
       }
     });
     server.start();
-    var cred = models.create(Provider.OPENAI_COMPATIBLE, "local", "http://127.0.0.1:" + server.getAddress().getPort() + "/v1",
+    var cred = models.create("openai-compatible", "local", java.util.Map.of("baseUrl", "http://127.0.0.1:" + server.getAddress().getPort() + "/v1"),
         crypto.encrypt("sk-local-1234567"), "sk-4567", TEACHER);
     credentialId = cred.id();
-    deploymentId = models.createCandidate(cred.id(), "modelo-local", 2).id();
+    deploymentId = models.createCandidate(cred.id(), descriptorDeModelo("modelo-local"), 2).id();
   }
 
   @AfterEach
@@ -108,5 +107,13 @@ class ProviderChatIT extends AbstractIntegrationIT {
   @Test
   void adminCanSubscribeToEvaluatorModelEvents() throws Exception {
     mvc.perform(asTeacher(get(ADMIN + "/evaluator-models/events"), course)).andExpect(status().isOk());
+  }
+
+  /** Descriptor mínimo para registrar un candidato en los tests (el SPI pide el modelo completo). */
+  private static ar.edu.utn.frc.tup.piv.llm.provider.spi.ModelDescriptor descriptorDeModelo(String modelId) {
+    return new ar.edu.utn.frc.tup.piv.llm.provider.spi.ModelDescriptor(modelId, modelId, null,
+        new ar.edu.utn.frc.tup.piv.llm.provider.spi.ProviderCapabilities(
+            true, true, true, true, true, true, false, false),
+        java.util.Map.of());
   }
 }

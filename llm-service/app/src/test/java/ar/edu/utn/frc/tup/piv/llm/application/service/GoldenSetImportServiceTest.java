@@ -3,7 +3,6 @@ package ar.edu.utn.frc.tup.piv.llm.application.service;
 
 import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.GoldenSetImportRepository;
 import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.ImportBatch;
-import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.GoldenSetImportRepository.ImportRow;
 import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.ImportBatch;
 import ar.edu.utn.frc.tup.piv.llm.domain.goldenset.ImportRow;
 import com.fasterxml.jackson.databind.ObjectMapper;

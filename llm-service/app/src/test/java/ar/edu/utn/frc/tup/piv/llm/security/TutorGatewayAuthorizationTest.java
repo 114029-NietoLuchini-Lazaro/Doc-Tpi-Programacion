@@ -18,7 +18,7 @@ class TutorGatewayAuthorizationTest {
   @Test
   void inWorkbenchModeAlwaysResolvesTheWorkbenchUserWithoutHeaders() {
     UUID workbenchUser = UUID.randomUUID();
-    var authorization = new TutorGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE, true, workbenchUser);
+    var authorization = new TutorGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE);
 
     var actor = authorization.require(new HttpHeaders());
 
@@ -28,7 +28,7 @@ class TutorGatewayAuthorizationTest {
 
   @Test
   void acceptsATrustedServiceWithTheRequiredScope() {
-    var authorization = new TutorGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE, false, UUID.randomUUID());
+    var authorization = new TutorGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE);
     UUID delegatedUser = UUID.randomUUID();
     var headers = new HttpHeaders();
     headers.set("X-Service-Id", TRUSTED_SERVICE);
@@ -45,7 +45,7 @@ class TutorGatewayAuthorizationTest {
 
   @Test
   void rejectsAnUntrustedServiceId() {
-    var authorization = new TutorGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE, false, UUID.randomUUID());
+    var authorization = new TutorGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE);
     var headers = new HttpHeaders();
     headers.set("X-Service-Id", "untrusted-service");
     headers.set("X-Service-Scopes", REQUIRED_SCOPE);
@@ -62,7 +62,7 @@ class TutorGatewayAuthorizationTest {
 
   @Test
   void rejectsATrustedServiceWithoutTheRequiredScope() {
-    var authorization = new TutorGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE, false, UUID.randomUUID());
+    var authorization = new TutorGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE);
     var headers = new HttpHeaders();
     headers.set("X-Service-Id", TRUSTED_SERVICE);
     headers.set("X-Service-Scopes", "other.scope");
@@ -79,7 +79,7 @@ class TutorGatewayAuthorizationTest {
 
   @Test
   void rejectsATrustedServiceWithNullScopes() {
-    var authorization = new TutorGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE, false, UUID.randomUUID());
+    var authorization = new TutorGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE);
     var headers = new HttpHeaders();
     headers.set("X-Service-Id", TRUSTED_SERVICE);
     headers.set("X-Delegated-User", UUID.randomUUID().toString());
@@ -95,7 +95,7 @@ class TutorGatewayAuthorizationTest {
 
   @Test
   void rejectsAMissingDelegatedUser() {
-    var authorization = new TutorGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE, false, UUID.randomUUID());
+    var authorization = new TutorGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE);
     var headers = new HttpHeaders();
     headers.set("X-Service-Id", TRUSTED_SERVICE);
     headers.set("X-Service-Scopes", REQUIRED_SCOPE);
@@ -111,7 +111,7 @@ class TutorGatewayAuthorizationTest {
 
   @Test
   void rejectsANonUuidDelegatedUser() {
-    var authorization = new TutorGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE, false, UUID.randomUUID());
+    var authorization = new TutorGatewayAuthorization(TRUSTED_SERVICE, REQUIRED_SCOPE);
     var headers = new HttpHeaders();
     headers.set("X-Service-Id", TRUSTED_SERVICE);
     headers.set("X-Service-Scopes", REQUIRED_SCOPE);

@@ -42,7 +42,7 @@ class TutorInteractionControllerTest {
   @Test
   void rejectsInvalidAuthenticationBeforeReachingTheService() {
     var service = mock(TutorInteractionService.class);
-    var authorization = new TutorGatewayAuthorization("practice-service", "llm.tutor.interact", false, UUID.randomUUID());
+    var authorization = new TutorGatewayAuthorization("practice-service", "llm.tutor.interact");
     var controller = new TutorInteractionController(service, authorization);
     var body = new TutorInteractionController.Request(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "hola", "low", null);
     var headers = new HttpHeaders();
@@ -59,7 +59,7 @@ class TutorInteractionControllerTest {
   @Test
   void rejectsMissingDelegatedUserBeforeReachingTheService() {
     var service = mock(TutorInteractionService.class);
-    var authorization = new TutorGatewayAuthorization("practice-service", "llm.tutor.interact", false, UUID.randomUUID());
+    var authorization = new TutorGatewayAuthorization("practice-service", "llm.tutor.interact");
     var controller = new TutorInteractionController(service, authorization);
     var body = new TutorInteractionController.Request(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "hola", "low", null);
     var headers = new HttpHeaders();

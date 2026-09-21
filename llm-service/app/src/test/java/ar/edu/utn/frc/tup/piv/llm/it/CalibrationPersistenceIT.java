@@ -209,9 +209,9 @@ class CalibrationPersistenceIT extends AbstractIntegrationIT {
     var exec = runs.execution(run.id());
     assertThat(exec.run().id()).isEqualTo(run.id());
     assertThat(exec.deployment().id()).isEqualTo(dep);
-    assertThat(exec.deployment().provider()).isEqualTo("OPENAI_COMPATIBLE");
-    assertThat(exec.deployment().baseUrl()).isEqualTo("http://h/v1");
-    assertThat(exec.deployment().encryptedSecret()).containsExactly(1, 2);
+    // Desde la V26 la credencial expone `provider_key` y el secreto ya no viaja en el Deployment:
+    // el gateway lo descifra en su frontera (ProviderInvocationGateway).
+    assertThat(exec.deployment().providerKey()).isEqualTo("openai-compatible");
     assertThat(exec.weights()).containsEntry(Dimension.AUTONOMY, 30).containsEntry(Dimension.EFFICIENCY, 10).hasSize(5);
     assertThat(exec.rubric()).contains("AUTONOMY (peso 30").contains("Anclas:");
     assertThat(exec.cases()).hasSize(2);

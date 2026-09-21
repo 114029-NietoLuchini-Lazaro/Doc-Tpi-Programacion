@@ -1,5 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.application;
 
+import ar.edu.utn.frc.tup.piv.llm.application.service.CalibrationExpirationService;
+
 import ar.edu.utn.frc.tup.piv.llm.application.service.RubricDraftService;
 import ar.edu.utn.frc.tup.piv.llm.application.service.RubricPublicationService;
 
@@ -18,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,7 +37,7 @@ class RubricPublicationServiceTest {
     when(rubrics.find(courseId, versionId)).thenReturn(java.util.Optional.of(validRubric(courseId, versionId)));
     when(rubrics.publishDraft(courseId, versionId)).thenReturn(true);
 
-    new RubricPublicationService(rubrics, audit).publish(courseId, versionId, actor);
+    new RubricPublicationService(rubrics, audit, mock(CalibrationExpirationService.class)).publish(courseId, versionId, actor);
 
     verify(rubrics).publishDraft(courseId, versionId);
     verify(audit).record(eq("rubric.published"), eq("rubric-version"), eq(versionId), eq(actor), anyString());
@@ -46,7 +49,7 @@ class RubricPublicationServiceTest {
         dimension(Dimension.AUTONOMY, 30), dimension(Dimension.CLARITY, 25), dimension(Dimension.PROGRESSION, 20),
         dimension(Dimension.COMPLIANCE, 15), dimension(Dimension.EFFICIENCY, 9)));
 
-    assertThatThrownBy(() -> new RubricPublicationService(rubrics, audit).publish(courseId, versionId,
+    assertThatThrownBy(() -> new RubricPublicationService(rubrics, audit, mock(CalibrationExpirationService.class)).publish(courseId, versionId,
         new CallerIdentity("admin-service", UUID.randomUUID(), null, null)))
         .isInstanceOf(IllegalArgumentException.class).hasMessage("Rubric weights must total 100");
 
@@ -60,7 +63,7 @@ class RubricPublicationServiceTest {
     when(rubrics.find(courseId, versionId)).thenReturn(java.util.Optional.of(validRubric(courseId, versionId)));
     when(rubrics.publishDraft(courseId, versionId)).thenReturn(false);
 
-    assertThatThrownBy(() -> new RubricPublicationService(rubrics, audit).publish(courseId, versionId,
+    assertThatThrownBy(() -> new RubricPublicationService(rubrics, audit, mock(CalibrationExpirationService.class)).publish(courseId, versionId,
         new CallerIdentity("admin-service", UUID.randomUUID(), null, null)))
         .isInstanceOf(IllegalStateException.class).hasMessage("La rúbrica fue modificada mientras se publicaba");
 

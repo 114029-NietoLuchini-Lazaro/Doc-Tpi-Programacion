@@ -1,5 +1,11 @@
 package ar.edu.utn.frc.tup.piv.llm.api.agent;
 
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelDeploymentSummary;
+
+import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.ModelDeploymentRepository;
+
+import ar.edu.utn.frc.tup.piv.llm.adapter.in.web.agent.AgentMentionRequest;
+
 import ar.edu.utn.frc.tup.piv.llm.adapter.in.web.agent.AgentMentionController;
 
 import ar.edu.utn.frc.tup.piv.llm.adapter.in.web.ApiExceptionHandler;
@@ -112,11 +118,13 @@ class AgentMentionControllerIT {
 
     SimulatedConfigRepository configRepository = new SimulatedConfigRepository();
     SimulatedEmbeddingAdapter embeddingAdapter = new SimulatedEmbeddingAdapter();
-    EmbeddingInvocationService embeddingService = new EmbeddingInvocationService(configRepository, embeddingAdapter);
+    SimulatedDeploymentRepository deploymentRepository = new SimulatedDeploymentRepository();
+    EmbeddingInvocationService embeddingService = new EmbeddingInvocationService(configRepository, deploymentRepository, embeddingAdapter);
     RagQueryService ragQueryService = new RagQueryService(ragDocumentRepository, embeddingService, vectorStore);
 
     ModelInvocationService modelService = new ModelInvocationService(
         configRepository,
+        deploymentRepository,
         modelAdapter
     );
 
@@ -447,6 +455,20 @@ class AgentMentionControllerIT {
     }
   }
 
+  private static final UUID DEPLOYMENT_SIMULADO = UUID.randomUUID();
+
+  /** El despliegue que resuelve el Config simulado: proveedor y modelo salen de acá desde la V26. */
+  private static class SimulatedDeploymentRepository extends ModelDeploymentRepository {
+    SimulatedDeploymentRepository() {
+      super(null);
+    }
+
+    @Override
+    public Optional<ModelDeploymentSummary> byId(UUID deploymentId) {
+      return Optional.of(new ModelDeploymentSummary(DEPLOYMENT_SIMULADO, "simulated-model", "test-model", "v1", "ENABLED"));
+    }
+  }
+
   private static class SimulatedConfigRepository extends FunctionModelConfigRepository {
     SimulatedConfigRepository() {
       super(null);
@@ -454,7 +476,7 @@ class AgentMentionControllerIT {
 
     @Override
     public Optional<Config> find(ModelFunction function) {
-      return Optional.of(new Config("simulated-model", "test-model", "v1", true));
+      return Optional.of(new Config(DEPLOYMENT_SIMULADO, true));
     }
   }
 

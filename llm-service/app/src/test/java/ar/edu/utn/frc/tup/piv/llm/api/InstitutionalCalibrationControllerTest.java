@@ -9,7 +9,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ar.edu.utn.frc.tup.piv.llm.infrastructure.gateway.ProviderLlmGateway.Provider;
 import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.CalibrationRunRepository;
 import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.ProviderCredentialRepository;
 import ar.edu.utn.frc.tup.piv.llm.application.model.CallerIdentity;
@@ -74,7 +73,7 @@ class InstitutionalCalibrationControllerTest {
   @Test
   void createReturnsAcceptedWithNewRun() {
     var profile = new CalibrationRunRepository.Profile(UUID.randomUUID(), UUID.randomUUID(), Instant.now());
-    var target = new ProviderCredentialRepository.Deployment(UUID.randomUUID(), UUID.randomUUID(), Provider.OPENAI_COMPATIBLE, "c", "m", "ACTIVE", Instant.now(), null, null);
+    var target = new ProviderCredentialRepository.Deployment(UUID.randomUUID(), UUID.randomUUID(), "openai-compatible", "c", "m", "ACTIVE", Instant.now(), null, null, java.util.Map.of());
     var run = new CalibrationRunRepository.Run(UUID.randomUUID(), "QUEUED", 0);
     when(runs.profile()).thenReturn(Optional.of(profile));
     when(deployments.calibrationTarget()).thenReturn(Optional.of(target));

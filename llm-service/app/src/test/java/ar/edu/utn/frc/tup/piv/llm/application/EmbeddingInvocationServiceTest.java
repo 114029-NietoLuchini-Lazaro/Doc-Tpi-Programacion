@@ -1,5 +1,9 @@
 package ar.edu.utn.frc.tup.piv.llm.application;
 
+import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.ModelDeploymentRepository;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelDeploymentSummary;
+import java.util.UUID;
+
 import ar.edu.utn.frc.tup.piv.llm.application.service.EmbeddingInvocationService;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,11 +28,12 @@ class EmbeddingInvocationServiceTest {
   @Test
   void embedsWhenTheFunctionIsEnabled() {
     var configs = mock(FunctionModelConfigRepository.class);
+    var deployments = mock(ModelDeploymentRepository.class);
     when(configs.find(ModelFunction.EMBEDDING))
-        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("fake", "fake-embedding-768", "1", true)));
+        .thenReturn(Optional.of(asignado(deployments, "fake", "fake-embedding-768", "1", true)));
     var adapter = mock(EmbeddingPort.class);
     when(adapter.embed("hola")).thenReturn(new EmbeddingResult(new float[768], "fake", "fake-embedding-768"));
-    var service = new EmbeddingInvocationService(configs, adapter);
+    var service = new EmbeddingInvocationService(configs, deployments, adapter);
 
     var result = service.embed("hola", Duration.ofSeconds(1));
 
@@ -38,9 +43,10 @@ class EmbeddingInvocationServiceTest {
   @Test
   void failsWhenTheFunctionHasNoModelAssigned() {
     var configs = mock(FunctionModelConfigRepository.class);
+    var deployments = mock(ModelDeploymentRepository.class);
     when(configs.find(ModelFunction.EMBEDDING)).thenReturn(Optional.empty());
     var adapter = mock(EmbeddingPort.class);
-    var service = new EmbeddingInvocationService(configs, adapter);
+    var service = new EmbeddingInvocationService(configs, deployments, adapter);
 
     assertThatThrownBy(() -> service.embed("hola", Duration.ofSeconds(1))).isInstanceOf(IllegalStateException.class);
   }
@@ -48,10 +54,11 @@ class EmbeddingInvocationServiceTest {
   @Test
   void failsWhenTheFunctionIsDisabled() {
     var configs = mock(FunctionModelConfigRepository.class);
+    var deployments = mock(ModelDeploymentRepository.class);
     when(configs.find(ModelFunction.EMBEDDING))
-        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("fake", "fake-embedding-768", "1", false)));
+        .thenReturn(Optional.of(asignado(deployments, "fake", "fake-embedding-768", "1", false)));
     var adapter = mock(EmbeddingPort.class);
-    var service = new EmbeddingInvocationService(configs, adapter);
+    var service = new EmbeddingInvocationService(configs, deployments, adapter);
 
     assertThatThrownBy(() -> service.embed("hola", Duration.ofSeconds(1))).isInstanceOf(IllegalStateException.class);
   }
@@ -59,11 +66,12 @@ class EmbeddingInvocationServiceTest {
   @Test
   void rejectsANullVectorForASingleEmbed() {
     var configs = mock(FunctionModelConfigRepository.class);
+    var deployments = mock(ModelDeploymentRepository.class);
     when(configs.find(ModelFunction.EMBEDDING))
-        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("fake", "fake-embedding-768", "1", true)));
+        .thenReturn(Optional.of(asignado(deployments, "fake", "fake-embedding-768", "1", true)));
     var adapter = mock(EmbeddingPort.class);
     when(adapter.embed(any())).thenReturn(new EmbeddingResult(null, "fake", "fake-embedding-768"));
-    var service = new EmbeddingInvocationService(configs, adapter);
+    var service = new EmbeddingInvocationService(configs, deployments, adapter);
 
     assertThatThrownBy(() -> service.embed("hola", Duration.ofSeconds(1))).isInstanceOf(InvalidEmbeddingException.class);
   }
@@ -71,11 +79,12 @@ class EmbeddingInvocationServiceTest {
   @Test
   void rejectsAVectorWithTheWrongDimension() {
     var configs = mock(FunctionModelConfigRepository.class);
+    var deployments = mock(ModelDeploymentRepository.class);
     when(configs.find(ModelFunction.EMBEDDING))
-        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("fake", "fake-embedding-768", "1", true)));
+        .thenReturn(Optional.of(asignado(deployments, "fake", "fake-embedding-768", "1", true)));
     var adapter = mock(EmbeddingPort.class);
     when(adapter.embed(any())).thenReturn(new EmbeddingResult(new float[10], "fake", "fake-embedding-768"));
-    var service = new EmbeddingInvocationService(configs, adapter);
+    var service = new EmbeddingInvocationService(configs, deployments, adapter);
 
     assertThatThrownBy(() -> service.embed("hola", Duration.ofSeconds(1))).isInstanceOf(InvalidEmbeddingException.class);
   }
@@ -83,13 +92,14 @@ class EmbeddingInvocationServiceTest {
   @Test
   void embedBatchToleratesIndividualNullVectors() {
     var configs = mock(FunctionModelConfigRepository.class);
+    var deployments = mock(ModelDeploymentRepository.class);
     when(configs.find(ModelFunction.EMBEDDING))
-        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("fake", "fake-embedding-768", "1", true)));
+        .thenReturn(Optional.of(asignado(deployments, "fake", "fake-embedding-768", "1", true)));
     var adapter = mock(EmbeddingPort.class);
     when(adapter.embedBatch(any())).thenReturn(List.of(
         new EmbeddingResult(new float[768], "fake", "fake-embedding-768"),
         new EmbeddingResult(null, "fake", "fake-embedding-768")));
-    var service = new EmbeddingInvocationService(configs, adapter);
+    var service = new EmbeddingInvocationService(configs, deployments, adapter);
 
     var results = service.embedBatch(List.of("a", "b"), Duration.ofSeconds(1));
 
@@ -100,14 +110,15 @@ class EmbeddingInvocationServiceTest {
   @Test
   void cutsTheCallWhenTheAdapterExceedsTheConfiguredTimeout() {
     var configs = mock(FunctionModelConfigRepository.class);
+    var deployments = mock(ModelDeploymentRepository.class);
     when(configs.find(ModelFunction.EMBEDDING))
-        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("fake", "fake-embedding-768", "1", true)));
+        .thenReturn(Optional.of(asignado(deployments, "fake", "fake-embedding-768", "1", true)));
     var adapter = mock(EmbeddingPort.class);
     when(adapter.embed(any())).thenAnswer(invocation -> {
       Thread.sleep(300);
       return new EmbeddingResult(new float[768], "fake", "fake-embedding-768");
     });
-    var service = new EmbeddingInvocationService(configs, adapter);
+    var service = new EmbeddingInvocationService(configs, deployments, adapter);
 
     assertThatThrownBy(() -> service.embed("hola", Duration.ofMillis(50))).isInstanceOf(EmbeddingTimeoutException.class);
   }
@@ -115,9 +126,23 @@ class EmbeddingInvocationServiceTest {
   @Test
   void embedBatchOfAnEmptyListReturnsEmptyWithoutCallingTheAdapter() {
     var configs = mock(FunctionModelConfigRepository.class);
+    var deployments = mock(ModelDeploymentRepository.class);
     var adapter = mock(EmbeddingPort.class);
-    var service = new EmbeddingInvocationService(configs, adapter);
+    var service = new EmbeddingInvocationService(configs, deployments, adapter);
 
     assertThat(service.embedBatch(List.of(), Duration.ofSeconds(1))).isEmpty();
+  }
+
+  /**
+   * Desde la V26 la asignación función→modelo guarda el id del despliegue; proveedor y modelo se
+   * leen de {@code ModelDeploymentRepository}. Registra el despliegue en el mock y devuelve el
+   * Config correspondiente.
+   */
+  private static FunctionModelConfigRepository.Config asignado(ModelDeploymentRepository deployments,
+      String provider, String modelId, String modelVersion, boolean enabled) {
+    UUID deploymentId = UUID.randomUUID();
+    when(deployments.byId(deploymentId)).thenReturn(Optional.of(
+        new ModelDeploymentSummary(deploymentId, provider, modelId, modelVersion, "ENABLED")));
+    return new FunctionModelConfigRepository.Config(deploymentId, enabled);
   }
 }

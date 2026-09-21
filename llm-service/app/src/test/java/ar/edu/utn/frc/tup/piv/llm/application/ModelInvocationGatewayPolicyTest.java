@@ -1,5 +1,9 @@
 package ar.edu.utn.frc.tup.piv.llm.application;
 
+import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.ModelDeploymentRepository;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelDeploymentSummary;
+import java.util.UUID;
+
 import ar.edu.utn.frc.tup.piv.llm.application.service.EmbeddingInvocationService;
 import ar.edu.utn.frc.tup.piv.llm.application.service.ModelInvocationService;
 import ar.edu.utn.frc.tup.piv.llm.application.service.gateway.GatewayExecutor;
@@ -114,14 +118,15 @@ class ModelInvocationGatewayPolicyTest {
 
   private ModelInvocationService service(GatewayPolicy policy, Function<ModelInvocationRequest, ModelInvocationResult> fn) {
     var configs = mock(FunctionModelConfigRepository.class);
+    var deployments = mock(ModelDeploymentRepository.class);
     when(configs.find(ModelFunction.TUTOR))
-        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("fake", "m", "1", true)));
+        .thenReturn(Optional.of(asignado(deployments, "fake", "m", "1", true)));
     ModelInvocationPort port = new ModelInvocationPort() {
       public ModelInvocationResult invoke(ModelInvocationRequest r) { return fn.apply(r); }
       public String provider() { return "fake"; }
       public String model() { return "m"; }
     };
-    return new ModelInvocationService(configs, List.of(port), policy, budget, usage);
+    return new ModelInvocationService(configs, deployments, List.of(port), policy, budget, usage);
   }
 
   @Test
@@ -139,8 +144,9 @@ class ModelInvocationGatewayPolicyTest {
   void embeddingsGoThroughTheSamePolicy() {
     var calls = new AtomicInteger();
     var configs = mock(FunctionModelConfigRepository.class);
+    var deployments = mock(ModelDeploymentRepository.class);
     when(configs.find(ModelFunction.EMBEDDING))
-        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("fake", "emb", "1", true)));
+        .thenReturn(Optional.of(asignado(deployments, "fake", "emb", "1", true)));
     ar.edu.utn.frc.tup.piv.llm.domain.ai.EmbeddingPort port = new ar.edu.utn.frc.tup.piv.llm.domain.ai.EmbeddingPort() {
       public ar.edu.utn.frc.tup.piv.llm.domain.ai.EmbeddingResult embed(String text) {
         if (calls.incrementAndGet() < 2) throw new IllegalStateException("503");
@@ -150,7 +156,7 @@ class ModelInvocationGatewayPolicyTest {
       public String provider() { return "fake"; }
       public String model() { return "emb"; }
     };
-    var service = new EmbeddingInvocationService(configs, port,
+    var service = new EmbeddingInvocationService(configs, deployments, port,
         new ar.edu.utn.frc.tup.piv.llm.application.service.gateway.GatewayExecutor(FAST, budget, usage));
 
     service.embed("hola", Duration.ofSeconds(1));
@@ -170,5 +176,18 @@ class ModelInvocationGatewayPolicyTest {
 
     assertThat(log.costOf("acme", 500, 500)).isEqualTo(1.0);
     assertThat(log.costOf("desconocido", 500, 500)).isZero();
+  }
+
+  /**
+   * Desde la V26 la asignación función→modelo guarda el id del despliegue; proveedor y modelo se
+   * leen de {@code ModelDeploymentRepository}. Registra el despliegue en el mock y devuelve el
+   * Config correspondiente.
+   */
+  private static FunctionModelConfigRepository.Config asignado(ModelDeploymentRepository deployments,
+      String provider, String modelId, String modelVersion, boolean enabled) {
+    UUID deploymentId = UUID.randomUUID();
+    when(deployments.byId(deploymentId)).thenReturn(Optional.of(
+        new ModelDeploymentSummary(deploymentId, provider, modelId, modelVersion, "ENABLED")));
+    return new FunctionModelConfigRepository.Config(deploymentId, enabled);
   }
 }

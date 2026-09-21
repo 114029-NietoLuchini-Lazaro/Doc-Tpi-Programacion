@@ -1,5 +1,9 @@
 package ar.edu.utn.frc.tup.piv.llm.application.service;
 
+import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.ModelDeploymentRepository;
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.ModelDeploymentSummary;
+import java.util.UUID;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,11 +36,12 @@ class ModelInvocationServiceTest {
   @Test
   void refusesToInvokeAFunctionWithoutModelAssigned() {
     var configs = mock(FunctionModelConfigRepository.class);
+    var deployments = mock(ModelDeploymentRepository.class);
     when(configs.find(ModelFunction.TUTOR)).thenReturn(Optional.empty());
     Adapter adapter = request -> {
       throw new AssertionError("no debería invocarse el adaptador sin configuración");
     };
-    var service = new ModelInvocationService(configs, adapter);
+    var service = new ModelInvocationService(configs, deployments, adapter);
 
     assertThatThrownBy(() -> service.invoke(ModelFunction.TUTOR, "system", "pregunta", Duration.ofSeconds(1)))
         .isInstanceOf(IllegalStateException.class);
@@ -86,11 +91,12 @@ class ModelInvocationServiceTest {
     };
 
     var configs = mock(FunctionModelConfigRepository.class);
+    var deployments = mock(ModelDeploymentRepository.class);
     // Primero configurado en groq:
     when(configs.find(ModelFunction.TUTOR))
-        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("groq", "llama-3.3-70b-versatile", "1", true)));
+        .thenReturn(Optional.of(asignado(deployments, "groq", "llama-3.3-70b-versatile", "1", true)));
 
-    var service = new ModelInvocationService(configs, java.util.List.of(fakeAdapter, groqAdapter));
+    var service = new ModelInvocationService(configs, deployments, java.util.List.of(fakeAdapter, groqAdapter));
 
     var groqResult = service.invoke(ModelFunction.TUTOR, "system", "¿cómo ordeno?", Duration.ofSeconds(1));
     assertThat(groqResult.text()).isEqualTo("respuesta real de groq");
@@ -98,7 +104,7 @@ class ModelInvocationServiceTest {
 
     // Luego cambia en la base a fake (sin redesplegar):
     when(configs.find(ModelFunction.TUTOR))
-        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("fake", "fake-socratic-v1", "1", true)));
+        .thenReturn(Optional.of(asignado(deployments, "fake", "fake-socratic-v1", "1", true)));
 
     var fakeResult = service.invoke(ModelFunction.TUTOR, "system", "¿cómo ordeno?", Duration.ofSeconds(1));
     assertThat(fakeResult.text()).isEqualTo("respuesta del fake");
@@ -113,9 +119,10 @@ class ModelInvocationServiceTest {
       return new ModelInvocationResult("ok", "fake", "fake-socratic-v1");
     };
     var configs = mock(FunctionModelConfigRepository.class);
+    var deployments = mock(ModelDeploymentRepository.class);
     when(configs.find(ModelFunction.TUTOR))
-        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("fake", "modelo-asignado", "1", true)));
-    var service = new ModelInvocationService(configs, adapter);
+        .thenReturn(Optional.of(asignado(deployments, "fake", "modelo-asignado", "1", true)));
+    var service = new ModelInvocationService(configs, deployments, adapter);
 
     service.invoke(ModelFunction.TUTOR, "system", "pregunta", Duration.ofSeconds(1));
 
@@ -126,10 +133,11 @@ class ModelInvocationServiceTest {
   void throwsExceptionWhenProviderIsNotRegistered() {
     Adapter fakeAdapter = request -> new ModelInvocationResult("pista", "fake", "fake-socratic-v1");
     var configs = mock(FunctionModelConfigRepository.class);
+    var deployments = mock(ModelDeploymentRepository.class);
     when(configs.find(ModelFunction.TUTOR))
-        .thenReturn(Optional.of(new FunctionModelConfigRepository.Config("unsupported-provider", "m1", "1", true)));
+        .thenReturn(Optional.of(asignado(deployments, "unsupported-provider", "m1", "1", true)));
 
-    var service = new ModelInvocationService(configs, java.util.List.of(fakeAdapter));
+    var service = new ModelInvocationService(configs, deployments, java.util.List.of(fakeAdapter));
 
     assertThatThrownBy(() -> service.invoke(ModelFunction.TUTOR, "system", "pregunta", Duration.ofSeconds(1)))
         .isInstanceOf(IllegalStateException.class)
@@ -138,9 +146,10 @@ class ModelInvocationServiceTest {
 
   private ModelInvocationService serviceWithAdapter(Adapter adapter) {
     var configs = mock(FunctionModelConfigRepository.class);
+    var deployments = mock(ModelDeploymentRepository.class);
     when(configs.find(ModelFunction.TUTOR))
         .thenReturn(Optional.of(new FunctionModelConfigRepository.Config(java.util.UUID.randomUUID(), true)));
-    return new ModelInvocationService(configs, adapter);
+    return new ModelInvocationService(configs, deployments, adapter);
   }
 
   /** {@link ModelInvocationPort} declara `provider()`/`model()` además de `invoke()`; esta
@@ -157,5 +166,18 @@ class ModelInvocationServiceTest {
     default String model() {
       return "fake-socratic-v1";
     }
+  }
+
+  /**
+   * Desde la V26 la asignación función→modelo guarda el id del despliegue; proveedor y modelo se
+   * leen de {@code ModelDeploymentRepository}. Registra el despliegue en el mock y devuelve el
+   * Config correspondiente.
+   */
+  private static FunctionModelConfigRepository.Config asignado(ModelDeploymentRepository deployments,
+      String provider, String modelId, String modelVersion, boolean enabled) {
+    UUID deploymentId = UUID.randomUUID();
+    when(deployments.byId(deploymentId)).thenReturn(Optional.of(
+        new ModelDeploymentSummary(deploymentId, provider, modelId, modelVersion, "ENABLED")));
+    return new FunctionModelConfigRepository.Config(deploymentId, enabled);
   }
 }

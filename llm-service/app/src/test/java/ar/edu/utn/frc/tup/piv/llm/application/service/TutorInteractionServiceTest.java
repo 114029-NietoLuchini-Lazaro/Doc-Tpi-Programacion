@@ -147,10 +147,10 @@ class TutorInteractionServiceTest {
         .thenReturn(new ModelInvocationResult(expectedSolution, "fake", "fake-socratic-v1"));
     var idempotency = idempotencyThatAlwaysProceeds();
     var audit = mock(AuditRepository.class);
-    var service = new TutorInteractionService(models, idempotency, audit, mapper, 1000);
+    var service = new TutorInteractionService(models, idempotency, audit, conversationsMock(), messagesMock(), mapper, 1000);
 
     var request = new TutorInteractionService.Request(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
-        UUID.randomUUID(), "¿cómo continúo?", "low", expectedSolution);
+        UUID.randomUUID(), "¿cómo continúo?", "low", null, expectedSolution);
     var response = service.respond(request, UUID.randomUUID(), actor);
 
     assertThat(response.message()).doesNotContain(expectedSolution);

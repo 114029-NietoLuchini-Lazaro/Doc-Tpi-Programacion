@@ -7,7 +7,6 @@ import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.ProviderCredentialRepo
 import ar.edu.utn.frc.tup.piv.llm.application.model.CallerIdentity;
 import ar.edu.utn.frc.tup.piv.llm.adapter.in.web.security.CourseAuthorization;
 import ar.edu.utn.frc.tup.piv.llm.adapter.in.web.security.GoldenSetAuthorization;
-import ar.edu.utn.frc.tup.piv.llm.domain.calibration.CalibrationRun;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -32,7 +31,7 @@ class CalibrationRunControllerTest {
     when(auth.require(headers)).thenReturn(actor);
 
     UUID runId = UUID.randomUUID();
-    when(service.list(courseId)).thenReturn(List.of(new CalibrationRun(runId, "PASSED", 100)));
+    when(service.list(courseId)).thenReturn(List.of(new CalibrationRunRepository.Run(runId, "PASSED", 100)));
 
     var result = controller.list(courseId, headers);
 
@@ -65,7 +64,7 @@ class CalibrationRunControllerTest {
 
     UUID runId = UUID.randomUUID();
     when(service.enqueue(courseId, rubricId, goldenId, modelId, key, actor))
-        .thenReturn(new CalibrationRun(runId, "QUEUED", 0));
+        .thenReturn(new CalibrationRunRepository.Run(runId, "QUEUED", 0));
 
     var response = controller.create(courseId, new CalibrationRunController.Request(rubricId, goldenId), key, headers);
 

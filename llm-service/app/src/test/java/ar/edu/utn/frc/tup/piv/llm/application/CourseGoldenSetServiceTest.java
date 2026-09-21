@@ -1,5 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.application;
 
+import ar.edu.utn.frc.tup.piv.llm.application.service.CalibrationExpirationService;
+
 import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.AuditRepository;
 import ar.edu.utn.frc.tup.piv.llm.application.service.CourseGoldenSetService;
 
@@ -67,7 +69,7 @@ class CourseGoldenSetServiceTest {
   @Test void publishesValidDraftAndRecordsAudit() {
     var repository = mock(CourseGoldenSetRepository.class);
     var audit = mock(ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.AuditRepository.class);
-    var service = new CourseGoldenSetService(repository, audit);
+    var service = new CourseGoldenSetService(repository, audit, mock(CalibrationExpirationService.class));
     UUID course = UUID.randomUUID(), version = UUID.randomUUID();
     CallerIdentity actor = new CallerIdentity("gateway", UUID.randomUUID(), null, null);
     when(repository.countCases(version)).thenReturn(3);
