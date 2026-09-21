@@ -18,6 +18,9 @@ class TutorRagIT extends AbstractIntegrationIT {
   @Autowired RagQueryService ragQuery;
 
   static MockHttpServletRequestBuilder cohortTeacher(MockHttpServletRequestBuilder b, UUID cohort) {
+    // Igual que asTeacher: declara la cohorte para el stub de courses-service.
+    CURSOS_DEL_DOCENTE.clear();
+    CURSOS_DEL_DOCENTE.add(cohort);
     return b.header("X-User-Roles", "TEACHER").header("X-Teacher-Course-Ids", cohort.toString());
   }
 

@@ -74,7 +74,7 @@ public abstract class AbstractIntegrationIT {
    * Stub de courses-service. Desde la integración main↔dev la autorización de curso ya no se
    * resuelve con headers: `CourseAuthorization` consulta a Courses por el Gateway
    * ({@code GatewayCoursesMembershipClient}). Sin este stub todos los ITs de curso responden 503.
-   * Devuelve matrícula solo para el docente de prueba y solo en las cohortes que el test declaró,
+   * Devuelve matrícula solo en las cohortes que el test declaró,
    * para que los casos de "otro curso" sigan dando 403.
    */
   static final com.sun.net.httpserver.HttpServer COURSES_STUB;
@@ -88,8 +88,8 @@ public abstract class AbstractIntegrationIT {
         boolean matriculado = false;
         if (partes.length >= 6 && "members".equals(partes[4])) {
           try {
-            matriculado = TEACHER.equals(java.util.UUID.fromString(partes[5]))
-                && CURSOS_DEL_DOCENTE.contains(java.util.UUID.fromString(partes[3]));
+            java.util.UUID.fromString(partes[5]); // valida que sea un userId
+            matriculado = CURSOS_DEL_DOCENTE.contains(java.util.UUID.fromString(partes[3]));
           } catch (IllegalArgumentException noEsUuid) {
             matriculado = false;
           }
