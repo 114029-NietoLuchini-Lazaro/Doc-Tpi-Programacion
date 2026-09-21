@@ -51,6 +51,20 @@ public class ApiExceptionHandler {
     p.setProperty("error", "provider_unavailable");
     return p;
   }
+  /**
+   * Los adaptadores del SPI validan la credencial/configuración y devuelven su diagnóstico como
+   * {@link ar.edu.utn.frc.tup.piv.llm.provider.spi.ProviderException}. Una entrada inválida es del
+   * cliente (422); el resto (proveedor caído, HTTP 5xx) es indisponibilidad (503). Sin este mapeo
+   * el error salía como 500, ocultando la causa.
+   */
+  @ExceptionHandler(ar.edu.utn.frc.tup.piv.llm.provider.spi.ProviderException.class)
+  ProblemDetail providerFailure(ar.edu.utn.frc.tup.piv.llm.provider.spi.ProviderException exception, HttpServletRequest request) {
+    HttpStatus status = providerStatus(exception.code());
+    ProblemDetail p = problem(status, exception.getMessage(), request);
+    p.setProperty("error", status == HttpStatus.UNPROCESSABLE_ENTITY ? "validation_error" : "provider_unavailable");
+    p.setProperty("provider_code", exception.code());
+    return p;
+  }
   private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
   @ExceptionHandler(ResponseStatusException.class)
   ProblemDetail statusException(ResponseStatusException exception, HttpServletRequest request) {
@@ -84,6 +98,17 @@ public class ApiExceptionHandler {
             ? "Ese modelo ya existe. Se reutilizará al asignarlo a una tarjeta; volvé a intentar."
             : "Los datos no cumplen el formato requerido; revisá los puntajes y campos obligatorios.";
     return problem(HttpStatus.UNPROCESSABLE_ENTITY, detail, request);
+  }
+  private HttpStatus providerStatus(String code) {
+    if (code == null) return HttpStatus.SERVICE_UNAVAILABLE;
+    return switch (code) {
+      case "INVALID_PROVIDER", "PROVIDER_NOT_INSTALLED", "INVALID_CONFIGURATION", "INVALID_CREDENTIAL",
+          "PROVIDER_AUTHENTICATION_FAILED", "PROVIDER_INVALID_REQUEST", "PROVIDER_MODEL_NOT_FOUND" ->
+          HttpStatus.UNPROCESSABLE_ENTITY;
+      default -> code.startsWith("PROVIDER_HTTP_4")
+          ? HttpStatus.UNPROCESSABLE_ENTITY
+          : HttpStatus.SERVICE_UNAVAILABLE;
+    };
   }
   private ProblemDetail problem(HttpStatus status, String detail, HttpServletRequest request) {
     ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);

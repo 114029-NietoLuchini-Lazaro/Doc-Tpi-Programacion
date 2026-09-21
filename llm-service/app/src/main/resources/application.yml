@@ -78,7 +78,7 @@ llm:
     retry-after-minutes: ${LLM_EVALUATION_RETRY_AFTER_MINUTES:30}
   tutor:
     trusted-service: practice-service
-    required-scope: llm.tutor.invoke
+    required-scope: llm.tutor.interact
     invocation-timeout-ms: 8000
   courses:
     base-url: ${LLM_COURSES_BASE_URL}

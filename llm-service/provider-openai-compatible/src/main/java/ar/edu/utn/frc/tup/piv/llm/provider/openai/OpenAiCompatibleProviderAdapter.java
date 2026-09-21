@@ -37,10 +37,29 @@ final class OpenAiCompatibleProviderAdapter implements AiProviderAdapter {
 
   @Override public void validate(ProviderCredentialMaterial credential) {
     String baseUrl = credential.configuration("baseUrl");
-    if (baseUrl == null || baseUrl.isBlank() || !"https".equalsIgnoreCase(URI.create(baseUrl).getScheme()))
-      throw new ProviderException("INVALID_CONFIGURATION", "baseUrl debe ser una URL HTTPS");
+    if (baseUrl == null || baseUrl.isBlank() || !esUrlSegura(baseUrl))
+      throw new ProviderException("INVALID_CONFIGURATION", "baseUrl debe ser una URL HTTPS válida");
     if (credential.secret("apiKey") == null || credential.secret("apiKey").isBlank())
       throw new ProviderException("INVALID_CREDENTIAL", "apiKey es obligatoria");
+  }
+
+  /** HTTPS siempre; HTTP se admite solo contra loopback (servidores OpenAI-compatible locales). */
+  private boolean esUrlSegura(String baseUrl) {
+    URI uri = URI.create(baseUrl);
+    String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(java.util.Locale.ROOT);
+    if ("https".equals(scheme)) return true;
+    return "http".equals(scheme) && esLoopback(uri.getHost());
+  }
+
+  private boolean esLoopback(String host) {
+    if (host == null) return false;
+    if ("localhost".equalsIgnoreCase(host)) return true;
+    try {
+      return java.util.Arrays.stream(java.net.InetAddress.getAllByName(host))
+          .anyMatch(java.net.InetAddress::isLoopbackAddress);
+    } catch (java.net.UnknownHostException exception) {
+      return false;
+    }
   }
 
   @Override public List<ModelDescriptor> discoverModels(ProviderCredentialMaterial credential) {
