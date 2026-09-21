@@ -42,7 +42,7 @@ JaCoCo 0.8.12 sobre `mvn test` (612 tests, 0 fallas). Paquete `moderation`: 92,5
 
 ## Actualización 2026-09-18 — checkboxes y valores mockeados documentados
 Las fichas `docs/historias/ep-08/*` (y su espejo en `docsV2/`) y el epígrafe de criterios del
-propio [`docs/epicas/ep-08.md`](../epicas/ep-08.md) ya reflejan el estado real de arriba: los CA
+propio [`docs/epicas/ep-08.md`](../../07-planificacion-y-trabajo-equipo/09-epicas-historias-tareas-sprints/epicas/ep-08.md) ya reflejan el estado real de arriba: los CA
 verificados en vivo quedaron tildados, `CA_negativo_1` de H01 sigue sin tildar porque no está
 implementado, y cada ficha con un valor todavía mockeado/hardcodeado (H01: `sender_id` y camino
 `contextual`; H02: umbrales por defecto sin calibrar; H04: notificación al alumno vía stub
@@ -51,5 +51,5 @@ sección **"Estado de verificación (2026-09-18)"** explicando qué hay que reem
 
 ## Para los grupos
 - **Mock (sin dependencias):** `docs/contracts/MOCK.md` §5 — `npx @stoplight/prism-cli mock docs/contracts/llm-service-v1-moderacion.openapi.yaml --port 4011`.
-- **Servicio real:** `docs/sprints/sprint-4/runbook-verificacion-moderacion.md` (headers `X-*`, no JWT).
+- **Servicio real:** `docsV2/07-planificacion-y-trabajo-equipo/09-epicas-historias-tareas-sprints/sprints/sprint-4/runbook-verificacion-moderacion.md` (headers `X-*`, no JWT).
 - **Contrato:** `docs/contracts/llm-service-v1-moderacion.openapi.yaml` v1.1.0 + adenda actualizada; el borrador viejo quedó marcado OBSOLETO.

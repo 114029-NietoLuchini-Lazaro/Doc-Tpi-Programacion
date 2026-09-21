@@ -2,7 +2,7 @@
 
 Esta adenda formaliza el contrato HTTP síncrono acordado entre `chat-service` y `llm-service` para la moderación previa a la entrega de mensajes (RF-CHT-09).
 
-> **Estado:** Implementado y verificado en `llm-service` (2026-09-18) · Contrato completo (decisiones, apelaciones, incidentes, resolución, retención) en [`llm-service-v1-moderacion.openapi.yaml`](llm-service-v1-moderacion.openapi.yaml) v1.1.0 · Pendiente de fusión formal en `llm-service-v1.openapi.yaml` tras la validación conjunta con `chat-service`.
+> **Estado:** Implementado y verificado en `llm-service` (2026-09-18) · Contrato completo (decisiones, apelaciones, incidentes, resolución, retención) en [`llm-service-v1-moderacion.openapi.yaml`](../llm-service-v1-moderacion.openapi.yaml) v1.1.0 · Pendiente de fusión formal en `llm-service-v1.openapi.yaml` tras la validación conjunta con `chat-service`.
 >
 > **Cambio v1.1.0 (breaking): `sender_id` pasa a ser obligatorio** en `POST /moderation/v1/decisions`. Sin él el incidente no podía registrar a su dueño y las apelaciones y la revisión docente no funcionaban de punta a punta.
 

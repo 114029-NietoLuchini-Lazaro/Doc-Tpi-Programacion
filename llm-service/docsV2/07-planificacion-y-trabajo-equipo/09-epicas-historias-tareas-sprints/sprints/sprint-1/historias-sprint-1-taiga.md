@@ -3,8 +3,8 @@
 > **Propósito del documento:** Facilitar la carga manual y unificada de las Historias de Usuario (HU) y Tareas de Sprint 1 en el backlog de **Taiga**, permitiendo identificar de forma unívoca a qué **Épica** pertenece cada ítem, qué rol cumple, su tipo (HU de valor vs. Tarea técnica habilitadora) y el contenido listo para copiar y pegar en el formulario de Taiga.
 >
 > **Ámbito:** `llm-service` (Tema 07 — Plataforma de Aprendizaje Gamificado de Programación).  
-> **Identificador de Grupo:** `G03` (prefijo obligatorio según [27 · Guía Wiki Taiga](27-guia-wiki-taiga.md)).  
-> **Plantilla base oficial:** [plantillas/historia-de-usuario-taiga.md](plantillas/historia-de-usuario-taiga.md).  
+> **Identificador de Grupo:** `G03` (prefijo obligatorio según [27 · Guía Wiki Taiga](../../../07-guia-wiki-taiga.md)).  
+> **Plantilla base oficial:** [plantillas/historia-de-usuario-taiga.md](../../../10-plantillas/historia-de-usuario-taiga.md).  
 > **Historia canónica de referencia para Planning Poker:** `LLM-EP03-H02` (*Consulta del golden set persistente tras reinicio*).
 
 ---

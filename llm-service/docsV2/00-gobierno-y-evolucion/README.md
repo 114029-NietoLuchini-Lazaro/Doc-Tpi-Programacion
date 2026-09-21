@@ -9,7 +9,9 @@ decisión afecte alcance, seguridad, contratos o planificación.
 1. [Fuentes de verdad y convenciones](01-fuentes-de-verdad-y-convenciones.md): orden de
    precedencia, identidad del servicio, Gateway, correlación y reglas transversales.
 2. [Decisiones y pendientes](02-decisiones-y-pendientes.md): ADR, decisiones aprobadas, dueños y
-   preguntas que aún requieren acuerdo.
+   preguntas que aún requieren acuerdo. Los ADR aceptados viven en [`adr/`](adr/):
+   [ADR-001](adr/ADR-001-arquitectura-y-convenciones-llm-service.md) (arquitectura y convenciones)
+   y [ADR-002](adr/ADR-002-mensajeria-kafka-outbox-y-dedup.md) (mensajería Kafka, outbox y dedup).
 3. [Glosario y metadata](03-glosario-y-metadata.md): términos que distintos equipos pueden usar
    con sentidos diferentes.
 4. [Matriz de trazabilidad](04-matriz-trazabilidad.md): relación entre requisitos, contratos,

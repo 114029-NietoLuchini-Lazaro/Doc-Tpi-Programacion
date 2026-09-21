@@ -3,6 +3,7 @@
 - **Estado:** 🟡 Camino síncrono completo; streaming fuera de alcance (documentado, no es un hueco)
 - **Contrato:** [`docs/contracts/llm-service-v1.openapi.yaml`](../../../contracts/historicos-y-contratos-v1/llm-service-v1.openapi.yaml)
   (`TutorInteractionRequest`/`Response`), [adenda SSE](../../../contracts/historicos-y-contratos-v1/llm-service-v1-tutor-sse-adenda.md)
+- **Demo con modelo real (Groq):** [`demo-h01.md`](demo-h01.md) — los tres escenarios de la ficha, con respuestas y auditoría reales
 - **Código:** `api/TutorInteractionController`, `application/TutorInteractionService`,
   `domain/ai/InputGuard`, `domain/ai/OutputAntiLeakGuard`, `security/TutorGatewayAuthorization`
 
