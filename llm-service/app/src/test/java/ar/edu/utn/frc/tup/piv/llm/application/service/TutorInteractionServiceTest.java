@@ -1,5 +1,7 @@
 package ar.edu.utn.frc.tup.piv.llm.application.service;
 
+import ar.edu.utn.frc.tup.piv.llm.domain.ai.OutputAntiLeakGuard;
+
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.BudgetExceededException;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.InputGuard;
 import ar.edu.utn.frc.tup.piv.llm.domain.ai.InvalidModelResponseException;
@@ -86,7 +88,7 @@ class TutorInteractionServiceTest {
   }
 
   @Test
-  void withoutAnExpectedSolutionTheSameResponseIsDelivered() {
+  void withoutAnExpectedSolutionTheCodeHeuristicStillBlocksAHighRiskResponse() {
     var models = mock(ModelInvocationService.class);
     when(models.invoke(eq(ModelFunction.TUTOR), anyString(), anyString(), any()))
         .thenReturn(new ModelInvocationResult("Probá con: return n <= 1 ? 1 : n * factorial(n - 1);", "fake", "fake-socratic-v1"));
@@ -95,7 +97,8 @@ class TutorInteractionServiceTest {
 
     var response = service.respond(request("¿cómo hago el factorial?", "high"), UUID.randomUUID(), actor);
 
-    assertThat(response.message()).contains("factorial(n - 1)");
+    // Sin solución esperada la heurística de forma de código sigue aplicando en high.
+    assertThat(response.message()).isEqualTo(OutputAntiLeakGuard.SAFE_REPLACEMENT);
   }
 
   @Test
@@ -125,7 +128,7 @@ class TutorInteractionServiceTest {
   }
 
   @Test
-  void aLowRiskResponseIsNotFilteredByTheOutputGuard() {
+  void aLowRiskCodeBlockIsNotFilteredBecauseTheHeuristicOnlyRunsOnHighOrMedium() {
     var models = mock(ModelInvocationService.class);
     String longButLowRisk = "```java\n" + "line;\n".repeat(9) + "```";
     when(models.invoke(eq(ModelFunction.TUTOR), anyString(), anyString(), any()))
@@ -136,7 +139,8 @@ class TutorInteractionServiceTest {
 
     var response = service.respond(request("code review de mi solución", "low"), UUID.randomUUID(), actor);
 
-    assertThat(response.message()).doesNotContain("```");
+    // La heurística de forma de código solo corre en high/medium (adenda SSE): en low no sobre-bloquea.
+    assertThat(response.message()).contains("```");
   }
 
   @Test

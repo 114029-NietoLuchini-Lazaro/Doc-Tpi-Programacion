@@ -22,6 +22,26 @@ public final class OutputAntiLeakGuard {
   private static final int MAX_CODE_LINES = 8;
 
   public boolean containsLeak(String response, String expectedSolution) {
+    return revealsExpectedSolution(response, expectedSolution) || looksLikeCode(response);
+  }
+
+  /**
+   * Coincidencia con la solución esperada. Corre en <b>todos</b> los niveles de riesgo: que el
+   * alumno declare `low` no puede habilitar que le devolvamos la solución del desafío. Decidido en
+   * la integración main↔dev del 2026-09-21, donde `main` filtraba siempre y `dev` salteaba `low`.
+   */
+  public boolean revealsExpectedSolution(String response, String expectedSolution) {
+    if (response == null || response.isBlank()) return false;
+    if (expectedSolution == null || expectedSolution.isBlank()) return false;
+    return normalized(response).contains(normalized(expectedSolution));
+  }
+
+  /**
+   * Heurística de forma de código (bloques largos, snippets inline, líneas con forma de código).
+   * Solo se aplica en `high`/`medium`: en `low` sobre-bloquea respuestas legítimas, según la adenda
+   * SSE y {@code docsV2/.../ep-05/interactions.md}.
+   */
+  public boolean looksLikeCode(String response) {
     if (response == null || response.isBlank()) return false;
 
     var matcher = CODE_BLOCK_PATTERN.matcher(response);
@@ -31,12 +51,7 @@ public final class OutputAntiLeakGuard {
 
     // The product policy is code-free tutoring. Do not rely on the model following its prompt:
     // reject inline snippets and code-shaped lines before any response reaches the learner.
-    if (INLINE_CODE_PATTERN.matcher(response).find() || CODE_LINE_PATTERN.matcher(response).find()) return true;
-
-    if (expectedSolution != null && !expectedSolution.isBlank()) {
-      return normalized(response).contains(normalized(expectedSolution));
-    }
-    return false;
+    return INLINE_CODE_PATTERN.matcher(response).find() || CODE_LINE_PATTERN.matcher(response).find();
   }
 
   private String normalized(String value) {

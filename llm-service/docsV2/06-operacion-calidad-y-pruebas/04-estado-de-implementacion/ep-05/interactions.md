@@ -26,10 +26,17 @@ Portado (adaptado) de `codigo-ejemplo/ms-evaluacion-llm`
    así la `Idempotency-Key` queda completada y no reservada sin respuesta (que hacía responder "sigue en
    curso" a todo reintento). Una respuesta `unavailable` queda guardada bajo esa clave: para reintentar hay
    que usar una nueva.
-5. **Guardarraíl de salida** — `OutputAntiLeakGuard.containsLeak` corre cuando `riskLevel` es
-   `high`/`medium` (no en `low`, según la propia adenda SSE); si detecta fuga (bloque de código
-   largo, o el `expectedSolution` opcional que manda Tema 05, solo en memoria), reemplaza el
-   mensaje por una redirección socrática.
+5. **Guardarraíl de salida** — `OutputAntiLeakGuard` tiene dos reglas con alcance distinto
+   (decidido en la integración main↔dev del 2026-09-21, donde `main` filtraba siempre y `dev`
+   salteaba `low`):
+   - `revealsExpectedSolution` — compara contra el `expectedSolution` opcional que manda Tema 05
+     (solo en memoria). Corre en **todos** los niveles de riesgo: que el llamador declare `low` no
+     puede habilitar que le devolvamos la solución del desafío.
+   - `looksLikeCode` — heurística de forma de código (bloque largo, snippet inline, línea con forma
+     de código). Corre solo en `high`/`medium`, no en `low`, según la propia adenda SSE: en `low`
+     sobre-bloquea respuestas legítimas.
+
+   Si cualquiera de las dos da positivo, reemplaza el mensaje por una redirección socrática.
 6. **Auditoría** — una fila en `audit_events` (reutilizado, no se creó tabla nueva) por
    interacción, con `courseCohortId`/`learnerId`/`riskLevel`/`state`/si se disparó un guardarraíl.
 

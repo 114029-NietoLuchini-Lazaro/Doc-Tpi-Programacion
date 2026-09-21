@@ -118,8 +118,11 @@ public class TutorInteractionService {
       guardTriggered = true;
     } else {
       response = invokeModel(request, conversation, recentHistory);
-      if ("completed".equals(response.state()) && !"low".equals(request.riskLevel())
-          && outputGuard.containsLeak(response.message(), request.expectedSolution())) {
+      // La solución esperada se compara siempre; la heurística de forma de código solo en high/medium.
+      boolean fuga = "completed".equals(response.state())
+          && (outputGuard.revealsExpectedSolution(response.message(), request.expectedSolution())
+              || (!"low".equals(request.riskLevel()) && outputGuard.looksLikeCode(response.message())));
+      if (fuga) {
         response = new Response(OutputAntiLeakGuard.SAFE_REPLACEMENT, "completed", conversation.id());
         guardTriggered = true;
       }
