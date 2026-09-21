@@ -26,11 +26,14 @@ import java.time.Duration;
 import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 /** Implementa `POST /api/llm/rag/chat` — `docs/contracts/llm-service-v1.openapi.yaml`
  * (`RagChatRequest`/`Response`). Orquesta: validación de fuentes (partición obligatoria por
@@ -198,8 +201,17 @@ public class RagChatService {
 
   private Conversation resolveConversation(Request request, List<UUID> docIds) {
     if (request.conversacionId() != null) {
-      return conversations.findById(request.conversacionId())
-          .orElseGet(() -> conversations.save(nuevaConversacion(request, docIds)));
+      Optional<Conversation> existing = conversations.findById(request.conversacionId());
+      if (existing.isPresent()) {
+        Conversation conversation = existing.get();
+        // Aislamiento entre cohortes: reutilizar una conversación de otro curso filtraria
+        // historial de otra cohorte al prompt del tutor.
+        if (!request.courseCohortId().equals(conversation.courseCohortId())) {
+          throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+              "La conversación no pertenece a este curso");
+        }
+        return conversation;
+      }
     }
     return conversations.save(nuevaConversacion(request, docIds));
   }

@@ -3,10 +3,12 @@ package ar.edu.utn.frc.tup.piv.llm.infrastructure.rag;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import ar.edu.utn.frc.tup.piv.llm.domain.rag.DiagramDecodeResult;
+import ar.edu.utn.frc.tup.piv.llm.domain.rag.ImageDetection;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.List;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -65,6 +67,34 @@ class PdfDiagramDetectionAdapterTest {
     assertThat(result.tituloDetectado()).contains("Figura 1");
   }
 
+  @Test
+  void aRepeatedImageSignatureAcrossPagesIsFilteredAsAHeaderOrFooter() throws Exception {
+    byte[] pdf = pdfWithSameImageOnTwoPages(200, 150);
+
+    List<ImageDetection> images = adapter.detectImages(pdf);
+
+    assertThat(images).isEmpty();
+  }
+
+  @Test
+  void anImageWithExtremeAspectRatioIsDiscardedAsADecorativeBar() throws Exception {
+    byte[] pdf = pdfWithImage(400, 60);
+
+    List<ImageDetection> images = adapter.detectImages(pdf);
+
+    assertThat(images).isEmpty();
+  }
+
+  @Test
+  void decodeDiagramFallsBackToAPageNumberWhenNoCaptionIsDetected() throws Exception {
+    byte[] pdf = pdfWithImageAndText(200, 150, "Contenido técnico sin epígrafe identificable.");
+
+    DiagramDecodeResult result = adapter.decodeDiagram(pdf, 0);
+
+    assertThat(result.tipoDiagrama()).isEqualTo("DIAGRAMA_DOCUMENTO");
+    assertThat(result.tituloDetectado()).isEqualTo("Figura Pág. 1");
+  }
+
   private byte[] pdfWithTextOnly(String text) throws IOException {
     try (PDDocument document = new PDDocument()) {
       PDPage page = new PDPage();
@@ -75,6 +105,21 @@ class PdfDiagramDetectionAdapterTest {
         stream.newLineAtOffset(50, 700);
         stream.showText(text);
         stream.endText();
+      }
+      return toBytes(document);
+    }
+  }
+
+  private byte[] pdfWithSameImageOnTwoPages(int width, int height) throws IOException {
+    try (PDDocument document = new PDDocument()) {
+      BufferedImage image = solidImage(width, height);
+      PDImageXObject xObject = LosslessFactory.createFromImage(document, image);
+      for (int pageIndex = 0; pageIndex < 2; pageIndex++) {
+        PDPage page = new PDPage();
+        document.addPage(page);
+        try (PDPageContentStream stream = new PDPageContentStream(document, page)) {
+          stream.drawImage(xObject, 50, 500, width, height);
+        }
       }
       return toBytes(document);
     }
@@ -105,6 +150,24 @@ class PdfDiagramDetectionAdapterTest {
         stream.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 10);
         stream.newLineAtOffset(50, 480);
         stream.showText(caption);
+        stream.endText();
+      }
+      return toBytes(document);
+    }
+  }
+
+  private byte[] pdfWithImageAndText(int width, int height, String text) throws IOException {
+    try (PDDocument document = new PDDocument()) {
+      PDPage page = new PDPage();
+      document.addPage(page);
+      BufferedImage image = solidImage(width, height);
+      PDImageXObject xObject = LosslessFactory.createFromImage(document, image);
+      try (PDPageContentStream stream = new PDPageContentStream(document, page)) {
+        stream.drawImage(xObject, 50, 500, width, height);
+        stream.beginText();
+        stream.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 10);
+        stream.newLineAtOffset(50, 480);
+        stream.showText(text);
         stream.endText();
       }
       return toBytes(document);

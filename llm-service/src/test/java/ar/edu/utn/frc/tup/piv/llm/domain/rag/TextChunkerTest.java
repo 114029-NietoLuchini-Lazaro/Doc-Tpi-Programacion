@@ -72,4 +72,42 @@ class TextChunkerTest {
     var lbChunks = chunker.createChunks(documentId, "doc.pdf", List.of(new ExtractedPage(4, textWithLinebreaks)));
     assertThat(lbChunks.size()).isGreaterThan(1);
   }
+
+  @Test
+  void consecutivePiecesDoNotExceedTheChunkSizeOrOverlap() {
+    String longText = "Oración número uno con contenido suficiente para el fragmento. ".repeat(60);
+    List<DocumentChunk> chunks = chunker.createChunks(documentId, "doc.pdf", List.of(new ExtractedPage(1, longText)));
+
+    assertThat(chunks.size()).isGreaterThan(1);
+    for (DocumentChunk chunk : chunks) {
+      assertThat(chunk.content().length()).isLessThanOrEqualTo(1000);
+    }
+    for (int i = 1; i < chunks.size(); i++) {
+      int overlap = overlapBetween(chunks.get(i - 1).content(), chunks.get(i).content());
+      assertThat(overlap).isLessThanOrEqualTo(200);
+    }
+  }
+
+  @Test
+  void overlappingPiecesKeepContinuousContext() {
+    String longText = "Una oración con contexto que se repite hasta superar el tamaño del fragmento. ".repeat(50);
+    List<DocumentChunk> chunks = chunker.createChunks(documentId, "doc.pdf", List.of(new ExtractedPage(1, longText)));
+
+    assertThat(chunks.size()).isGreaterThan(1);
+    for (int i = 1; i < chunks.size(); i++) {
+      int overlap = overlapBetween(chunks.get(i - 1).content(), chunks.get(i).content());
+      assertThat(overlap).isGreaterThan(0);
+    }
+  }
+
+  private int overlapBetween(String previous, String current) {
+    int maxOverlap = Math.min(Math.min(previous.length(), current.length()), 200);
+    int overlap = 0;
+    for (int size = 1; size <= maxOverlap; size++) {
+      if (previous.endsWith(current.substring(0, size))) {
+        overlap = size;
+      }
+    }
+    return overlap;
+  }
 }

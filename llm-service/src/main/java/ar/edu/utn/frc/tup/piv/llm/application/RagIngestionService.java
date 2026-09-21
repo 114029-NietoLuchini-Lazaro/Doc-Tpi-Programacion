@@ -31,8 +31,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 /** Casos de uso de `/api/llm/rag/documents/**` (EP-09, alta/inspección de fuentes): sube y
  * procesa un PDF (extracción de texto, chunking, detección y auto-decodificación de diagramas,
@@ -71,7 +73,7 @@ public class RagIngestionService {
     this.embeddingTimeout = Duration.ofMillis(embeddingTimeoutMs);
   }
 
-  @Transactional
+  @Transactional(rollbackFor = Exception.class)
   public RagDocument upload(UUID courseCohortId, String fileName, byte[] bytes,
       UUID idempotencyKey, CallerIdentity actor) throws IOException {
     if (courseCohortId == null) {
@@ -85,7 +87,16 @@ public class RagIngestionService {
     }
 
     UUID documentId = UUID.randomUUID();
-    ExtractedPdf extracted = textExtractor.extractTextWithPages(bytes);
+    ExtractedPdf extracted;
+    try {
+      extracted = textExtractor.extractTextWithPages(bytes);
+    } catch (IOException exception) {
+      // Un archivo vacío, que no es PDF, cifrado o dañado se rechaza con 422 y no deja
+      // ninguna fuente creada (CA3 de LLM-EP09-H01). Sin este mapeo la IOException de
+      // PDFBox escapaba como 500.
+      throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+          "El archivo no es un PDF válido o está dañado", exception);
+    }
     List<DocumentChunk> chunks = new ArrayList<>(chunker.createChunks(documentId, fileName, extracted.pages()));
 
     appendDiagramChunks(documentId, fileName, bytes, chunks);
@@ -170,7 +181,7 @@ public class RagIngestionService {
   }
 
   public Optional<byte[]> getPdfBytes(UUID id) {
-    return documents.findById(id).map(doc -> documents.getPdfBytes(id));
+    return documents.findById(id).flatMap(doc -> Optional.ofNullable(documents.getPdfBytes(id)));
   }
 
   public List<ImageDetection> detectImages(byte[] pdfBytes) {
