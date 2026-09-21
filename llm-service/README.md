@@ -33,9 +33,25 @@ Gamificado**.
 
 ### Backend aislado
 
+Antes del primer arranque (una sola vez por máquina):
+
+```bash
+cp .env.example .env                                  # y completar LLM_CREDENTIALS_MASTER_KEY en .env
+openssl rand -base64 32                               # genera la clave AES-256 que pide LLM_CREDENTIALS_MASTER_KEY
+docker network create tpi-platform                    # red externa de la plataforma; no hace falta si ya existe
+```
+
+Sin `LLM_CREDENTIALS_MASTER_KEY` el `up` falla con `required variable LLM_CREDENTIALS_MASTER_KEY is missing`;
+sin la red `tpi-platform`, con `network tpi-platform declared as external, but could not be found`.
+
 ```bash
 docker compose up --build
 ```
+
+Levanta tres servicios *healthy*: `postgres`, `kafka-local` (broker local para probar sin la plataforma) y
+`llm-service`. `compose.yaml` fija `container_name: tpi-llm`: si ya existe un contenedor con ese nombre de otro
+proyecto, borrarlo (`docker rm tpi-llm`) o el `up` falla con `container name "/tpi-llm" is already in use`.
+El smoke `scripts/smoke-compose.sh` no tiene ese problema: usa nombres propios y clave descartable.
 
 El servicio queda disponible sólo dentro de la red Docker. Su healthcheck es
 `http://llm-service:8087/actuator/health` desde otro contenedor (la API escucha en `8086`). La composición base no expone
@@ -84,7 +100,7 @@ Para la Sprint Review y verificación reproducible con evidencia técnica:
   - Linux / macOS / Git Bash: `bash scripts/test-compose-restart.sh`
   - Windows PowerShell: `powershell -File scripts/test-compose-restart.ps1`
 - **Suite de pruebas y reporte de cobertura JaCoCo (H06·T6):**
-  - Ejecutar `mvn test` para correr las 218 pruebas unitarias y de arquitectura.
+  - Ejecutar `mvn test` para correr las pruebas unitarias y de arquitectura (675 al 2026-09-21; los tests de esquema `FlywaySchemaTest` y `V1IsolatedSchemaTest` requieren `-Dintegration=true`).
   - El reporte de cobertura se genera automáticamente en `target/site/jacoco/index.html` y `jacoco.xml`.
   - El gate de calidad en CI verifica que los paquetes de dominio superen el umbral exigido.
 

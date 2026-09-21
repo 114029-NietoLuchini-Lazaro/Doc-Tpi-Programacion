@@ -38,7 +38,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
  * Provider-neutral administrative API. Its request shape is described by installed adapters.
  */
 @RestController
-@RequestMapping("/api/llm/admin")
+@RequestMapping("${app.api.private-path}/admin")
 public class ProviderCredentialController {
     private final ProviderCredentialRepository repository;
     private final EncryptedSecretService crypto;
