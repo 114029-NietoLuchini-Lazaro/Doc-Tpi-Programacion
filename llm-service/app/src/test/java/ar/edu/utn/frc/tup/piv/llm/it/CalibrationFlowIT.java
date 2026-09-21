@@ -7,12 +7,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import ar.edu.utn.frc.tup.piv.llm.application.worker.CalibrationRunWorker;
 import ar.edu.utn.frc.tup.piv.llm.adapter.out.ai.EncryptedSecretService;
+import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.CalibrationRunRepository;
 import ar.edu.utn.frc.tup.piv.llm.adapter.out.persistence.ProviderCredentialRepository;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -23,7 +25,23 @@ class CalibrationFlowIT extends AbstractIntegrationIT {
   @Autowired ProviderCredentialRepository models;
   @Autowired EncryptedSecretService crypto;
   @Autowired CalibrationRunWorker worker;
+  @Autowired CalibrationRunRepository runs;
   HttpServer server;
+
+  /** El claim es global: drena corridas en cola de otros ITs para reclamar solo las propias. */
+  @BeforeEach
+  void drainCalibrationQueue() {
+    while (runs.claimNextQueued().isPresent()) {
+      // se descartan (quedan RUNNING): no interesan a este test
+    }
+  }
+
+  /** Cada enqueue crea un grupo de estabilidad de tres corridas (PAR-14): hay que procesarlas todas. */
+  private void dispatchStabilityGroup() {
+    for (int i = 0; i < 3; i++) {
+      worker.dispatch();
+    }
+  }
 
   @AfterEach
   void stop() {
@@ -47,7 +65,7 @@ class CalibrationFlowIT extends AbstractIntegrationIT {
     server.start();
     var cred = models.create("openai-compatible", "local",
         java.util.Map.of("baseUrl", "http://127.0.0.1:" + server.getAddress().getPort() + "/v1"),
-        crypto.encrypt("sk-local-1234567"), "sk-4567", TEACHER);
+        crypto.encrypt("{\"apiKey\":\"sk-local-1234567\"}"), "sk-4567", TEACHER);
     var dep = models.createCandidate(cred.id(), descriptorDeModelo("modelo-local"), 3);
     models.markChatVerified(dep.id());
     models.activate(dep.id());
@@ -93,11 +111,11 @@ class CalibrationFlowIT extends AbstractIntegrationIT {
     assertThat(enqueue(s, key)).as("misma Idempotency-Key devuelve la misma corrida").isEqualTo(runId);
     assertThat(run(s, runId).path("state").asText()).isEqualTo("QUEUED");
 
-    worker.dispatch();
+    dispatchStabilityGroup();
     assertThat(run(s, runId).path("state").asText()).isEqualTo("PASSED");
     String base = "/api/llm/courses/" + s.course();
     assertThat(body(mvc.perform(asTeacher(get(base + "/calibrations"), s.course()))
-        .andExpect(status().isOk())).path("items")).hasSize(1);
+        .andExpect(status().isOk())).path("items")).hasSize(3);
 
     var preview = body(mvc.perform(asTeacher(post(base + "/calibrations/" + runId + "/activate-preview"), s.course()))
         .andExpect(status().isOk()));
@@ -114,7 +132,7 @@ class CalibrationFlowIT extends AbstractIntegrationIT {
     provider(200, PERFECT);
     var s = publishedGoldenSetAndRubric();
     String runId = enqueue(s, UUID.randomUUID());
-    worker.dispatch();
+    dispatchStabilityGroup();
     mvc.perform(asTeacher(post("/api/llm/courses/" + s.course() + "/calibrations/" + runId + "/activate"), s.course())
         .content("{\"previewToken\":\"token-inventado\",\"challengeIds\":[]}")).andExpect(status().is4xxClientError());
   }
@@ -124,7 +142,7 @@ class CalibrationFlowIT extends AbstractIntegrationIT {
     provider(200, BAD);
     var s = publishedGoldenSetAndRubric();
     String runId = enqueue(s, UUID.randomUUID());
-    worker.dispatch();
+    dispatchStabilityGroup();
     assertThat(run(s, runId).path("state").asText()).isEqualTo("FAILED");
   }
 
@@ -133,7 +151,7 @@ class CalibrationFlowIT extends AbstractIntegrationIT {
     provider(200, "no soy json");
     var s = publishedGoldenSetAndRubric();
     String runId = enqueue(s, UUID.randomUUID());
-    worker.dispatch();
+    dispatchStabilityGroup();
     var run = run(s, runId);
     assertThat(run.path("state").asText()).isEqualTo("FAILED");
   }
@@ -143,7 +161,7 @@ class CalibrationFlowIT extends AbstractIntegrationIT {
     provider(503, "");
     var s = publishedGoldenSetAndRubric();
     String runId = enqueue(s, UUID.randomUUID());
-    worker.dispatch();
+    dispatchStabilityGroup();
     assertThat(run(s, runId).path("state").asText()).isEqualTo("FAILED");
   }
 

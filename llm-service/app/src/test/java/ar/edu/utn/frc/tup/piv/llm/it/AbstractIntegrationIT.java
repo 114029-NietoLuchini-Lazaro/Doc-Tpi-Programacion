@@ -32,6 +32,35 @@ public abstract class AbstractIntegrationIT {
 
   @org.springframework.beans.factory.annotation.Autowired protected org.springframework.test.web.servlet.MockMvc mvc;
   @org.springframework.beans.factory.annotation.Autowired protected com.fasterxml.jackson.databind.ObjectMapper json;
+  @org.springframework.beans.factory.annotation.Autowired protected org.springframework.jdbc.core.JdbcTemplate jdbc;
+
+  private static final java.util.UUID FAKE_CREDENTIAL =
+      java.util.UUID.nameUUIDFromBytes("it-fake-credential".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+  /**
+   * Desde la V26 `function_model_config` referencia un despliegue real y las semillas 'fake' de
+   * tutor/evaluator/embedding se retiraron. Los ITs que invocan modelos (tutor, evaluación de
+   * intentos, RAG) necesitan esa asignación: acá se crea una credencial y un despliegue por función
+   * con proveedor `fake` — que mapea al {@code FakeModelAdapter} del classpath de test — y se
+   * asignan por función. El upsert es idempotente para todos los métodos.
+   */
+  @org.junit.jupiter.api.BeforeEach
+  void seedFakeFunctionAssignments() {
+    jdbc.update("insert into llm.provider_credentials (id, provider_key, display_name, public_configuration, encrypted_secrets, secret_nonce, secret_mask, created_by_user_id, state) values (?, 'fake', 'fake', '{}'::jsonb, ?, ?, 'fake', ?, 'ACTIVE') on conflict (id) do nothing",
+        FAKE_CREDENTIAL, new byte[] {0}, new byte[] {0}, TEACHER);
+    for (String function : java.util.List.of("tutor", "evaluator", "embedding")) {
+      java.util.UUID deployment = fakeDeployment(function);
+      jdbc.update("insert into llm.model_deployments (id, credential_id, provider_key, adapter_version, model_id, model_version, capabilities, evaluator_state) values (?, ?, 'fake', '1', ?, 'v1', '{}'::jsonb, 'CANDIDATE') on conflict (id) do nothing",
+          deployment, FAKE_CREDENTIAL, "fake-" + function);
+      jdbc.update("insert into llm.function_model_config (function, model_deployment_id, enabled, updated_at) values (?, ?, true, now()) on conflict (function) do update set model_deployment_id=excluded.model_deployment_id, enabled=true, updated_at=now()",
+          function, deployment);
+    }
+  }
+
+  /** Despliegue fake estable por función, para reasignarlo desde un IT sin inventar un FK. */
+  protected static java.util.UUID fakeDeployment(String function) {
+    return java.util.UUID.nameUUIDFromBytes(("it-fake-deployment-" + function).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+  }
 
   /** Identidad de docente de un curso, tal como la propaga el API Gateway (admin-service delegando). */
   protected static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder asTeacher(

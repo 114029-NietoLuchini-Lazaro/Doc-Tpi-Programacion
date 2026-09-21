@@ -18,6 +18,7 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -32,6 +33,14 @@ class CalibrationPersistenceIT extends AbstractIntegrationIT {
   @Autowired CourseEvaluationStatusRepository status;
   @Autowired CourseGoldenSetRepository golden;
   @Autowired JdbcTemplate jdbc;
+
+  /** El claim es global: drena corridas en cola de otros ITs para reclamar solo las propias. */
+  @BeforeEach
+  void drainCalibrationQueue() {
+    while (runs.claimNextQueued().isPresent()) {
+      // se descartan (quedan RUNNING): no interesan a este test
+    }
+  }
 
   private CallerIdentity actor() { return new CallerIdentity("admin-service", TEACHER, "req", null); }
 

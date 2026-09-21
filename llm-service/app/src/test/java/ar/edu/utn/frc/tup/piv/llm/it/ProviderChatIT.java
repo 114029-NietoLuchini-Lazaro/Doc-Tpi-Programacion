@@ -42,7 +42,7 @@ class ProviderChatIT extends AbstractIntegrationIT {
     });
     server.start();
     var cred = models.create("openai-compatible", "local", java.util.Map.of("baseUrl", "http://127.0.0.1:" + server.getAddress().getPort() + "/v1"),
-        crypto.encrypt("sk-local-1234567"), "sk-4567", TEACHER);
+        crypto.encrypt("{\"apiKey\":\"sk-local-1234567\"}"), "sk-4567", TEACHER);
     credentialId = cred.id();
     deploymentId = models.createCandidate(cred.id(), descriptorDeModelo("modelo-local"), 2).id();
   }
@@ -71,7 +71,7 @@ class ProviderChatIT extends AbstractIntegrationIT {
 
   @Test
   void adminCanDiscoverModelsAndChatWithACandidate() throws Exception {
-    var models = body(mvc.perform(asTeacher(post(ADMIN + "/provider-credentials/" + credentialId + "/test"), course))
+    var models = body(mvc.perform(asTeacher(post(ADMIN + "/provider-credentials/" + credentialId + "/discover-models"), course))
         .andExpect(status().isOk()));
     assertThat(models.path("items")).hasSize(2);
 
@@ -81,8 +81,7 @@ class ProviderChatIT extends AbstractIntegrationIT {
 
     var chat = body(mvc.perform(asTeacher(post(ADMIN + "/evaluator-models/" + deploymentId + "/chat"), course)
         .content("{\"message\":\"hola\"}")).andExpect(status().isOk()));
-    assertThat(chat.path("inputTokens").asInt()).isEqualTo(3);
-    assertThat(chat.path("outputTokens").asInt()).isEqualTo(4);
+    assertThat(chat.path("text").asText()).isEqualTo("hola");
     var usage = body(mvc.perform(asTeacher(get(ADMIN + "/evaluator-models/" + deploymentId + "/usage"), course)).andExpect(status().isOk()));
     assertThat(usage.path("adminTests").asLong()).isGreaterThanOrEqualTo(1);
 

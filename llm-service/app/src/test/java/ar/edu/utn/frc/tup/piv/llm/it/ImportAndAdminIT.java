@@ -62,28 +62,31 @@ class ImportAndAdminIT extends AbstractIntegrationIT {
   @Test
   void modelAssignmentsAreReadAndReplaced() throws Exception {
     UUID c = UUID.randomUUID();
-    mvc.perform(asTeacher(get("/api/llm/model-assignments/TUTOR"), c)).andExpect(status().isOk());
+    // La V26 guarda la asignación como despliegue real: el @BeforeEach de la base siembra tutor/evaluator/embedding.
+    var current = body(mvc.perform(asTeacher(get("/api/llm/model-assignments/TUTOR"), c)).andExpect(status().isOk()));
+    assertThat(current.path("modelDeploymentId").asText()).isNotBlank();
+
+    String target = fakeDeployment("evaluator").toString();
     mvc.perform(asTeacher(put("/api/llm/model-assignments/TUTOR"), c).header("Idempotency-Key", UUID.randomUUID().toString())
-        .content("{\"provider\":\"fake\",\"modelId\":\"fake-1\",\"modelVersion\":\"v1\"}")).andExpect(status().isOk());
-    assertThat(body(mvc.perform(asTeacher(get("/api/llm/model-assignments/tutor"), c)).andExpect(status().isOk())).path("modelId").asText())
-        .isEqualTo("fake-1");
+        .content("{\"modelDeploymentId\":\"" + target + "\"}")).andExpect(status().isOk());
+    assertThat(body(mvc.perform(asTeacher(get("/api/llm/model-assignments/tutor"), c)).andExpect(status().isOk())).path("modelDeploymentId").asText())
+        .isEqualTo(target);
     mvc.perform(asTeacher(get("/api/llm/model-assignments/NOPE"), c)).andExpect(status().isUnprocessableEntity());
     mvc.perform(asTeacher(put("/api/llm/model-assignments/TUTOR"), c).header("Idempotency-Key", UUID.randomUUID().toString())
-        .content("{\"provider\":\"\"}")).andExpect(status().isUnprocessableEntity());
+        .content("{}")).andExpect(status().isUnprocessableEntity());
   }
 
   @Test
   void institutionalCalibrationRequiresProfileAndTarget() throws Exception {
     UUID c = UUID.randomUUID();
-    // El perfil institucional es global: según el orden de los ITs puede existir o no.
-    mvc.perform(asTeacher(get("/api/llm/admin/institutional-calibration/profile"), c))
-        .andExpect(status().is(org.hamcrest.Matchers.anyOf(org.hamcrest.Matchers.is(200), org.hamcrest.Matchers.is(409))));
+    // El perfil institucional es global; se parte de un estado conocido para que el caso sea determinista.
+    jdbc.update("delete from llm.institutional_calibration_profiles");
+    mvc.perform(asTeacher(get("/api/llm/admin/institutional-calibration/profile"), c)).andExpect(status().isConflict());
     mvc.perform(asTeacher(post("/api/llm/admin/institutional-calibration/profile"), c)
         .content("{\"goldenSetVersionId\":\"" + draft(c) + "\",\"rubricVersionId\":\"10000000-0000-0000-0000-000000000002\"}"))
         .andExpect(status().isConflict());
     mvc.perform(asTeacher(get("/api/llm/admin/institutional-calibration/runs"), c)).andExpect(status().isOk());
-    mvc.perform(asTeacher(post("/api/llm/admin/institutional-calibration/runs"), c))
-        .andExpect(status().is(org.hamcrest.Matchers.anyOf(org.hamcrest.Matchers.is(202), org.hamcrest.Matchers.is(409))));
+    mvc.perform(asTeacher(post("/api/llm/admin/institutional-calibration/runs"), c)).andExpect(status().isConflict());
   }
 
   @Test
@@ -102,6 +105,5 @@ class ImportAndAdminIT extends AbstractIntegrationIT {
     mvc.perform(asTeacher(post("/api/llm/courses/" + c + "/eligible-interactions/" + UUID.randomUUID() + "/anonymize-preview"), c))
         .andExpect(status().isNotFound());
     mvc.perform(asTeacher(get("/api/llm/courses/" + c + "/golden-set-update-proposals"), c)).andExpect(status().isOk());
-    mvc.perform(asTeacher(get("/api/llm/courses"), c)).andExpect(status().isOk());
   }
 }

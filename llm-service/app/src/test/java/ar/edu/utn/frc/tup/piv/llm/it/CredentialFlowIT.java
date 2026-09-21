@@ -13,16 +13,17 @@ class CredentialFlowIT extends AbstractIntegrationIT {
   static final String ADMIN = "/api/llm/admin";
   @Autowired ProviderCredentialRepository repository;
 
-  private String credential(UUID c, String provider) throws Exception {
-    return body(mvc.perform(asTeacher(post(ADMIN + "/provider-credentials"), c)
-        .content("{\"provider\":\"" + provider + "\",\"name\":\"" + provider + "\",\"apiKey\":\"sk-test-1234567890\"}"))
+  private String credential(UUID c, String providerKey) throws Exception {
+    String request = "{\"providerKey\":\"" + providerKey + "\",\"displayName\":\"" + providerKey
+        + "\",\"secrets\":{\"apiKey\":\"sk-test-1234567890\"}}";
+    return body(mvc.perform(asTeacher(post(ADMIN + "/provider-credentials"), c).content(request))
         .andExpect(status().isOk())).path("id").asText();
   }
 
   @Test
   void credentialToActiveEvaluatorModel() throws Exception {
     UUID c = UUID.randomUUID();
-    String credentialId = credential(c, "ANTHROPIC");
+    String credentialId = credential(c, "anthropic");
     var listed = body(mvc.perform(asTeacher(get(ADMIN + "/provider-credentials"), c)).andExpect(status().isOk()));
     assertThat(listed.path("items").toString()).contains(credentialId).doesNotContain("sk-test-1234567890");
 
@@ -61,12 +62,18 @@ class CredentialFlowIT extends AbstractIntegrationIT {
   @Test
   void rejectsInvalidCredentialsAndUnknownModels() throws Exception {
     UUID c = UUID.randomUUID();
+    // Sin apiKey el adaptador del SPI la rechaza (INVALID_CREDENTIAL).
     mvc.perform(asTeacher(post(ADMIN + "/provider-credentials"), c)
-        .content("{\"provider\":\"GEMINI\",\"name\":\"g\",\"apiKey\":\"corta\"}")).andExpect(status().isUnprocessableEntity());
+        .content("{\"providerKey\":\"gemini\",\"displayName\":\"g\",\"secrets\":{}}")).andExpect(status().isUnprocessableEntity());
+    // Un proveedor que no está instalado tampoco se puede dar de alta.
     mvc.perform(asTeacher(post(ADMIN + "/provider-credentials"), c)
-        .content("{\"provider\":\"OPENAI_COMPATIBLE\",\"name\":\"o\",\"baseUrl\":\"http://inseguro\",\"apiKey\":\"sk-test-1234567890\"}"))
+        .content("{\"providerKey\":\"desconocido\",\"displayName\":\"x\",\"secrets\":{\"apiKey\":\"sk-test-1234567890\"}}"))
         .andExpect(status().isUnprocessableEntity());
-    mvc.perform(asTeacher(post(ADMIN + "/provider-credentials"), c).content("{\"name\":\"sin proveedor\"}")).andExpect(status().isBadRequest());
+    // baseUrl http (no loopback) es inválida para el adaptador OpenAI compatible.
+    mvc.perform(asTeacher(post(ADMIN + "/provider-credentials"), c)
+        .content("{\"providerKey\":\"openai-compatible\",\"displayName\":\"o\",\"configuration\":{\"baseUrl\":\"http://inseguro\"},\"secrets\":{\"apiKey\":\"sk-test-1234567890\"}}"))
+        .andExpect(status().isUnprocessableEntity());
+    mvc.perform(asTeacher(post(ADMIN + "/provider-credentials"), c).content("{\"displayName\":\"sin proveedor\"}")).andExpect(status().isBadRequest());
     mvc.perform(asTeacher(post(ADMIN + "/evaluator-models/" + UUID.randomUUID() + "/chat"), c).content("{\"message\":\"hola\"}"))
         .andExpect(status().isConflict());
     mvc.perform(asTeacher(post(ADMIN + "/evaluator-models/" + UUID.randomUUID() + "/activate"), c)).andExpect(status().isConflict());
